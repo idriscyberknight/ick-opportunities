@@ -35,9 +35,10 @@ function Index() {
   return (
     <>
       <Hero />
-      <SearchSection />
       <FeaturedOpportunities />
+      <ValueJourney />
       <TrustSection />
     </>
   );
+
 }
