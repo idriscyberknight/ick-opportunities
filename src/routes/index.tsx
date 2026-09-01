@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { Hero } from "../components/Hero";
-import { SearchSection } from "../components/SearchSection";
 import { FeaturedOpportunities } from "../components/FeaturedOpportunities";
+import { ValueJourney } from "../components/ValueJourney";
 import { TrustSection } from "../components/TrustSection";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
