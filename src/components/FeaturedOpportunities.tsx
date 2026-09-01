@@ -125,7 +125,7 @@ export function FeaturedOpportunities() {
           {opportunities.map((opportunity) => (
             <article
               key={opportunity.id}
-              className="group flex flex-col rounded-xl border border-border bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-secondary/30 hover:shadow-[0_18px_40px_-28px_rgba(16,24,40,0.45)]"
+              className="group flex min-w-0 flex-col rounded-xl border border-border bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-secondary/30 hover:shadow-[0_18px_40px_-28px_rgba(16,24,40,0.45)]"
             >
               <div className="flex min-w-0 items-start gap-3">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-muted text-sm font-bold text-primary">
