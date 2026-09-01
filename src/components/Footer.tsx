@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { Mail } from "lucide-react";
 
 const productLinks = [
   { to: "/opportunities", label: "Opportunities" },
