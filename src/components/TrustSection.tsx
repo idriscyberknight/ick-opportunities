@@ -1,63 +1,74 @@
-import { ShieldCheck, FileCheck, Search, AlertCircle } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ShieldCheck, FileCheck, Search, Flag, ArrowRight } from "lucide-react";
 
 const trustPoints = [
   {
     icon: Search,
-    title: "Sourced from official channels",
+    title: "Official sources only",
     description:
-      "We pull opportunities directly from government portals, embassy pages, company career sites, and verified funders.",
+      "Listings come from government portals, embassy pages, verified funders and company career sites.",
   },
   {
     icon: FileCheck,
-    title: "Cross-checked before listing",
+    title: "Cross-checked details",
     description:
-      "Every opportunity is reviewed against the original source link, deadline, and eligibility requirements.",
+      "Deadlines, eligibility and application links are checked against the original source before publishing.",
   },
   {
     icon: ShieldCheck,
-    title: "No pay-to-apply schemes",
+    title: "No pay-to-apply",
     description:
-      "We flag opportunities that ask for suspicious upfront fees and prioritize programmes with transparent processes.",
+      "We flag opportunities that request suspicious upfront fees and prioritise transparent processes.",
   },
   {
-    icon: AlertCircle,
+    icon: Flag,
     title: "Community reporting",
     description:
-      "Users can report outdated or suspicious listings so the platform stays accurate and trustworthy.",
+      "Anyone can report an outdated or suspicious listing, and reports are reviewed before action.",
   },
 ];
 
 export function TrustSection() {
   return (
-    <section className="w-full bg-card py-14 sm:py-20">
+    <section className="w-full bg-card py-16 sm:py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Verified. Trustworthy. Built for You.
-          </h2>
-          <p className="mt-3 text-muted-foreground">
-            We believe opportunity discovery should feel safe, not scammy. Here is
-            how we plan to keep listings reliable as ICK Opportunities grows.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {trustPoints.map((point) => (
-            <div
-              key={point.title}
-              className="rounded-xl border border-border bg-background p-5"
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+          <div className="max-w-md">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-success">
+              Trust &amp; verification
+            </span>
+            <h2 className="mt-2 font-display text-2xl font-extrabold tracking-[-0.02em] text-foreground sm:text-3xl">
+              Verified opportunities, official application sources
+            </h2>
+            <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
+              Opportunity scams are common. ICK Opportunities exists to make the
+              search safe: we verify what we publish and always point you to the
+              official application page.
+            </p>
+            <Link
+              to="/opportunities"
+              className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-secondary transition-colors hover:text-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">
-                <point.icon className="h-5 w-5" />
+              Browse verified opportunities
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2">
+            {trustPoints.map((point) => (
+              <div key={point.title} className="bg-card p-6">
+                <span className="grid h-10 w-10 place-items-center rounded-lg bg-success/10 text-success">
+                  <point.icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-4 font-display text-[15px] font-bold text-foreground">
+                  {point.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {point.description}
+                </p>
               </div>
-              <h3 className="mt-4 font-display text-base font-semibold text-foreground">
-                {point.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {point.description}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>

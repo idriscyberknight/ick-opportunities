@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { to: "/", label: "Home" },
   { to: "/opportunities", label: "Opportunities" },
   { to: "/scholarships", label: "Scholarships" },
   { to: "/jobs", label: "Jobs" },
@@ -12,45 +11,75 @@ const navLinks = [
   { to: "/grants", label: "Grants" },
 ];
 
+function Wordmark() {
+  return (
+    <Link
+      to="/"
+      className="flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-[13px] font-extrabold tracking-tight text-primary-foreground">
+        ICK
+      </span>
+      <span className="flex min-w-0 flex-col leading-none">
+        <span className="truncate font-display text-[15px] font-bold tracking-tight text-foreground">
+          ICK Opportunities
+        </span>
+        <span className="mt-0.5 hidden text-[11px] font-medium text-muted-foreground sm:block">
+          by ICK Technologies Ltd
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur-sm">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2 text-primary">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-            ICK
-          </span>
-          <span className="hidden text-lg font-semibold tracking-tight sm:inline">
-            Opportunities
-          </span>
-        </Link>
+    <header
+      className={cn(
+        "sticky top-0 z-50 w-full bg-background/85 backdrop-blur-md transition-shadow",
+        scrolled ? "border-b border-border shadow-[0_1px_2px_rgba(16,24,40,0.06)]" : "border-b border-transparent"
+      )}
+    >
+      <div className="mx-auto grid h-16 max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 sm:px-6 lg:h-[72px] lg:px-8">
+        <div className="flex min-w-0 items-center gap-8">
+          <Wordmark />
+          <nav className="hidden items-center gap-0.5 lg:flex">
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                activeProps={{ className: "text-foreground bg-muted/70" }}
+                inactiveProps={{
+                  className: "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                }}
+                className="rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
-        <nav className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              activeProps={{ className: "text-primary" }}
-              inactiveProps={{ className: "text-muted-foreground hover:text-foreground" }}
-              className="rounded-md px-3 py-2 text-sm font-medium transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           <Link
             to="/signin"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Sign In
           </Link>
           <Link
             to="/get-started"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_1px_2px_rgba(16,24,40,0.12)] transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             Get Started
           </Link>
@@ -59,47 +88,47 @@ export function Header() {
         <button
           type="button"
           onClick={() => setMobileOpen((prev) => !prev)}
-          className="inline-flex items-center justify-center rounded-md p-2 text-foreground md:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:bg-muted lg:hidden"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
         >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       <div
         className={cn(
-          "overflow-hidden border-b border-border bg-card transition-all duration-200 ease-in-out md:hidden",
-          mobileOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          "overflow-hidden border-border bg-background transition-all duration-200 ease-in-out lg:hidden",
+          mobileOpen ? "max-h-[32rem] border-b opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <nav className="flex flex-col gap-1 px-4 py-3">
+        <nav className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 pb-5 pt-2 sm:px-6">
           {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
               onClick={() => setMobileOpen(false)}
-              activeProps={{ className: "text-primary" }}
-              inactiveProps={{ className: "text-muted-foreground hover:text-foreground" }}
-              className="rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+              activeProps={{ className: "text-foreground bg-muted/70" }}
+              inactiveProps={{ className: "text-muted-foreground" }}
+              className="rounded-lg px-3 py-3 text-[15px] font-medium transition-colors"
             >
               {link.label}
             </Link>
           ))}
-          <div className="my-2 h-px bg-border" />
-          <Link
-            to="/signin"
-            onClick={() => setMobileOpen(false)}
-            className="rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Sign In
-          </Link>
+          <div className="my-3 h-px bg-border" />
           <Link
             to="/get-started"
             onClick={() => setMobileOpen(false)}
-            className="rounded-md bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="rounded-lg bg-primary px-3 py-3 text-center text-[15px] font-semibold text-primary-foreground"
           >
             Get Started
+          </Link>
+          <Link
+            to="/signin"
+            onClick={() => setMobileOpen(false)}
+            className="rounded-lg border border-border px-3 py-3 text-center text-[15px] font-semibold text-foreground"
+          >
+            Sign In
           </Link>
         </nav>
       </div>
