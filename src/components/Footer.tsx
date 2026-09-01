@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { Mail } from "lucide-react";
 
 const productLinks = [
   { to: "/opportunities", label: "Opportunities" },
@@ -34,13 +33,6 @@ export function Footer() {
               jobs, internships and grants — and preparing applications that
               stand out.
             </p>
-            <a
-              href="mailto:hello@ickopportunities.com"
-              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-secondary transition-colors hover:text-secondary/80"
-            >
-              <Mail className="h-4 w-4" />
-              hello@ickopportunities.com
-            </a>
           </div>
 
           <div>
@@ -85,11 +77,6 @@ export function Footer() {
             </h3>
             <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
               <li>ICK Technologies Ltd</li>
-              <li>
-                <a href="mailto:hello@ickopportunities.com" className="transition-colors hover:text-foreground">
-                  Contact
-                </a>
-              </li>
               <li>
                 <Link to="/" className="transition-colors hover:text-foreground">
                   Privacy Policy
