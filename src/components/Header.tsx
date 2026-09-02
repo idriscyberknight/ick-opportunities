@@ -38,6 +38,18 @@ function Wordmark() {
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  async function handleSignOut() {
+    setMobileOpen(false);
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/signin", replace: true });
+  }
+
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
