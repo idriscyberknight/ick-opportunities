@@ -134,7 +134,9 @@ export function Header() {
       <div
         className={cn(
           "overflow-hidden border-border bg-background transition-all duration-200 ease-in-out lg:hidden",
-          mobileOpen ? "max-h-[32rem] border-b opacity-100" : "max-h-0 opacity-0"
+          mobileOpen
+            ? "max-h-[32rem] border-b opacity-100"
+            : "pointer-events-none max-h-0 opacity-0"
         )}
       >
         <nav className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 pb-5 pt-2 sm:px-6">
