@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const navLinks = [
   { to: "/opportunities", label: "Opportunities" },
@@ -35,6 +38,18 @@ function Wordmark() {
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  async function handleSignOut() {
+    setMobileOpen(false);
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/signin", replace: true });
+  }
+
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -71,18 +86,38 @@ export function Header() {
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <Link
-            to="/signin"
-            className="rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Sign In
-          </Link>
-          <Link
-            to="/get-started"
-            className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_1px_2px_rgba(16,24,40,0.12)] transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            Get Started
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Sign Out
+              </button>
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_1px_2px_rgba(16,24,40,0.12)] transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/signin"
+                className="rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/get-started"
+                className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_1px_2px_rgba(16,24,40,0.12)] transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -99,7 +134,9 @@ export function Header() {
       <div
         className={cn(
           "overflow-hidden border-border bg-background transition-all duration-200 ease-in-out lg:hidden",
-          mobileOpen ? "max-h-[32rem] border-b opacity-100" : "max-h-0 opacity-0"
+          mobileOpen
+            ? "max-h-[32rem] border-b opacity-100"
+            : "pointer-events-none max-h-0 opacity-0"
         )}
       >
         <nav className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 pb-5 pt-2 sm:px-6">
@@ -116,20 +153,41 @@ export function Header() {
             </Link>
           ))}
           <div className="my-3 h-px bg-border" />
-          <Link
-            to="/get-started"
-            onClick={() => setMobileOpen(false)}
-            className="rounded-lg bg-primary px-3 py-3 text-center text-[15px] font-semibold text-primary-foreground"
-          >
-            Get Started
-          </Link>
-          <Link
-            to="/signin"
-            onClick={() => setMobileOpen(false)}
-            className="rounded-lg border border-border px-3 py-3 text-center text-[15px] font-semibold text-foreground"
-          >
-            Sign In
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link
+                to="/dashboard"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg bg-primary px-3 py-3 text-center text-[15px] font-semibold text-primary-foreground"
+              >
+                Dashboard
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="mt-0.5 rounded-lg border border-border px-3 py-3 text-center text-[15px] font-semibold text-foreground"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/get-started"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg bg-primary px-3 py-3 text-center text-[15px] font-semibold text-primary-foreground"
+              >
+                Get Started
+              </Link>
+              <Link
+                to="/signin"
+                onClick={() => setMobileOpen(false)}
+                className="mt-0.5 rounded-lg border border-border px-3 py-3 text-center text-[15px] font-semibold text-foreground"
+              >
+                Sign In
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>
