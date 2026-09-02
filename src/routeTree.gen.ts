@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as GetStartedRouteImport } from './routes/get-started'
 import { Route as GrantsRouteImport } from './routes/grants'
 import { Route as InternshipsRouteImport } from './routes/internships'
@@ -17,10 +18,15 @@ import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as OpportunitiesRouteImport } from './routes/opportunities'
 import { Route as ScholarshipsRouteImport } from './routes/scholarships'
 import { Route as SigninRouteImport } from './routes/signin'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GetStartedRoute = GetStartedRouteImport.update({
@@ -58,6 +64,11 @@ const SigninRoute = SigninRouteImport.update({
   path: '/signin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/opportunities': typeof OpportunitiesRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,10 +90,12 @@ export interface FileRoutesByTo {
   '/opportunities': typeof OpportunitiesRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/get-started': typeof GetStartedRoute
   '/grants': typeof GrantsRoute
   '/internships': typeof InternshipsRoute
@@ -89,6 +103,7 @@ export interface FileRoutesById {
   '/opportunities': typeof OpportunitiesRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +116,7 @@ export interface FileRouteTypes {
     | '/opportunities'
     | '/scholarships'
     | '/signin'
+    | '/dashboard'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,9 +127,11 @@ export interface FileRouteTypes {
     | '/opportunities'
     | '/scholarships'
     | '/signin'
+    | '/dashboard'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/get-started'
     | '/grants'
     | '/internships'
@@ -121,10 +139,12 @@ export interface FileRouteTypes {
     | '/opportunities'
     | '/scholarships'
     | '/signin'
+    | '/_authenticated/dashboard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   GetStartedRoute: typeof GetStartedRoute
   GrantsRoute: typeof GrantsRoute
   InternshipsRoute: typeof InternshipsRoute
@@ -141,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/get-started': {
@@ -192,11 +219,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SigninRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   GetStartedRoute: GetStartedRoute,
   GrantsRoute: GrantsRoute,
   InternshipsRoute: InternshipsRoute,
