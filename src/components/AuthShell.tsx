@@ -27,7 +27,7 @@ export function AuthShell({
   );
 }
 
-export function FieldError({ children }: { children?: string }) {
+export function FieldError({ children }: { children?: string | undefined }) {
   if (!children) return null;
   return (
     <p role="alert" className="mt-1.5 text-xs font-medium text-destructive">
