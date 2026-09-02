@@ -151,20 +151,41 @@ export function Header() {
             </Link>
           ))}
           <div className="my-3 h-px bg-border" />
-          <Link
-            to="/get-started"
-            onClick={() => setMobileOpen(false)}
-            className="rounded-lg bg-primary px-3 py-3 text-center text-[15px] font-semibold text-primary-foreground"
-          >
-            Get Started
-          </Link>
-          <Link
-            to="/signin"
-            onClick={() => setMobileOpen(false)}
-            className="rounded-lg border border-border px-3 py-3 text-center text-[15px] font-semibold text-foreground"
-          >
-            Sign In
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link
+                to="/dashboard"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg bg-primary px-3 py-3 text-center text-[15px] font-semibold text-primary-foreground"
+              >
+                Dashboard
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="mt-0.5 rounded-lg border border-border px-3 py-3 text-center text-[15px] font-semibold text-foreground"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/get-started"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg bg-primary px-3 py-3 text-center text-[15px] font-semibold text-primary-foreground"
+              >
+                Get Started
+              </Link>
+              <Link
+                to="/signin"
+                onClick={() => setMobileOpen(false)}
+                className="mt-0.5 rounded-lg border border-border px-3 py-3 text-center text-[15px] font-semibold text-foreground"
+              >
+                Sign In
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>
