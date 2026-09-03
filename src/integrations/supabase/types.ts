@@ -16,24 +16,163 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          career_field: string | null
+          city: string | null
+          country: string | null
           created_at: string
+          education_level: string | null
+          experience_level: string | null
+          field_of_study: string | null
           full_name: string | null
           id: string
+          onboarding_completed: boolean
+          remote_preference: string | null
+          state: string | null
           updated_at: string
         }
         Insert: {
+          career_field?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
+          education_level?: string | null
+          experience_level?: string | null
+          field_of_study?: string | null
           full_name?: string | null
           id: string
+          onboarding_completed?: boolean
+          remote_preference?: string | null
+          state?: string | null
           updated_at?: string
         }
         Update: {
+          career_field?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
+          education_level?: string | null
+          experience_level?: string | null
+          field_of_study?: string | null
           full_name?: string | null
           id?: string
+          onboarding_completed?: boolean
+          remote_preference?: string | null
+          state?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      skills: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      user_interests: {
+        Row: {
+          created_at: string
+          id: string
+          interest: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interest: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interest?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_interests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_opportunity_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          opportunity_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          opportunity_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          opportunity_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_opportunity_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_skills: {
+        Row: {
+          created_at: string
+          id: string
+          skill_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          skill_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          skill_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_skills_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
