@@ -88,6 +88,12 @@ export function Header() {
         <div className="hidden items-center gap-2 lg:flex">
           {isAuthenticated ? (
             <>
+              <Link
+                to="/profile"
+                className="rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Profile
+              </Link>
               <button
                 type="button"
                 onClick={handleSignOut}
@@ -161,6 +167,13 @@ export function Header() {
                 className="rounded-lg bg-primary px-3 py-3 text-center text-[15px] font-semibold text-primary-foreground"
               >
                 Dashboard
+              </Link>
+              <Link
+                to="/profile"
+                onClick={() => setMobileOpen(false)}
+                className="mt-0.5 rounded-lg border border-border px-3 py-3 text-center text-[15px] font-semibold text-foreground"
+              >
+                Profile
               </Link>
               <button
                 type="button"
