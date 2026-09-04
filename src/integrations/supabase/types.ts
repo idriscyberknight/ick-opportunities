@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      opportunities: {
+        Row: {
+          benefits: string | null
+          category: Database["public"]["Enums"]["opportunity_category"]
+          country: string | null
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          description: string
+          eligibility: string | null
+          id: string
+          official_link: string | null
+          organization: string
+          state: string | null
+          status: Database["public"]["Enums"]["opportunity_status"]
+          title: string
+          updated_at: string
+          verified_status: Database["public"]["Enums"]["verified_status"]
+        }
+        Insert: {
+          benefits?: string | null
+          category: Database["public"]["Enums"]["opportunity_category"]
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description: string
+          eligibility?: string | null
+          id?: string
+          official_link?: string | null
+          organization: string
+          state?: string | null
+          status?: Database["public"]["Enums"]["opportunity_status"]
+          title: string
+          updated_at?: string
+          verified_status?: Database["public"]["Enums"]["verified_status"]
+        }
+        Update: {
+          benefits?: string | null
+          category?: Database["public"]["Enums"]["opportunity_category"]
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description?: string
+          eligibility?: string | null
+          id?: string
+          official_link?: string | null
+          organization?: string
+          state?: string | null
+          status?: Database["public"]["Enums"]["opportunity_status"]
+          title?: string
+          updated_at?: string
+          verified_status?: Database["public"]["Enums"]["verified_status"]
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           career_field: string | null
@@ -138,6 +195,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_skills: {
         Row: {
           created_at: string
@@ -179,10 +257,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      opportunity_category: "scholarship" | "job" | "internship" | "grant"
+      opportunity_status: "active" | "draft" | "expired"
+      verified_status: "verified" | "pending_review"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -309,6 +396,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      opportunity_category: ["scholarship", "job", "internship", "grant"],
+      opportunity_status: ["active", "draft", "expired"],
+      verified_status: ["verified", "pending_review"],
+    },
   },
 } as const
