@@ -43,6 +43,9 @@ function DashboardPage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
+  const adminQuery = useQuery({ queryKey: ["is-admin"], queryFn: isCurrentUserAdmin });
+  const isAdmin = adminQuery.data === true;
+
 
   useEffect(() => {
     let active = true;
