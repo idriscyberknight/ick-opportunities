@@ -16,7 +16,6 @@ import { Route as GetStartedRouteImport } from './routes/get-started'
 import { Route as GrantsRouteImport } from './routes/grants'
 import { Route as InternshipsRouteImport } from './routes/internships'
 import { Route as JobsRouteImport } from './routes/jobs'
-import { Route as OpportunitiesRouteImport } from './routes/opportunities'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ScholarshipsRouteImport } from './routes/scholarships'
 import { Route as SigninRouteImport } from './routes/signin'
@@ -58,11 +57,6 @@ const JobsRoute = JobsRouteImport.update({
   path: '/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OpportunitiesRoute = OpportunitiesRouteImport.update({
-  id: '/opportunities',
-  path: '/opportunities',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -101,7 +95,6 @@ export interface FileRoutesByFullPath {
   '/grants': typeof GrantsRoute
   '/internships': typeof InternshipsRoute
   '/jobs': typeof JobsRoute
-  '/opportunities': typeof OpportunitiesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
@@ -116,7 +109,6 @@ export interface FileRoutesByTo {
   '/grants': typeof GrantsRoute
   '/internships': typeof InternshipsRoute
   '/jobs': typeof JobsRoute
-  '/opportunities': typeof OpportunitiesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
@@ -133,7 +125,6 @@ export interface FileRoutesById {
   '/grants': typeof GrantsRoute
   '/internships': typeof InternshipsRoute
   '/jobs': typeof JobsRoute
-  '/opportunities': typeof OpportunitiesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
@@ -150,7 +141,6 @@ export interface FileRouteTypes {
     | '/grants'
     | '/internships'
     | '/jobs'
-    | '/opportunities'
     | '/reset-password'
     | '/scholarships'
     | '/signin'
@@ -165,7 +155,6 @@ export interface FileRouteTypes {
     | '/grants'
     | '/internships'
     | '/jobs'
-    | '/opportunities'
     | '/reset-password'
     | '/scholarships'
     | '/signin'
@@ -181,7 +170,6 @@ export interface FileRouteTypes {
     | '/grants'
     | '/internships'
     | '/jobs'
-    | '/opportunities'
     | '/reset-password'
     | '/scholarships'
     | '/signin'
@@ -198,7 +186,6 @@ export interface RootRouteChildren {
   GrantsRoute: typeof GrantsRoute
   InternshipsRoute: typeof InternshipsRoute
   JobsRoute: typeof JobsRoute
-  OpportunitiesRoute: typeof OpportunitiesRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ScholarshipsRoute: typeof ScholarshipsRoute
   SigninRoute: typeof SigninRoute
@@ -253,13 +240,6 @@ declare module '@tanstack/react-router' {
       path: '/jobs'
       fullPath: '/jobs'
       preLoaderRoute: typeof JobsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/opportunities': {
-      id: '/opportunities'
-      path: '/opportunities'
-      fullPath: '/opportunities'
-      preLoaderRoute: typeof OpportunitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -330,7 +310,6 @@ const rootRouteChildren: RootRouteChildren = {
   GrantsRoute: GrantsRoute,
   InternshipsRoute: InternshipsRoute,
   JobsRoute: JobsRoute,
-  OpportunitiesRoute: OpportunitiesRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ScholarshipsRoute: ScholarshipsRoute,
   SigninRoute: SigninRoute,
