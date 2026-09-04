@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, LogOut, Sparkles, UserCog } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, LogOut, ShieldCheck, Sparkles, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { isCurrentUserAdmin } from "@/lib/opportunities";
+
 import {
   EDUCATION_LEVELS,
   EXPERIENCE_LEVELS,
