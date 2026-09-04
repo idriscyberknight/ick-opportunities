@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, LogOut, Sparkles, UserCog } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, LogOut, ShieldCheck, Sparkles, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { isCurrentUserAdmin } from "@/lib/opportunities";
+
 import {
   EDUCATION_LEVELS,
   EXPERIENCE_LEVELS,
@@ -41,6 +43,9 @@ function DashboardPage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
+  const adminQuery = useQuery({ queryKey: ["is-admin"], queryFn: isCurrentUserAdmin });
+  const isAdmin = adminQuery.data === true;
+
 
   useEffect(() => {
     let active = true;
@@ -84,6 +89,15 @@ function DashboardPage() {
           ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
+          {isAdmin ? (
+            <Link
+              to="/admin/opportunities"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              <ShieldCheck className="h-4 w-4" aria-hidden />
+              Manage opportunities
+            </Link>
+          ) : null}
           <Link
             to="/profile"
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
@@ -91,6 +105,7 @@ function DashboardPage() {
             <UserCog className="h-4 w-4" aria-hidden />
             Edit profile
           </Link>
+
           <button
             type="button"
             onClick={handleSignOut}

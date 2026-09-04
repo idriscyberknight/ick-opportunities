@@ -16,13 +16,15 @@ import { Route as GetStartedRouteImport } from './routes/get-started'
 import { Route as GrantsRouteImport } from './routes/grants'
 import { Route as InternshipsRouteImport } from './routes/internships'
 import { Route as JobsRouteImport } from './routes/jobs'
-import { Route as OpportunitiesRouteImport } from './routes/opportunities'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ScholarshipsRouteImport } from './routes/scholarships'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as OpportunitiesIndexRouteImport } from './routes/opportunities.index'
+import { Route as OpportunitiesIdRouteImport } from './routes/opportunities.$id'
+import { Route as AuthenticatedAdminOpportunitiesRouteImport } from './routes/_authenticated/admin.opportunities'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,11 +60,6 @@ const JobsRoute = JobsRouteImport.update({
   path: '/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OpportunitiesRoute = OpportunitiesRouteImport.update({
-  id: '/opportunities',
-  path: '/opportunities',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -93,6 +90,22 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const OpportunitiesIndexRoute = OpportunitiesIndexRouteImport.update({
+  id: '/opportunities/',
+  path: '/opportunities/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpportunitiesIdRoute = OpportunitiesIdRouteImport.update({
+  id: '/opportunities/$id',
+  path: '/opportunities/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminOpportunitiesRoute =
+  AuthenticatedAdminOpportunitiesRouteImport.update({
+    id: '/admin/opportunities',
+    path: '/admin/opportunities',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -101,13 +114,15 @@ export interface FileRoutesByFullPath {
   '/grants': typeof GrantsRoute
   '/internships': typeof InternshipsRoute
   '/jobs': typeof JobsRoute
-  '/opportunities': typeof OpportunitiesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/opportunities/$id': typeof OpportunitiesIdRoute
+  '/opportunities/': typeof OpportunitiesIndexRoute
+  '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -116,13 +131,15 @@ export interface FileRoutesByTo {
   '/grants': typeof GrantsRoute
   '/internships': typeof InternshipsRoute
   '/jobs': typeof JobsRoute
-  '/opportunities': typeof OpportunitiesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/opportunities/$id': typeof OpportunitiesIdRoute
+  '/opportunities': typeof OpportunitiesIndexRoute
+  '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -133,13 +150,15 @@ export interface FileRoutesById {
   '/grants': typeof GrantsRoute
   '/internships': typeof InternshipsRoute
   '/jobs': typeof JobsRoute
-  '/opportunities': typeof OpportunitiesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/opportunities/$id': typeof OpportunitiesIdRoute
+  '/opportunities/': typeof OpportunitiesIndexRoute
+  '/_authenticated/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -150,13 +169,15 @@ export interface FileRouteTypes {
     | '/grants'
     | '/internships'
     | '/jobs'
-    | '/opportunities'
     | '/reset-password'
     | '/scholarships'
     | '/signin'
     | '/dashboard'
     | '/onboarding'
     | '/profile'
+    | '/opportunities/$id'
+    | '/opportunities/'
+    | '/admin/opportunities'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -165,13 +186,15 @@ export interface FileRouteTypes {
     | '/grants'
     | '/internships'
     | '/jobs'
-    | '/opportunities'
     | '/reset-password'
     | '/scholarships'
     | '/signin'
     | '/dashboard'
     | '/onboarding'
     | '/profile'
+    | '/opportunities/$id'
+    | '/opportunities'
+    | '/admin/opportunities'
   id:
     | '__root__'
     | '/'
@@ -181,13 +204,15 @@ export interface FileRouteTypes {
     | '/grants'
     | '/internships'
     | '/jobs'
-    | '/opportunities'
     | '/reset-password'
     | '/scholarships'
     | '/signin'
     | '/_authenticated/dashboard'
     | '/_authenticated/onboarding'
     | '/_authenticated/profile'
+    | '/opportunities/$id'
+    | '/opportunities/'
+    | '/_authenticated/admin/opportunities'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -198,10 +223,11 @@ export interface RootRouteChildren {
   GrantsRoute: typeof GrantsRoute
   InternshipsRoute: typeof InternshipsRoute
   JobsRoute: typeof JobsRoute
-  OpportunitiesRoute: typeof OpportunitiesRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ScholarshipsRoute: typeof ScholarshipsRoute
   SigninRoute: typeof SigninRoute
+  OpportunitiesIdRoute: typeof OpportunitiesIdRoute
+  OpportunitiesIndexRoute: typeof OpportunitiesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -255,13 +281,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JobsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/opportunities': {
-      id: '/opportunities'
-      path: '/opportunities'
-      fullPath: '/opportunities'
-      preLoaderRoute: typeof OpportunitiesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -304,6 +323,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/opportunities/': {
+      id: '/opportunities/'
+      path: '/opportunities'
+      fullPath: '/opportunities/'
+      preLoaderRoute: typeof OpportunitiesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/opportunities/$id': {
+      id: '/opportunities/$id'
+      path: '/opportunities/$id'
+      fullPath: '/opportunities/$id'
+      preLoaderRoute: typeof OpportunitiesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin/opportunities': {
+      id: '/_authenticated/admin/opportunities'
+      path: '/admin/opportunities'
+      fullPath: '/admin/opportunities'
+      preLoaderRoute: typeof AuthenticatedAdminOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -311,12 +351,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedAdminOpportunitiesRoute: typeof AuthenticatedAdminOpportunitiesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedAdminOpportunitiesRoute: AuthenticatedAdminOpportunitiesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -330,10 +372,11 @@ const rootRouteChildren: RootRouteChildren = {
   GrantsRoute: GrantsRoute,
   InternshipsRoute: InternshipsRoute,
   JobsRoute: JobsRoute,
-  OpportunitiesRoute: OpportunitiesRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ScholarshipsRoute: ScholarshipsRoute,
   SigninRoute: SigninRoute,
+  OpportunitiesIdRoute: OpportunitiesIdRoute,
+  OpportunitiesIndexRoute: OpportunitiesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
