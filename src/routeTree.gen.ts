@@ -24,6 +24,7 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as OpportunitiesIndexRouteImport } from './routes/opportunities.index'
 import { Route as OpportunitiesIdRouteImport } from './routes/opportunities.$id'
+import { Route as AuthenticatedAdminOpportunitiesRouteImport } from './routes/_authenticated/admin.opportunities'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -99,6 +100,12 @@ const OpportunitiesIdRoute = OpportunitiesIdRouteImport.update({
   path: '/opportunities/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminOpportunitiesRoute =
+  AuthenticatedAdminOpportunitiesRouteImport.update({
+    id: '/admin/opportunities',
+    path: '/admin/opportunities',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/opportunities/$id': typeof OpportunitiesIdRoute
   '/opportunities/': typeof OpportunitiesIndexRoute
+  '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -131,6 +139,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/opportunities/$id': typeof OpportunitiesIdRoute
   '/opportunities': typeof OpportunitiesIndexRoute
+  '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -149,6 +158,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/opportunities/$id': typeof OpportunitiesIdRoute
   '/opportunities/': typeof OpportunitiesIndexRoute
+  '/_authenticated/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/opportunities/$id'
     | '/opportunities/'
+    | '/admin/opportunities'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/opportunities/$id'
     | '/opportunities'
+    | '/admin/opportunities'
   id:
     | '__root__'
     | '/'
@@ -200,6 +212,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/opportunities/$id'
     | '/opportunities/'
+    | '/_authenticated/admin/opportunities'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -324,6 +337,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpportunitiesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/opportunities': {
+      id: '/_authenticated/admin/opportunities'
+      path: '/admin/opportunities'
+      fullPath: '/admin/opportunities'
+      preLoaderRoute: typeof AuthenticatedAdminOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -331,12 +351,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedAdminOpportunitiesRoute: typeof AuthenticatedAdminOpportunitiesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedAdminOpportunitiesRoute: AuthenticatedAdminOpportunitiesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
