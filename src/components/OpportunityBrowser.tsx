@@ -12,6 +12,7 @@ import {
   locationLabel,
   type OpportunityCategory,
 } from "@/lib/opportunities";
+import { SaveOpportunityButton } from "@/components/SaveOpportunityButton";
 
 const fieldClass =
   "w-full appearance-none rounded-lg border border-input bg-background py-2.5 pl-10 pr-3 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-4 focus:ring-ring/15";
@@ -148,20 +149,23 @@ export function OpportunityBrowser({
                 key={o.id}
                 className="group flex min-w-0 flex-col rounded-xl border border-border bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-secondary/30 hover:shadow-[0_18px_40px_-28px_rgba(16,24,40,0.45)]"
               >
-                <div className="flex min-w-0 items-center gap-2">
-                  <span
-                    className={cn(
-                      "inline-flex rounded-md px-2 py-0.5 text-[11px] font-semibold",
-                      categoryStyles[o.category],
-                    )}
-                  >
-                    {categoryLabel(o.category)}
-                  </span>
-                  {o.verified_status === "verified" && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-success">
-                      <BadgeCheck className="h-3.5 w-3.5" /> Verified
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className={cn(
+                        "inline-flex rounded-md px-2 py-0.5 text-[11px] font-semibold",
+                        categoryStyles[o.category],
+                      )}
+                    >
+                      {categoryLabel(o.category)}
                     </span>
-                  )}
+                    {o.verified_status === "verified" && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-success">
+                        <BadgeCheck className="h-3.5 w-3.5" /> Verified
+                      </span>
+                    )}
+                  </div>
+                  <SaveOpportunityButton opportunityId={o.id} />
                 </div>
 
                 <h2 className="mt-3 font-display text-[17px] font-bold leading-snug tracking-[-0.01em] text-foreground">
