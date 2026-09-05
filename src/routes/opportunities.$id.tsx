@@ -18,6 +18,7 @@ import {
   formatDeadline,
   locationLabel,
 } from "@/lib/opportunities";
+import { SaveOpportunityButton } from "@/components/SaveOpportunityButton";
 
 export const Route = createFileRoute("/opportunities/$id")({
   head: () => ({
@@ -116,6 +117,7 @@ function OpportunityDetailPage() {
             <ShieldAlert className="h-4 w-4" /> Pending review
           </span>
         )}
+        <SaveOpportunityButton opportunityId={data.id} className="ml-auto" />
       </div>
 
       <h1 className="mt-3 font-display text-3xl font-extrabold tracking-[-0.02em] text-foreground sm:text-4xl">
