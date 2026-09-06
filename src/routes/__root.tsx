@@ -122,7 +122,7 @@ const themeInitScript = `(function(){try{var t=localStorage.getItem("ick-theme")
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
