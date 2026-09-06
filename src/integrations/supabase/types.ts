@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      application_tracking: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          opportunity_id: string
+          status: Database["public"]["Enums"]["application_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          opportunity_id: string
+          status?: Database["public"]["Enums"]["application_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          opportunity_id?: string
+          status?: Database["public"]["Enums"]["application_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_tracking_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_tracking_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opportunities: {
         Row: {
           benefits: string | null
@@ -303,6 +348,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      application_status:
+        | "interested"
+        | "applied"
+        | "interview"
+        | "accepted"
+        | "rejected"
       opportunity_category: "scholarship" | "job" | "internship" | "grant"
       opportunity_status: "active" | "draft" | "expired"
       verified_status: "verified" | "pending_review"
@@ -434,6 +485,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      application_status: [
+        "interested",
+        "applied",
+        "interview",
+        "accepted",
+        "rejected",
+      ],
       opportunity_category: ["scholarship", "job", "internship", "grant"],
       opportunity_status: ["active", "draft", "expired"],
       verified_status: ["verified", "pending_review"],

@@ -13,6 +13,7 @@ import {
   type OpportunityCategory,
 } from "@/lib/opportunities";
 import { SaveOpportunityButton } from "@/components/SaveOpportunityButton";
+import { TrackOpportunityButton } from "@/components/TrackOpportunityButton";
 
 const fieldClass =
   "w-full appearance-none rounded-lg border border-input bg-background py-2.5 pl-10 pr-3 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-4 focus:ring-ring/15";
@@ -165,7 +166,10 @@ export function OpportunityBrowser({
                       </span>
                     )}
                   </div>
-                  <SaveOpportunityButton opportunityId={o.id} />
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <TrackOpportunityButton opportunityId={o.id} />
+                    <SaveOpportunityButton opportunityId={o.id} />
+                  </div>
                 </div>
 
                 <h2 className="mt-3 font-display text-[17px] font-bold leading-snug tracking-[-0.01em] text-foreground">
