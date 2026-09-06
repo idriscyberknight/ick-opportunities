@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 
 const navLinks = [
