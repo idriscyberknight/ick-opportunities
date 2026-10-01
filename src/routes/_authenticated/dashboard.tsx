@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, LogOut, ShieldCheck, Sparkles, UserCog } from "lucide-react";
+import { Loader2, LogOut, ShieldCheck, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { isCurrentUserAdmin } from "@/lib/opportunities";
+import { RecommendedSection } from "@/components/RecommendedOpportunities";
 
 import {
   EDUCATION_LEVELS,
@@ -172,19 +173,7 @@ function DashboardPage() {
         )}
       </section>
 
-      <div className="mt-6 rounded-xl border border-border bg-card p-6 sm:p-8">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Sparkles className="h-5 w-5" aria-hidden />
-        </div>
-        <h2 className="mt-4 font-display text-lg font-bold tracking-tight text-foreground">
-          Personalized opportunities are coming soon
-        </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Your profile is saved. Once matching is live, scholarships, jobs, internships, and grants
-          selected for your profile and goals will appear here — each checked against its official
-          source before it reaches you.
-        </p>
-      </div>
+      <RecommendedSection className="mt-10" />
     </div>
   );
 }

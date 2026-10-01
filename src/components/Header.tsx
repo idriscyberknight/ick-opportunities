@@ -91,6 +91,12 @@ export function Header() {
           {isAuthenticated ? (
             <>
               <Link
+                to="/recommended"
+                className="rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                For You
+              </Link>
+              <Link
                 to="/saved"
                 className="rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
@@ -184,6 +190,13 @@ export function Header() {
                 className="rounded-lg bg-primary px-3 py-3 text-center text-[15px] font-semibold text-primary-foreground"
               >
                 Dashboard
+              </Link>
+              <Link
+                to="/recommended"
+                onClick={() => setMobileOpen(false)}
+                className="mt-0.5 rounded-lg border border-border px-3 py-3 text-center text-[15px] font-semibold text-foreground"
+              >
+                Recommended
               </Link>
               <Link
                 to="/saved"
