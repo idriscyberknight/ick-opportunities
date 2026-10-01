@@ -99,6 +99,14 @@ function DashboardPage() {
               Manage opportunities
             </Link>
           ) : null}
+          {isAdmin ? (
+            <Link
+              to="/admin/review"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              Review queue
+            </Link>
+          ) : null}
           <Link
             to="/profile"
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
