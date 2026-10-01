@@ -28,6 +28,8 @@ import { Route as AuthenticatedTrackerRouteImport } from './routes/_authenticate
 import { Route as OpportunitiesIndexRouteImport } from './routes/opportunities.index'
 import { Route as OpportunitiesIdRouteImport } from './routes/opportunities.$id'
 import { Route as AuthenticatedAdminOpportunitiesRouteImport } from './routes/_authenticated/admin.opportunities'
+import { Route as AuthenticatedAdminReviewRouteImport } from './routes/_authenticated/admin.review'
+import { Route as AuthenticatedAdminSourcesRouteImport } from './routes/_authenticated/admin.sources'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -125,6 +127,18 @@ const AuthenticatedAdminOpportunitiesRoute =
     path: '/admin/opportunities',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminReviewRoute =
+  AuthenticatedAdminReviewRouteImport.update({
+    id: '/admin/review',
+    path: '/admin/review',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminSourcesRoute =
+  AuthenticatedAdminSourcesRouteImport.update({
+    id: '/admin/sources',
+    path: '/admin/sources',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -145,6 +159,8 @@ export interface FileRoutesByFullPath {
   '/opportunities/$id': typeof OpportunitiesIdRoute
   '/opportunities/': typeof OpportunitiesIndexRoute
   '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
+  '/admin/review': typeof AuthenticatedAdminReviewRoute
+  '/admin/sources': typeof AuthenticatedAdminSourcesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -165,6 +181,8 @@ export interface FileRoutesByTo {
   '/opportunities/$id': typeof OpportunitiesIdRoute
   '/opportunities': typeof OpportunitiesIndexRoute
   '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
+  '/admin/review': typeof AuthenticatedAdminReviewRoute
+  '/admin/sources': typeof AuthenticatedAdminSourcesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -187,6 +205,8 @@ export interface FileRoutesById {
   '/opportunities/$id': typeof OpportunitiesIdRoute
   '/opportunities/': typeof OpportunitiesIndexRoute
   '/_authenticated/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
+  '/_authenticated/admin/review': typeof AuthenticatedAdminReviewRoute
+  '/_authenticated/admin/sources': typeof AuthenticatedAdminSourcesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -209,6 +229,8 @@ export interface FileRouteTypes {
     | '/opportunities/$id'
     | '/opportunities/'
     | '/admin/opportunities'
+    | '/admin/review'
+    | '/admin/sources'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -229,6 +251,8 @@ export interface FileRouteTypes {
     | '/opportunities/$id'
     | '/opportunities'
     | '/admin/opportunities'
+    | '/admin/review'
+    | '/admin/sources'
   id:
     | '__root__'
     | '/'
@@ -250,6 +274,8 @@ export interface FileRouteTypes {
     | '/opportunities/$id'
     | '/opportunities/'
     | '/_authenticated/admin/opportunities'
+    | '/_authenticated/admin/review'
+    | '/_authenticated/admin/sources'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -402,6 +428,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminOpportunitiesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/review': {
+      id: '/_authenticated/admin/review'
+      path: '/admin/review'
+      fullPath: '/admin/review'
+      preLoaderRoute: typeof AuthenticatedAdminReviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/sources': {
+      id: '/_authenticated/admin/sources'
+      path: '/admin/sources'
+      fullPath: '/admin/sources'
+      preLoaderRoute: typeof AuthenticatedAdminSourcesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -413,6 +453,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
   AuthenticatedTrackerRoute: typeof AuthenticatedTrackerRoute
   AuthenticatedAdminOpportunitiesRoute: typeof AuthenticatedAdminOpportunitiesRoute
+  AuthenticatedAdminReviewRoute: typeof AuthenticatedAdminReviewRoute
+  AuthenticatedAdminSourcesRoute: typeof AuthenticatedAdminSourcesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -423,6 +465,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSavedRoute: AuthenticatedSavedRoute,
   AuthenticatedTrackerRoute: AuthenticatedTrackerRoute,
   AuthenticatedAdminOpportunitiesRoute: AuthenticatedAdminOpportunitiesRoute,
+  AuthenticatedAdminReviewRoute: AuthenticatedAdminReviewRoute,
+  AuthenticatedAdminSourcesRoute: AuthenticatedAdminSourcesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

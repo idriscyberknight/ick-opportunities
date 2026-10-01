@@ -68,10 +68,15 @@ export type Database = {
           created_by: string | null
           deadline: string | null
           description: string
+          discovered_at: string | null
           eligibility: string | null
           id: string
           official_link: string | null
           organization: string
+          published_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_id: string | null
           state: string | null
           status: Database["public"]["Enums"]["opportunity_status"]
           title: string
@@ -86,10 +91,15 @@ export type Database = {
           created_by?: string | null
           deadline?: string | null
           description: string
+          discovered_at?: string | null
           eligibility?: string | null
           id?: string
           official_link?: string | null
           organization: string
+          published_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["opportunity_status"]
           title: string
@@ -104,15 +114,115 @@ export type Database = {
           created_by?: string | null
           deadline?: string | null
           description?: string
+          discovered_at?: string | null
           eligibility?: string | null
           id?: string
           official_link?: string | null
           organization?: string
+          published_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["opportunity_status"]
           title?: string
           updated_at?: string
           verified_status?: Database["public"]["Enums"]["verified_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: string | null
+          id: string
+          opportunity_id: string | null
+          opportunity_title: string | null
+          source_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          opportunity_id?: string | null
+          opportunity_title?: string | null
+          source_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          opportunity_id?: string | null
+          opportunity_title?: string | null
+          source_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_audit_logs_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_audit_logs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_sources: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          last_checked_at: string | null
+          last_error: string | null
+          source_name: string
+          source_type: Database["public"]["Enums"]["source_type"]
+          source_url: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          source_name: string
+          source_type: Database["public"]["Enums"]["source_type"]
+          source_url: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          source_name?: string
+          source_type?: Database["public"]["Enums"]["source_type"]
+          source_url?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -355,7 +465,13 @@ export type Database = {
         | "accepted"
         | "rejected"
       opportunity_category: "scholarship" | "job" | "internship" | "grant"
-      opportunity_status: "active" | "draft" | "expired"
+      opportunity_status: "active" | "draft" | "expired" | "rejected"
+      source_type:
+        | "scholarship"
+        | "grant"
+        | "fellowship"
+        | "career_page"
+        | "internship"
       verified_status: "verified" | "pending_review"
     }
     CompositeTypes: {
@@ -493,7 +609,14 @@ export const Constants = {
         "rejected",
       ],
       opportunity_category: ["scholarship", "job", "internship", "grant"],
-      opportunity_status: ["active", "draft", "expired"],
+      opportunity_status: ["active", "draft", "expired", "rejected"],
+      source_type: [
+        "scholarship",
+        "grant",
+        "fellowship",
+        "career_page",
+        "internship",
+      ],
       verified_status: ["verified", "pending_review"],
     },
   },

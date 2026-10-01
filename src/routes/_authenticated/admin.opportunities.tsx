@@ -69,6 +69,7 @@ const statusStyles: Record<OpportunityStatus, string> = {
   active: "bg-success/10 text-success",
   draft: "bg-muted text-muted-foreground",
   expired: "bg-destructive/10 text-destructive",
+  rejected: "bg-destructive/10 text-destructive",
 };
 
 function toForm(o: Opportunity): FormState {
