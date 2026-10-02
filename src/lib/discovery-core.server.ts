@@ -30,7 +30,7 @@ export type DiscoveryResult = {
  */
 export async function runDiscoveryCore(
   supabase: SupabaseClient<Database>,
-  opts: { actorId: string | null; trigger: "manual" | "scheduled"; sourceId?: string },
+  opts: { actorId: string | null; trigger: "manual" | "scheduled"; sourceId?: string | undefined },
 ): Promise<DiscoveryResult> {
   const started = Date.now();
   let q = supabase
