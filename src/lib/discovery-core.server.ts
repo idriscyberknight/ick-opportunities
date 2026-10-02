@@ -68,7 +68,8 @@ export async function runDiscoveryCore(
         items = await extractOpportunities(text, src.source_url, src.source_type);
       } catch (e) {
         if (e instanceof GatewayError) throw e;
-        throw new SourceFetchError("Extraction failed", "error");
+        console.error("Extraction failed", src.source_name, e);
+        throw new SourceFetchError(`Extraction failed: ${e instanceof Error ? e.message.slice(0, 200) : "unknown"}`, "error");
       }
       entry.found = items.length;
       let incomplete = 0;
