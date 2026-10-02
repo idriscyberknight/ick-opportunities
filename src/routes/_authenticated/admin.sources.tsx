@@ -14,6 +14,8 @@ import {
   type SourceType,
 } from "@/lib/review";
 import { runDiscovery, type DiscoveryResult } from "@/lib/discovery.functions";
+import { HEALTH } from "@/lib/discovery-admin";
+import { DiscoveryNotice } from "@/components/DiscoveryNotice";
 
 export const Route = createFileRoute("/_authenticated/admin/sources")({
   head: () => ({
@@ -94,6 +96,7 @@ function SourcesPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link to="/admin/discovery" className={btn}>Analytics &amp; history</Link>
           <Link to="/admin/review" className={btn}>Review queue</Link>
           <button
             type="button"
@@ -107,6 +110,7 @@ function SourcesPage() {
         </div>
       </div>
 
+      <DiscoveryNotice />
       {run.isError && (
         <p className="mt-6 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
           {(run.error as Error).message}
@@ -170,9 +174,14 @@ function SourcesPage() {
                 <a href={s.source_url} target="_blank" rel="noreferrer noopener" className="block truncate text-sm text-secondary">
                   {s.source_url}
                 </a>
+                <p className={`mt-1 text-sm font-semibold ${HEALTH[s.health].cls}`}>
+                  {HEALTH[s.health].icon} {HEALTH[s.health].label}
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {SOURCE_TYPES.find((t) => t.value === s.source_type)?.label} · Last checked{" "}
-                  {s.last_checked_at ? new Date(s.last_checked_at).toLocaleString("en-GB") : "never"}
+                  {s.last_checked_at ? new Date(s.last_checked_at).toLocaleString("en-GB") : "never"} · Last successful
+                  discovery {s.last_success_at ? new Date(s.last_success_at).toLocaleString("en-GB") : "never"} · Found{" "}
+                  {s.last_found_count}
                 </p>
                 {s.last_error && <p className="mt-1 text-xs text-destructive">Last error: {s.last_error}</p>}
               </div>

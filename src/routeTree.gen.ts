@@ -27,6 +27,7 @@ import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTrackerRouteImport } from './routes/_authenticated/tracker'
 import { Route as OpportunitiesIndexRouteImport } from './routes/opportunities.index'
 import { Route as OpportunitiesIdRouteImport } from './routes/opportunities.$id'
+import { Route as AuthenticatedAdminDiscoveryRouteImport } from './routes/_authenticated/admin.discovery'
 import { Route as AuthenticatedAdminOpportunitiesRouteImport } from './routes/_authenticated/admin.opportunities'
 import { Route as AuthenticatedAdminReviewRouteImport } from './routes/_authenticated/admin.review'
 import { Route as AuthenticatedAdminSourcesRouteImport } from './routes/_authenticated/admin.sources'
@@ -122,6 +123,12 @@ const OpportunitiesIdRoute = OpportunitiesIdRouteImport.update({
   path: '/opportunities/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminDiscoveryRoute =
+  AuthenticatedAdminDiscoveryRouteImport.update({
+    id: '/admin/discovery',
+    path: '/admin/discovery',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminOpportunitiesRoute =
   AuthenticatedAdminOpportunitiesRouteImport.update({
     id: '/admin/opportunities',
@@ -164,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/tracker': typeof AuthenticatedTrackerRoute
   '/opportunities/$id': typeof OpportunitiesIdRoute
   '/opportunities/': typeof OpportunitiesIndexRoute
+  '/admin/discovery': typeof AuthenticatedAdminDiscoveryRoute
   '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/admin/sources': typeof AuthenticatedAdminSourcesRoute
@@ -187,6 +195,7 @@ export interface FileRoutesByTo {
   '/tracker': typeof AuthenticatedTrackerRoute
   '/opportunities/$id': typeof OpportunitiesIdRoute
   '/opportunities': typeof OpportunitiesIndexRoute
+  '/admin/discovery': typeof AuthenticatedAdminDiscoveryRoute
   '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/admin/sources': typeof AuthenticatedAdminSourcesRoute
@@ -212,6 +221,7 @@ export interface FileRoutesById {
   '/_authenticated/tracker': typeof AuthenticatedTrackerRoute
   '/opportunities/$id': typeof OpportunitiesIdRoute
   '/opportunities/': typeof OpportunitiesIndexRoute
+  '/_authenticated/admin/discovery': typeof AuthenticatedAdminDiscoveryRoute
   '/_authenticated/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
   '/_authenticated/admin/review': typeof AuthenticatedAdminReviewRoute
   '/_authenticated/admin/sources': typeof AuthenticatedAdminSourcesRoute
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/tracker'
     | '/opportunities/$id'
     | '/opportunities/'
+    | '/admin/discovery'
     | '/admin/opportunities'
     | '/admin/review'
     | '/admin/sources'
@@ -260,6 +271,7 @@ export interface FileRouteTypes {
     | '/tracker'
     | '/opportunities/$id'
     | '/opportunities'
+    | '/admin/discovery'
     | '/admin/opportunities'
     | '/admin/review'
     | '/admin/sources'
@@ -284,6 +296,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tracker'
     | '/opportunities/$id'
     | '/opportunities/'
+    | '/_authenticated/admin/discovery'
     | '/_authenticated/admin/opportunities'
     | '/_authenticated/admin/review'
     | '/_authenticated/admin/sources'
@@ -434,6 +447,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpportunitiesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/discovery': {
+      id: '/_authenticated/admin/discovery'
+      path: '/admin/discovery'
+      fullPath: '/admin/discovery'
+      preLoaderRoute: typeof AuthenticatedAdminDiscoveryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/opportunities': {
       id: '/_authenticated/admin/opportunities'
       path: '/admin/opportunities'
@@ -472,6 +492,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRecommendedRoute: typeof AuthenticatedRecommendedRoute
   AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
   AuthenticatedTrackerRoute: typeof AuthenticatedTrackerRoute
+  AuthenticatedAdminDiscoveryRoute: typeof AuthenticatedAdminDiscoveryRoute
   AuthenticatedAdminOpportunitiesRoute: typeof AuthenticatedAdminOpportunitiesRoute
   AuthenticatedAdminReviewRoute: typeof AuthenticatedAdminReviewRoute
   AuthenticatedAdminSourcesRoute: typeof AuthenticatedAdminSourcesRoute
@@ -484,6 +505,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRecommendedRoute: AuthenticatedRecommendedRoute,
   AuthenticatedSavedRoute: AuthenticatedSavedRoute,
   AuthenticatedTrackerRoute: AuthenticatedTrackerRoute,
+  AuthenticatedAdminDiscoveryRoute: AuthenticatedAdminDiscoveryRoute,
   AuthenticatedAdminOpportunitiesRoute: AuthenticatedAdminOpportunitiesRoute,
   AuthenticatedAdminReviewRoute: AuthenticatedAdminReviewRoute,
   AuthenticatedAdminSourcesRoute: AuthenticatedAdminSourcesRoute,
