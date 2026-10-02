@@ -61,6 +61,7 @@ export type Database = {
       }
       opportunities: {
         Row: {
+          africa_score: number | null
           benefits: string | null
           category: Database["public"]["Enums"]["opportunity_category"]
           country: string | null
@@ -70,10 +71,14 @@ export type Database = {
           description: string
           discovered_at: string | null
           eligibility: string | null
+          global_score: number | null
           id: string
+          nigeria_score: number | null
           official_link: string | null
           organization: string
           published_at: string | null
+          relevance_score: number | null
+          remote_score: number | null
           reviewed_at: string | null
           reviewed_by: string | null
           source_id: string | null
@@ -84,6 +89,7 @@ export type Database = {
           verified_status: Database["public"]["Enums"]["verified_status"]
         }
         Insert: {
+          africa_score?: number | null
           benefits?: string | null
           category: Database["public"]["Enums"]["opportunity_category"]
           country?: string | null
@@ -93,10 +99,14 @@ export type Database = {
           description: string
           discovered_at?: string | null
           eligibility?: string | null
+          global_score?: number | null
           id?: string
+          nigeria_score?: number | null
           official_link?: string | null
           organization: string
           published_at?: string | null
+          relevance_score?: number | null
+          remote_score?: number | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           source_id?: string | null
@@ -107,6 +117,7 @@ export type Database = {
           verified_status?: Database["public"]["Enums"]["verified_status"]
         }
         Update: {
+          africa_score?: number | null
           benefits?: string | null
           category?: Database["public"]["Enums"]["opportunity_category"]
           country?: string | null
@@ -116,10 +127,14 @@ export type Database = {
           description?: string
           discovered_at?: string | null
           eligibility?: string | null
+          global_score?: number | null
           id?: string
+          nigeria_score?: number | null
           official_link?: string | null
           organization?: string
           published_at?: string | null
+          relevance_score?: number | null
+          remote_score?: number | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           source_id?: string | null
