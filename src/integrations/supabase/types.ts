@@ -59,6 +59,138 @@ export type Database = {
           },
         ]
       }
+      discovery_run_sources: {
+        Row: {
+          added: number
+          duplicates: number
+          duration_ms: number | null
+          error: string | null
+          found: number
+          health: Database["public"]["Enums"]["source_health"]
+          id: string
+          run_id: string
+          source_id: string | null
+          source_name: string
+          started_at: string
+        }
+        Insert: {
+          added?: number
+          duplicates?: number
+          duration_ms?: number | null
+          error?: string | null
+          found?: number
+          health: Database["public"]["Enums"]["source_health"]
+          id?: string
+          run_id: string
+          source_id?: string | null
+          source_name: string
+          started_at?: string
+        }
+        Update: {
+          added?: number
+          duplicates?: number
+          duration_ms?: number | null
+          error?: string | null
+          found?: number
+          health?: Database["public"]["Enums"]["source_health"]
+          id?: string
+          run_id?: string
+          source_id?: string | null
+          source_name?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discovery_run_sources_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "discovery_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discovery_run_sources_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discovery_runs: {
+        Row: {
+          acknowledged: boolean
+          actor_id: string | null
+          added: number
+          duplicates: number
+          duration_ms: number | null
+          errors: number
+          finished_at: string | null
+          found: number
+          id: string
+          sources_checked: number
+          started_at: string
+          status: string
+          stopped_reason: string | null
+          trigger: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          actor_id?: string | null
+          added?: number
+          duplicates?: number
+          duration_ms?: number | null
+          errors?: number
+          finished_at?: string | null
+          found?: number
+          id?: string
+          sources_checked?: number
+          started_at?: string
+          status?: string
+          stopped_reason?: string | null
+          trigger: string
+        }
+        Update: {
+          acknowledged?: boolean
+          actor_id?: string | null
+          added?: number
+          duplicates?: number
+          duration_ms?: number | null
+          errors?: number
+          finished_at?: string | null
+          found?: number
+          id?: string
+          sources_checked?: number
+          started_at?: string
+          status?: string
+          stopped_reason?: string | null
+          trigger?: string
+        }
+        Relationships: []
+      }
+      discovery_settings: {
+        Row: {
+          cron_token: string
+          id: boolean
+          lock_until: string | null
+          scheduled_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          cron_token?: string
+          id?: boolean
+          lock_until?: string | null
+          scheduled_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          cron_token?: string
+          id?: boolean
+          lock_until?: string | null
+          scheduled_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       opportunities: {
         Row: {
           africa_score: number | null
@@ -207,9 +339,12 @@ export type Database = {
           active: boolean
           created_at: string
           created_by: string | null
+          health: Database["public"]["Enums"]["source_health"]
           id: string
           last_checked_at: string | null
           last_error: string | null
+          last_found_count: number
+          last_success_at: string | null
           source_name: string
           source_type: Database["public"]["Enums"]["source_type"]
           source_url: string
@@ -219,9 +354,12 @@ export type Database = {
           active?: boolean
           created_at?: string
           created_by?: string | null
+          health?: Database["public"]["Enums"]["source_health"]
           id?: string
           last_checked_at?: string | null
           last_error?: string | null
+          last_found_count?: number
+          last_success_at?: string | null
           source_name: string
           source_type: Database["public"]["Enums"]["source_type"]
           source_url: string
@@ -231,9 +369,12 @@ export type Database = {
           active?: boolean
           created_at?: string
           created_by?: string | null
+          health?: Database["public"]["Enums"]["source_health"]
           id?: string
           last_checked_at?: string | null
           last_error?: string | null
+          last_found_count?: number
+          last_success_at?: string | null
           source_name?: string
           source_type?: Database["public"]["Enums"]["source_type"]
           source_url?: string
@@ -481,6 +622,7 @@ export type Database = {
         | "rejected"
       opportunity_category: "scholarship" | "job" | "internship" | "grant"
       opportunity_status: "active" | "draft" | "expired" | "rejected"
+      source_health: "unknown" | "healthy" | "partial" | "blocked" | "error"
       source_type:
         | "scholarship"
         | "grant"
@@ -625,6 +767,7 @@ export const Constants = {
       ],
       opportunity_category: ["scholarship", "job", "internship", "grant"],
       opportunity_status: ["active", "draft", "expired", "rejected"],
+      source_health: ["unknown", "healthy", "partial", "blocked", "error"],
       source_type: [
         "scholarship",
         "grant",
