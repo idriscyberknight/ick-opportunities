@@ -107,6 +107,14 @@ function DashboardPage() {
               Review queue
             </Link>
           ) : null}
+          {isAdmin ? (
+            <Link
+              to="/admin/discovery"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              Discovery
+            </Link>
+          ) : null}
           <Link
             to="/profile"
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
