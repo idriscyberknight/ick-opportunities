@@ -125,7 +125,7 @@ function SourcesPage() {
             {result.sources.map((s) => (
               <li key={s.name} className="text-muted-foreground">
                 <span className="font-medium text-foreground">{s.name}:</span>{" "}
-                {s.error ? <span className="text-destructive">{s.error}</span> : `${s.found} found, ${s.added} new drafts, ${s.duplicates} duplicates skipped`}
+                {HEALTH[s.health].icon} {s.error ? <span className="text-destructive">{s.error}</span> : `${s.found} found, ${s.added} new drafts, ${s.duplicates} duplicates skipped`}
               </li>
             ))}
           </ul>
