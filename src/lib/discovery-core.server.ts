@@ -176,10 +176,13 @@ export async function runDiscoveryCore(
       const msg = e instanceof Error ? e.message : "Unknown error";
       entry.error = msg;
       entry.health = e instanceof SourceFetchError ? e.kind : "error";
-      await supabase
-        .from("opportunity_sources")
-        .update({ last_checked_at: new Date().toISOString(), last_error: msg.slice(0, 500), health: entry.health, last_found_count: 0 })
-        .eq("id", src.id);
+      // AI-side failures (credits, rate limits) are not the source's fault: leave its health untouched.
+      if (!(e instanceof GatewayError)) {
+        await supabase
+          .from("opportunity_sources")
+          .update({ last_checked_at: new Date().toISOString(), last_error: msg.slice(0, 500), health: entry.health, last_found_count: 0 })
+          .eq("id", src.id);
+      }
       if (e instanceof GatewayError && [401, 402, 403].includes(e.status)) {
         result.stoppedReason = msg;
         stop = true;
