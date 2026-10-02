@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ExternalLink, Loader2, Pencil, Send, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { relevanceLabel, relevanceLevel, relevanceStyles } from "@/lib/relevance";
 import { fieldClass, labelClass } from "@/components/AuthShell";
 import {
   CATEGORIES,
@@ -102,7 +103,20 @@ function ReviewPage() {
                   <span className={cn("rounded-md px-2 py-0.5", o.verified_status === "verified" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground")}>
                     {o.verified_status === "verified" ? "Approved" : "Pending review"}
                   </span>
+                  {(() => {
+                    const lvl = relevanceLevel(o.relevance_score);
+                    return (
+                      <span className={cn("rounded-md px-2 py-0.5", relevanceStyles[lvl])}>
+                        {o.relevance_score == null ? "Not scored" : `${relevanceLabel[lvl]} · ${o.relevance_score}`}
+                      </span>
+                    );
+                  })()}
                 </div>
+                {o.relevance_score != null && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Nigeria {o.nigeria_score ?? 0} · Africa {o.africa_score ?? 0} · Remote {o.remote_score ?? 0} · Global {o.global_score ?? 0}
+                  </p>
+                )}
                 <h2 className="mt-3 font-display text-lg font-bold text-foreground">{o.title}</h2>
                 <p className="text-sm font-medium text-muted-foreground">
                   {o.organization} · {o.country ?? "Country not stated"} · Deadline: {formatDeadline(o.deadline)}

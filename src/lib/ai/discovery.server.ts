@@ -16,6 +16,10 @@ export type ExtractedOpportunity = {
   eligibility: string | null;
   benefits: string | null;
   official_link: string | null;
+  nigeria_score: number;
+  africa_score: number;
+  remote_score: number;
+  global_score: number;
 };
 
 export class GatewayError extends Error {
@@ -74,6 +78,10 @@ const schema = jsonSchema<{ opportunities: ExtractedOpportunity[] }>({
           "eligibility",
           "benefits",
           "official_link",
+          "nigeria_score",
+          "africa_score",
+          "remote_score",
+          "global_score",
         ],
         properties: {
           title: { type: "string" },
@@ -85,6 +93,10 @@ const schema = jsonSchema<{ opportunities: ExtractedOpportunity[] }>({
           eligibility: { type: ["string", "null"] },
           benefits: { type: ["string", "null"] },
           official_link: { type: ["string", "null"] },
+          nigeria_score: { type: "integer" },
+          africa_score: { type: "integer" },
+          remote_score: { type: "integer" },
+          global_score: { type: "integer" },
         },
       },
     },
@@ -127,7 +139,12 @@ export async function extractOpportunities(
       "You extract real, currently open opportunities (scholarships, fellowships, jobs, internships, grants) from web page text. " +
       "Only include opportunities explicitly described in the text — never invent details. Fellowships map to 'scholarship' unless funding a project (then 'grant'). " +
       "Use null for anything not stated. deadline must be YYYY-MM-DD or null. official_link must be an absolute URL taken from the [bracketed links] in the text, ideally the specific opportunity page. " +
-      "description: 1–3 sentences. Return at most 15 opportunities; return an empty list if none are listed.",
+      "description: 1–3 sentences. Return at most 15 opportunities; return an empty list if none are listed. " +
+      "Score each opportunity 0–100 based only on what the text states (use low scores when unclear): " +
+      "nigeria_score = how clearly it is based in or open to applicants from Nigeria (100 = Nigeria-based or Nigerians explicitly eligible); " +
+      "africa_score = how clearly it targets Africa and is open to Nigerians (100 = African programme with Nigeria eligible; 0 if Nigeria excluded); " +
+      "remote_score = how clearly it can be done remotely from anywhere in the world (100 = fully remote worldwide; low if remote only within one country); " +
+      "global_score = how open it is to applicants from all countries (100 = open internationally; 0 = restricted to citizens/residents of one non-African country).",
     prompt: `Today is ${today}. Source type: ${sourceType}. Source URL: ${sourceUrl}\n\nPAGE TEXT:\n${pageText}`,
     providerOptions: {
       openai: {
