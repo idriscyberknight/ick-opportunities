@@ -31,14 +31,37 @@ export class GatewayError extends Error {
   }
 }
 
+/** Source fetch failure, classified for health monitoring. */
+export class SourceFetchError extends Error {
+  constructor(
+    message: string,
+    public kind: "blocked" | "error",
+  ) {
+    super(message);
+  }
+}
+
+const BOT_MARKERS = /captcha|cf-challenge|just a moment\.\.\.|attention required|access denied|are you a robot|bot protection|enable javascript and cookies/i;
+
 /** Fetch a source page and reduce it to readable text with absolute links kept inline. */
 export async function fetchPageText(url: string): Promise<string> {
-  const res = await fetch(url, {
-    headers: { "User-Agent": "ICKOpportunitiesBot/1.0 (+opportunity discovery)" },
-    redirect: "follow",
-  });
-  if (!res.ok) throw new Error(`Source returned HTTP ${res.status}`);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: { "User-Agent": "ICKOpportunitiesBot/1.0 (+opportunity discovery)" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(20_000),
+    });
+  } catch (e) {
+    const timeout = e instanceof Error && /timeout|abort/i.test(e.name + e.message);
+    throw new SourceFetchError(timeout ? "Request timed out" : "Request failed — source unreachable", "error");
+  }
+  if (res.status === 401 || res.status === 403 || res.status === 429 || res.status === 451)
+    throw new SourceFetchError(`Access denied (HTTP ${res.status})`, "blocked");
+  if (!res.ok) throw new SourceFetchError(`Source returned HTTP ${res.status}`, "error");
   const html = await res.text();
+  if (html.length < 20_000 && BOT_MARKERS.test(html))
+    throw new SourceFetchError("Bot protection detected", "blocked");
   const text = html
     .replace(/<(script|style|noscript|svg|head)[\s\S]*?<\/\1>/gi, " ")
     .replace(/<a\s[^>]*href=["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_m, href: string, inner: string) => {
