@@ -18,6 +18,17 @@ const normLink = (s: string | null | undefined) =>
   (s ?? "").toLowerCase().replace(/^https?:\/\/(www\.)?/, "").replace(/[/?#]+$/, "").trim();
 const clamp = (n: unknown) => Math.max(0, Math.min(100, Math.round(Number(n) || 0)));
 
+function statusOf(e: unknown, depth = 0): number | null {
+  if (!e || typeof e !== "object" || depth > 4) return null;
+  const o = e as Record<string, unknown>;
+  for (const k of ["statusCode", "status"]) if (typeof o[k] === "number") return o[k] as number;
+  for (const k of ["cause", "lastError"]) {
+    const s = statusOf(o[k], depth + 1);
+    if (s) return s;
+  }
+  return null;
+}
+
 export type DiscoveryResult = {
   runId: string | null;
   sources: { name: string; found: number; added: number; duplicates: number; health: Health; error: string | null }[];
@@ -68,6 +79,8 @@ export async function runDiscoveryCore(
         items = await extractOpportunities(text, src.source_url, src.source_type);
       } catch (e) {
         if (e instanceof GatewayError) throw e;
+        const st = statusOf(e);
+        if (st && [401, 402, 403, 429].includes(st)) throw new GatewayError(st === 402 ? "AI credits are used up — add credits to continue discovery." : `AI request failed (${st})`, st);
         console.error("Extraction failed", src.source_name, e);
         throw new SourceFetchError(`Extraction failed: ${e instanceof Error ? e.message.slice(0, 200) : "unknown"}`, "error");
       }
