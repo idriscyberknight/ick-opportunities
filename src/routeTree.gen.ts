@@ -30,6 +30,7 @@ import { Route as OpportunitiesIdRouteImport } from './routes/opportunities.$id'
 import { Route as AuthenticatedAdminOpportunitiesRouteImport } from './routes/_authenticated/admin.opportunities'
 import { Route as AuthenticatedAdminReviewRouteImport } from './routes/_authenticated/admin.review'
 import { Route as AuthenticatedAdminSourcesRouteImport } from './routes/_authenticated/admin.sources'
+import { Route as ApiPublicHooksDiscoveryRouteImport } from './routes/api/public/hooks/discovery'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -139,6 +140,11 @@ const AuthenticatedAdminSourcesRoute =
     path: '/admin/sources',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHooksDiscoveryRoute = ApiPublicHooksDiscoveryRouteImport.update({
+  id: '/api/public/hooks/discovery',
+  path: '/api/public/hooks/discovery',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/admin/sources': typeof AuthenticatedAdminSourcesRoute
+  '/api/public/hooks/discovery': typeof ApiPublicHooksDiscoveryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/admin/sources': typeof AuthenticatedAdminSourcesRoute
+  '/api/public/hooks/discovery': typeof ApiPublicHooksDiscoveryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
   '/_authenticated/admin/review': typeof AuthenticatedAdminReviewRoute
   '/_authenticated/admin/sources': typeof AuthenticatedAdminSourcesRoute
+  '/api/public/hooks/discovery': typeof ApiPublicHooksDiscoveryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/admin/opportunities'
     | '/admin/review'
     | '/admin/sources'
+    | '/api/public/hooks/discovery'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/admin/opportunities'
     | '/admin/review'
     | '/admin/sources'
+    | '/api/public/hooks/discovery'
   id:
     | '__root__'
     | '/'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/opportunities'
     | '/_authenticated/admin/review'
     | '/_authenticated/admin/sources'
+    | '/api/public/hooks/discovery'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -291,6 +303,7 @@ export interface RootRouteChildren {
   SigninRoute: typeof SigninRoute
   OpportunitiesIdRoute: typeof OpportunitiesIdRoute
   OpportunitiesIndexRoute: typeof OpportunitiesIndexRoute
+  ApiPublicHooksDiscoveryRoute: typeof ApiPublicHooksDiscoveryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -442,6 +455,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSourcesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/discovery': {
+      id: '/api/public/hooks/discovery'
+      path: '/api/public/hooks/discovery'
+      fullPath: '/api/public/hooks/discovery'
+      preLoaderRoute: typeof ApiPublicHooksDiscoveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -485,6 +505,7 @@ const rootRouteChildren: RootRouteChildren = {
   SigninRoute: SigninRoute,
   OpportunitiesIdRoute: OpportunitiesIdRoute,
   OpportunitiesIndexRoute: OpportunitiesIndexRoute,
+  ApiPublicHooksDiscoveryRoute: ApiPublicHooksDiscoveryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
