@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { overallRelevance } from "@/lib/relevance";
 
 const MAX_SOURCES_PER_RUN = 5;
 const VALID_CATS = ["scholarship", "job", "internship", "grant"] as const;
@@ -8,6 +9,24 @@ const norm = (s: string | null | undefined) =>
   (s ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const normLink = (s: string | null | undefined) =>
   (s ?? "").toLowerCase().replace(/^https?:\/\/(www\.)?/, "").replace(/[/?#]+$/, "").trim();
+const clamp = (n: unknown) => Math.max(0, Math.min(100, Math.round(Number(n) || 0)));
+function scores(it: { nigeria_score?: number; africa_score?: number; remote_score?: number; global_score?: number }) {
+  const s = {
+    nigeria_score: clamp(it.nigeria_score),
+    africa_score: clamp(it.africa_score),
+    remote_score: clamp(it.remote_score),
+    global_score: clamp(it.global_score),
+  };
+  return {
+    ...s,
+    relevance_score: overallRelevance({
+      nigeria: s.nigeria_score,
+      africa: s.africa_score,
+      remote: s.remote_score,
+      global: s.global_score,
+    }),
+  };
+}
 
 export type DiscoveryResult = {
   sources: { name: string; found: number; added: number; duplicates: number; error: string | null }[];
@@ -89,6 +108,7 @@ export const runDiscovery = createServerFn({ method: "POST" })
               eligibility: it.eligibility?.trim() || null,
               benefits: it.benefits?.trim() || null,
               official_link: link ?? src.source_url,
+              ...scores(it),
               status: "draft",
               verified_status: "pending_review",
               source_id: src.id,

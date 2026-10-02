@@ -46,6 +46,7 @@ export async function fetchReviewQueue() {
     .from("opportunities")
     .select("*, opportunity_sources(source_name, source_url)")
     .eq("status", "draft")
+    .order("relevance_score", { ascending: false, nullsFirst: false })
     .order("discovered_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
   if (error) throw error;
