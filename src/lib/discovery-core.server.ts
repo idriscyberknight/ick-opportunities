@@ -44,6 +44,21 @@ export async function runDiscoveryCore(
   opts: { actorId: string | null; trigger: "manual" | "scheduled"; sourceId?: string | undefined },
 ): Promise<DiscoveryResult> {
   const started = Date.now();
+
+  // Close out runs left "running" by a crashed or timed-out worker.
+  await supabase
+    .from("discovery_runs")
+    .update({ status: "failed", finished_at: new Date().toISOString(), stopped_reason: "Run did not finish (interrupted)" })
+    .eq("status", "running")
+    .lt("started_at", new Date(Date.now() - 30 * 60_000).toISOString());
+
+  // Never run two discoveries at once (manual + scheduled could otherwise create duplicate drafts).
+  const { count: running, error: runErr } = await supabase
+    .from("discovery_runs")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "running");
+  if (runErr) throw runErr;
+  if ((running ?? 0) > 0) throw new Error("Another discovery run is in progress. Try again in a few minutes.");
   let q = supabase
     .from("opportunity_sources")
     .select("id, source_name, source_url, source_type")
@@ -54,16 +69,32 @@ export async function runDiscoveryCore(
   const { data: sources, error } = await q;
   if (error) throw error;
 
-  const { data: run } = await supabase
+  // Load every existing record (paged past the 1000-row API limit) for duplicate detection.
+  // Fail the run rather than risk inserting duplicates when this read fails.
+  const keys = new Set<string>();
+  const links = new Set<string>();
+  for (let from = 0; ; from += 1000) {
+    const { data: page, error: exErr } = await supabase
+      .from("opportunities")
+      .select("title, organization, official_link")
+      .order("id")
+      .range(from, from + 999);
+    if (exErr) throw exErr;
+    for (const o of page ?? []) {
+      keys.add(`${norm(o.title)}|${norm(o.organization)}`);
+      const l = normLink(o.official_link);
+      if (l) links.add(l);
+    }
+    if (!page || page.length < 1000) break;
+  }
+
+  const { data: run, error: runInsErr } = await supabase
     .from("discovery_runs")
     .insert({ trigger: opts.trigger, actor_id: opts.actorId })
     .select("id")
     .single();
-  const runId = run?.id ?? null;
-
-  const { data: existing } = await supabase.from("opportunities").select("title, organization, official_link");
-  const keys = new Set((existing ?? []).map((o) => `${norm(o.title)}|${norm(o.organization)}`));
-  const links = new Set((existing ?? []).map((o) => normLink(o.official_link)).filter(Boolean));
+  if (runInsErr || !run) throw runInsErr ?? new Error("Could not start discovery run");
+  const runId: string = run.id;
 
   const result: DiscoveryResult = { runId, sources: [], stoppedReason: null };
 
@@ -74,6 +105,10 @@ export async function runDiscoveryCore(
     let stop = false;
     try {
       const text = await fetchPageText(src.source_url);
+      if (text.length < 200) {
+        // Likely a script-rendered page: reachable, but nothing readable to extract. Skip the AI call.
+        throw Object.assign(new Error("Page reachable but contains almost no readable text"), { partial: true });
+      }
       let items;
       try {
         items = await extractOpportunities(text, src.source_url, src.source_type);
@@ -144,6 +179,7 @@ export async function runDiscoveryCore(
           .select("id")
           .single();
         if (insErr) {
+          console.error("Draft insert failed", src.source_name, insErr.message);
           incomplete++;
           continue;
         }
@@ -175,9 +211,10 @@ export async function runDiscoveryCore(
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       entry.error = msg;
-      entry.health = e instanceof SourceFetchError ? e.kind : "error";
+      entry.health = e instanceof SourceFetchError ? e.kind : (e as { partial?: boolean }).partial ? "partial" : "error";
       // AI-side failures (credits, rate limits) are not the source's fault: leave its health untouched.
       if (!(e instanceof GatewayError)) {
+        // (also covers the "almost no readable text" partial case)
         await supabase
           .from("opportunity_sources")
           .update({ last_checked_at: new Date().toISOString(), last_error: msg.slice(0, 500), health: entry.health, last_found_count: 0 })
@@ -214,7 +251,12 @@ export async function runDiscoveryCore(
     await supabase
       .from("discovery_runs")
       .update({
-        status: result.stoppedReason ? "failed" : errors > 0 ? "partial" : "completed",
+        status:
+          result.stoppedReason || (result.sources.length > 0 && errors === result.sources.length)
+            ? "failed"
+            : errors > 0
+              ? "partial"
+              : "completed",
         finished_at: new Date().toISOString(),
         duration_ms: Date.now() - started,
         sources_checked: result.sources.length,
