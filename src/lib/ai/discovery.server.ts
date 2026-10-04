@@ -155,7 +155,13 @@ export async function extractOpportunities(
   });
 
   const today = new Date().toISOString().slice(0, 10);
+  // streamText reports transport errors via onError and then rejects `output` with a generic
+  // NoOutputGeneratedError — capture the real error so callers can classify it.
+  let streamError: unknown = null;
   const result = streamText({
+    onError: ({ error }) => {
+      streamError ??= error;
+    },
     model: provider.responses(MODEL),
     output: Output.object({ schema }),
     system:
@@ -185,6 +191,10 @@ export async function extractOpportunities(
     return out?.opportunities ?? [];
   } catch (e) {
     if (e instanceof GatewayError) throw e;
+    if (streamError instanceof GatewayError) throw streamError;
+    const sc = (streamError as { cause?: unknown } | null)?.cause;
+    if (sc instanceof GatewayError) throw sc;
+    if (streamError) throw streamError;
     if (NoObjectGeneratedError.isInstance(e)) return [];
     const cause = (e as { cause?: unknown })?.cause;
     if (cause instanceof GatewayError) throw cause;
