@@ -68,6 +68,7 @@ export type Database = {
           found: number
           health: Database["public"]["Enums"]["source_health"]
           id: string
+          mode: string
           run_id: string
           source_id: string | null
           source_name: string
@@ -81,6 +82,7 @@ export type Database = {
           found?: number
           health: Database["public"]["Enums"]["source_health"]
           id?: string
+          mode?: string
           run_id: string
           source_id?: string | null
           source_name: string
@@ -94,6 +96,7 @@ export type Database = {
           found?: number
           health?: Database["public"]["Enums"]["source_health"]
           id?: string
+          mode?: string
           run_id?: string
           source_id?: string | null
           source_name?: string
