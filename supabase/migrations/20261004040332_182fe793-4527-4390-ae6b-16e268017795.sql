@@ -1,0 +1,1 @@
+ALTER TABLE public.discovery_run_sources ADD COLUMN mode text NOT NULL DEFAULT 'ai' CHECK (mode IN ('ai','fallback'));

@@ -183,19 +183,24 @@ function RunRow({ run }: { run: DiscoveryRun }) {
       </button>
       {open && (
         <div className="border-t border-border p-4">
-          {run.stopped_reason && <p className="mb-2 text-sm text-destructive">Stopped: {run.stopped_reason}</p>}
+          {run.stopped_reason && <p className="mb-2 text-sm text-destructive">Note: {run.stopped_reason}</p>}
           {details.isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left text-sm">
+              <table className="w-full min-w-[720px] text-left text-sm">
                 <thead className="text-xs uppercase tracking-wider text-muted-foreground">
-                  <tr><th className="p-2">Source</th><th className="p-2">Run time</th><th className="p-2">Duration</th><th className="p-2">Found</th><th className="p-2">Duplicates</th><th className="p-2">Status</th><th className="p-2">Errors</th></tr>
+                  <tr><th className="p-2">Source</th><th className="p-2">Mode</th><th className="p-2">Run time</th><th className="p-2">Duration</th><th className="p-2">Found</th><th className="p-2">Duplicates</th><th className="p-2">Status</th><th className="p-2">Errors</th></tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {(details.data ?? []).map((s) => (
                     <tr key={s.id}>
                       <td className="p-2 font-medium text-foreground">{s.source_name}</td>
+                      <td className="whitespace-nowrap p-2">
+                        <span className={cn("rounded px-1.5 py-0.5 text-xs font-semibold", s.mode === "fallback" ? "bg-muted text-foreground" : "bg-primary/10 text-primary")}>
+                          {s.mode === "fallback" ? "Fallback Mode" : "AI Mode"}
+                        </span>
+                      </td>
                       <td className="whitespace-nowrap p-2 text-muted-foreground">{fmtTime(s.started_at)}</td>
                       <td className="p-2">{fmtDuration(s.duration_ms)}</td>
                       <td className="p-2">{s.found}</td>
@@ -204,7 +209,7 @@ function RunRow({ run }: { run: DiscoveryRun }) {
                       <td className="p-2 text-muted-foreground">{s.error ?? "—"}</td>
                     </tr>
                   ))}
-                  {(details.data ?? []).length === 0 && <tr><td colSpan={7} className="p-2 text-muted-foreground">No sources were checked.</td></tr>}
+                  {(details.data ?? []).length === 0 && <tr><td colSpan={8} className="p-2 text-muted-foreground">No sources were checked.</td></tr>}
                 </tbody>
               </table>
             </div>
