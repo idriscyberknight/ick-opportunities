@@ -43,8 +43,8 @@ export class SourceFetchError extends Error {
 
 const BOT_MARKERS = /captcha|cf-challenge|just a moment\.\.\.|attention required|access denied|are you a robot|bot protection|enable javascript and cookies/i;
 
-/** Fetch a source page and reduce it to readable text with absolute links kept inline. */
-export async function fetchPageText(url: string): Promise<string> {
+/** Fetch a source page; returns raw HTML plus readable text with absolute links kept inline. */
+export async function fetchPage(url: string): Promise<{ html: string; text: string }> {
   let res: Response;
   try {
     res = await fetch(url, {
@@ -78,7 +78,11 @@ export async function fetchPageText(url: string): Promise<string> {
     .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ")
     .trim();
-  return text.slice(0, MAX_PAGE_CHARS);
+  return { html, text: text.slice(0, MAX_PAGE_CHARS) };
+}
+
+export async function fetchPageText(url: string): Promise<string> {
+  return (await fetchPage(url)).text;
 }
 
 const schema = jsonSchema<{ opportunities: ExtractedOpportunity[] }>({
