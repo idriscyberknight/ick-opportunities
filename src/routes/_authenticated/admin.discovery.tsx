@@ -197,7 +197,7 @@ function RunRow({ run }: { run: DiscoveryRun }) {
                     <tr key={s.id}>
                       <td className="p-2 font-medium text-foreground">{s.source_name}</td>
                       <td className="whitespace-nowrap p-2">
-                        <span className={cn("rounded px-1.5 py-0.5 text-xs font-semibold", s.mode === "fallback" ? "bg-warning/15 text-warning" : "bg-primary/10 text-primary")}>
+                        <span className={cn("rounded px-1.5 py-0.5 text-xs font-semibold", s.mode === "fallback" ? "bg-muted text-foreground" : "bg-primary/10 text-primary")}>
                           {s.mode === "fallback" ? "Fallback Mode" : "AI Mode"}
                         </span>
                       </td>
