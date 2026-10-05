@@ -3,14 +3,41 @@ import type { Database } from "@/integrations/supabase/types";
 import { overallRelevance } from "@/lib/relevance";
 import {
   extractOpportunities,
-  fetchPageText,
+  fetchPage,
   GatewayError,
   SourceFetchError,
 } from "@/lib/ai/discovery.server";
+import { extractFallback } from "@/lib/ai/fallback-extract.server";
 
 const MAX_SOURCES_PER_RUN = 5;
 const VALID_CATS = ["scholarship", "job", "internship", "grant"] as const;
 type Health = Database["public"]["Enums"]["source_health"];
+type Category = (typeof VALID_CATS)[number];
+
+type Normalized = {
+  title: string;
+  organization: string;
+  description: string;
+  category: Category;
+  country: string | null;
+  deadline: string | null;
+  eligibility: string | null;
+  benefits: string | null;
+  link: string | null;
+  scores: { nigeria_score: number; africa_score: number; remote_score: number; global_score: number } | null;
+};
+
+/** Deterministic category: title keywords first, then the source's type. */
+function guessCategory(title: string, sourceType: string): Category {
+  if (/intern/i.test(title)) return "internship";
+  if (/scholarship|fellowship|bursary|studentship/i.test(title)) return "scholarship";
+  if (/grant|funding|call for proposals|award/i.test(title)) return "grant";
+  if (/vacanc|job|officer|manager|analyst|engineer|assistant|consultant|specialist|coordinator|position/i.test(title)) return "job";
+  if (sourceType === "internship") return "internship";
+  if (sourceType === "grant") return "grant";
+  if (sourceType === "career_page") return "job";
+  return "scholarship";
+}
 
 const norm = (s: string | null | undefined) =>
   (s ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -31,7 +58,15 @@ function statusOf(e: unknown, depth = 0): number | null {
 
 export type DiscoveryResult = {
   runId: string | null;
-  sources: { name: string; found: number; added: number; duplicates: number; health: Health; error: string | null }[];
+  sources: {
+    name: string;
+    found: number;
+    added: number;
+    duplicates: number;
+    health: Health;
+    error: string | null;
+    mode: "ai" | "fallback";
+  }[];
   stoppedReason: string | null;
 };
 
@@ -291,7 +326,7 @@ export async function runDiscoveryCore(
       .from("discovery_runs")
       .update({
         status:
-          result.stoppedReason || (result.sources.length > 0 && errors === result.sources.length)
+          result.sources.length > 0 && errors === result.sources.length
             ? "failed"
             : errors > 0
               ? "partial"
