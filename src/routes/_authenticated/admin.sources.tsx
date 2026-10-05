@@ -119,13 +119,13 @@ function SourcesPage() {
       {result && (
         <div className="mt-6 rounded-xl border border-border bg-card p-5 text-sm">
           <p className="font-semibold text-foreground">Last run</p>
-          {result.stoppedReason && <p className="mt-1 text-destructive">Stopped: {result.stoppedReason}</p>}
+          {result.stoppedReason && <p className="mt-1 text-destructive">Note: {result.stoppedReason}</p>}
           {result.sources.length === 0 && <p className="mt-1 text-muted-foreground">No active sources to check.</p>}
           <ul className="mt-2 space-y-1">
             {result.sources.map((s) => (
               <li key={s.name} className="text-muted-foreground">
                 <span className="font-medium text-foreground">{s.name}:</span>{" "}
-                {HEALTH[s.health].icon} {s.error ? <span className="text-destructive">{s.error}</span> : `${s.found} found, ${s.added} new drafts, ${s.duplicates} duplicates skipped`}
+                {HEALTH[s.health].icon} <span className="font-semibold">{s.mode === "fallback" ? "Fallback Mode" : "AI Mode"}</span> · {s.error ? <span className="text-destructive">{s.error}</span> : `${s.found} found, ${s.added} new drafts, ${s.duplicates} duplicates skipped`}
               </li>
             ))}
           </ul>

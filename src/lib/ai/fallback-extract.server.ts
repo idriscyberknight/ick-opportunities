@@ -9,7 +9,7 @@ const KEYWORDS =
   /scholarship|fellowship|grant|internship|intern\b|vacanc|job|position|career opening|programme|program\b|award|bursary|funding|call for (applications|proposals)|apply|opportunit|recruit|hiring|officer|manager|analyst|engineer|assistant|consultant|specialist|coordinator/i;
 const NAV =
   /^(home|about|about us|contact|contact us|login|log in|sign in|sign up|register|privacy|terms|faq|faqs|blog|news|search|menu|more|read more|learn more|apply now|apply|click here|view all|see all|next|previous|back|careers|jobs|opportunities|scholarships|grants|internships|fellowships)$/i;
-const BAD_HREF = /^(mailto:|tel:|javascript:)|\.(pdf|jpg|jpeg|png|gif|zip|docx?)(\?|$)|\/(login|signin|signup|register|privacy|terms|contact|about|tag|category|author|search|feed)(\/|\?|$)|facebook\.com|twitter\.com|x\.com\/|linkedin\.com\/(share|company)|instagram\.com|youtube\.com|wa\.me|whatsapp/i;
+const BAD_HREF = /^(mailto:|tel:|javascript:)|\.(pdf|jpg|jpeg|png|gif|zip|docx?)(\?|$)|\/(login|signin|signup|register|privacy|terms|contact|about|tag|category|author|search|feed|publications?|news|blog|events?|press|media|page\/\d+)(\/|\?|$)|facebook\.com|twitter\.com|x\.com\/|linkedin\.com\/(share|company)|instagram\.com|youtube\.com|wa\.me|whatsapp/i;
 
 const decode = (s: string) =>
   s
@@ -69,9 +69,9 @@ export function extractFallback(html: string, sourceUrl: string, max = 15): Fall
         const o = n as Record<string, unknown>;
         const t = String(o["@type"] ?? "");
         if (/JobPosting|Scholarship|Grant|EducationalOccupationalProgram/i.test(t)) {
-          const title = String(o.title ?? o.name ?? "");
-          const link = absolute(String(o.url ?? ""), sourceUrl);
-          const vt = typeof o.validThrough === "string" ? o.validThrough.slice(0, 10) : null;
+          const title = String(o["title"] ?? o["name"] ?? "");
+          const link = absolute(String(o["url"] ?? ""), sourceUrl);
+          const vt = typeof o["validThrough"] === "string" ? o["validThrough"].slice(0, 10) : null;
           push(title, link, vt && /^\d{4}-\d{2}-\d{2}$/.test(vt) ? vt : null);
         }
         Object.values(o).forEach(walk);
