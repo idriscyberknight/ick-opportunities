@@ -97,35 +97,79 @@ export async function runDiscoveryCore(
   const runId: string = run.id;
 
   const result: DiscoveryResult = { runId, sources: [], stoppedReason: null };
+  // AI is tried until it fails for credit/access/rate reasons; then the rest of the run uses fallback mode.
+  let aiAvailable = true;
 
   for (const src of sources ?? []) {
     const t0 = Date.now();
-    const entry = { name: src.source_name, found: 0, added: 0, duplicates: 0, health: "healthy" as Health, error: null as string | null };
+    const entry = {
+      name: src.source_name,
+      found: 0,
+      added: 0,
+      duplicates: 0,
+      health: "healthy" as Health,
+      error: null as string | null,
+      mode: "ai" as "ai" | "fallback",
+    };
     result.sources.push(entry);
-    let stop = false;
     try {
-      const text = await fetchPageText(src.source_url);
-      if (text.length < 200) {
-        // Likely a script-rendered page: reachable, but nothing readable to extract. Skip the AI call.
-        throw Object.assign(new Error("Page reachable but contains almost no readable text"), { partial: true });
+      const { html, text } = await fetchPage(src.source_url);
+      let items: Normalized[] | null = null;
+      if (aiAvailable && text.length >= 200) {
+        try {
+          const ai = await extractOpportunities(text, src.source_url, src.source_type);
+          items = ai.map((it) => ({
+            title: it.title?.trim() ?? "",
+            organization: it.organization?.trim() ?? "",
+            description: it.description?.trim() ?? "",
+            category: (VALID_CATS as readonly string[]).includes(it.category) ? it.category : "scholarship",
+            country: it.country?.trim() || null,
+            deadline: it.deadline,
+            eligibility: it.eligibility?.trim() || null,
+            benefits: it.benefits?.trim() || null,
+            link: it.official_link,
+            scores: {
+              nigeria_score: clamp(it.nigeria_score),
+              africa_score: clamp(it.africa_score),
+              remote_score: clamp(it.remote_score),
+              global_score: clamp(it.global_score),
+            },
+          }));
+        } catch (e) {
+          const st = e instanceof GatewayError ? e.status : statusOf(e);
+          if (st && [401, 402, 403, 429].includes(st)) {
+            aiAvailable = false;
+            result.stoppedReason =
+              st === 402
+                ? "AI credits unavailable — remaining sources processed in Fallback Mode."
+                : `AI unavailable (${st}) — remaining sources processed in Fallback Mode.`;
+          } else {
+            console.error("AI extraction failed, using fallback", src.source_name, e);
+          }
+          items = null;
+        }
       }
-      let items;
-      try {
-        items = await extractOpportunities(text, src.source_url, src.source_type);
-      } catch (e) {
-        if (e instanceof GatewayError) throw e;
-        const st = statusOf(e);
-        if (st && [401, 402, 403, 429].includes(st)) throw new GatewayError(st === 402 ? "AI credits are used up — add credits to continue discovery." : `AI request failed (${st})`, st);
-        console.error("Extraction failed", src.source_name, e);
-        throw new SourceFetchError(`Extraction failed: ${e instanceof Error ? e.message.slice(0, 200) : "unknown"}`, "error");
+      if (!items) {
+        entry.mode = "fallback";
+        items = extractFallback(html, src.source_url).map((f) => ({
+          title: f.title,
+          organization: src.source_name,
+          description: `Found on ${src.source_name} by fallback discovery (no AI). Needs review — verify all details on the official page.`,
+          category: guessCategory(f.title, src.source_type),
+          country: null,
+          deadline: f.deadline,
+          eligibility: null,
+          benefits: null,
+          link: f.link,
+          scores: null,
+        }));
       }
+
       entry.found = items.length;
       let incomplete = 0;
       const now = new Date().toISOString();
       for (const it of items) {
-        const title = it.title?.trim();
-        const organization = it.organization?.trim();
-        const description = it.description?.trim();
+        const { title, organization, description } = it;
         if (!title || !organization || !description) {
           incomplete++;
           continue;
@@ -133,7 +177,7 @@ export async function runDiscoveryCore(
         const key = `${norm(title)}|${norm(organization)}`;
         let link: string | null = null;
         try {
-          if (it.official_link) link = new URL(it.official_link).toString();
+          if (it.link) link = new URL(it.link).toString();
         } catch {
           link = null;
         }
@@ -144,32 +188,30 @@ export async function runDiscoveryCore(
           continue;
         }
         const deadline = it.deadline && /^\d{4}-\d{2}-\d{2}$/.test(it.deadline) ? it.deadline : null;
-        const category = (VALID_CATS as readonly string[]).includes(it.category) ? it.category : "scholarship";
-        const s = {
-          nigeria_score: clamp(it.nigeria_score),
-          africa_score: clamp(it.africa_score),
-          remote_score: clamp(it.remote_score),
-          global_score: clamp(it.global_score),
-        };
+        const s = it.scores;
         const { data: inserted, error: insErr } = await supabase
           .from("opportunities")
           .insert({
             title: title.slice(0, 300),
             organization: organization.slice(0, 200),
-            category,
-            country: it.country?.trim() || null,
+            category: it.category,
+            country: it.country,
             deadline,
             description: description.slice(0, 2000),
-            eligibility: it.eligibility?.trim() || null,
-            benefits: it.benefits?.trim() || null,
+            eligibility: it.eligibility,
+            benefits: it.benefits,
             official_link: link ?? src.source_url,
-            ...s,
-            relevance_score: overallRelevance({
-              nigeria: s.nigeria_score,
-              africa: s.africa_score,
-              remote: s.remote_score,
-              global: s.global_score,
-            }),
+            ...(s
+              ? {
+                  ...s,
+                  relevance_score: overallRelevance({
+                    nigeria: s.nigeria_score,
+                    africa: s.africa_score,
+                    remote: s.remote_score,
+                    global: s.global_score,
+                  }),
+                }
+              : {}),
             status: "draft",
             verified_status: "pending_review",
             source_id: src.id,
@@ -192,11 +234,19 @@ export async function runDiscoveryCore(
           source_id: src.id,
           action: "discovered",
           actor_id: opts.actorId,
-          details: opts.trigger === "scheduled" ? "Scheduled discovery" : null,
+          details: [opts.trigger === "scheduled" ? "Scheduled discovery" : null, entry.mode === "fallback" ? "Fallback Mode (no AI)" : null]
+            .filter(Boolean)
+            .join(" · ") || null,
         });
       }
       entry.health = items.length === 0 || incomplete > 0 ? "partial" : "healthy";
-      if (items.length === 0) entry.error = "Page reachable but no opportunities extracted";
+      if (items.length === 0)
+        entry.error =
+          entry.mode === "fallback"
+            ? text.length < 200
+              ? "Page has almost no readable text (likely script-rendered)"
+              : "Fallback extraction found no opportunity links"
+            : "Page reachable but no opportunities extracted";
       else if (incomplete > 0) entry.error = `${incomplete} item(s) incomplete and skipped`;
       await supabase
         .from("opportunity_sources")
@@ -211,22 +261,11 @@ export async function runDiscoveryCore(
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       entry.error = msg;
-      entry.health = e instanceof SourceFetchError ? e.kind : (e as { partial?: boolean }).partial ? "partial" : "error";
-      // AI-side failures (credits, rate limits) are not the source's fault: leave its health untouched.
-      if (!(e instanceof GatewayError)) {
-        // (also covers the "almost no readable text" partial case)
-        await supabase
-          .from("opportunity_sources")
-          .update({ last_checked_at: new Date().toISOString(), last_error: msg.slice(0, 500), health: entry.health, last_found_count: 0 })
-          .eq("id", src.id);
-      }
-      if (e instanceof GatewayError && [401, 402, 403].includes(e.status)) {
-        result.stoppedReason = msg;
-        stop = true;
-      } else if (e instanceof GatewayError && e.status === 429) {
-        result.stoppedReason = "AI is busy right now. Try again in a few minutes.";
-        stop = true;
-      }
+      entry.health = e instanceof SourceFetchError ? e.kind : "error";
+      await supabase
+        .from("opportunity_sources")
+        .update({ last_checked_at: new Date().toISOString(), last_error: msg.slice(0, 500), health: entry.health, last_found_count: 0 })
+        .eq("id", src.id);
     }
     if (runId) {
       await supabase.from("discovery_run_sources").insert({
@@ -240,9 +279,9 @@ export async function runDiscoveryCore(
         duplicates: entry.duplicates,
         health: entry.health,
         error: entry.error?.slice(0, 500) ?? null,
+        mode: entry.mode,
       });
     }
-    if (stop) break;
   }
 
   if (runId) {
