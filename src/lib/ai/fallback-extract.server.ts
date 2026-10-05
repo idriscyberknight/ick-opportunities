@@ -69,9 +69,9 @@ export function extractFallback(html: string, sourceUrl: string, max = 15): Fall
         const o = n as Record<string, unknown>;
         const t = String(o["@type"] ?? "");
         if (/JobPosting|Scholarship|Grant|EducationalOccupationalProgram/i.test(t)) {
-          const title = String(o.title ?? o.name ?? "");
-          const link = absolute(String(o.url ?? ""), sourceUrl);
-          const vt = typeof o.validThrough === "string" ? o.validThrough.slice(0, 10) : null;
+          const title = String(o["title"] ?? o["name"] ?? "");
+          const link = absolute(String(o["url"] ?? ""), sourceUrl);
+          const vt = typeof o["validThrough"] === "string" ? o["validThrough"].slice(0, 10) : null;
           push(title, link, vt && /^\d{4}-\d{2}-\d{2}$/.test(vt) ? vt : null);
         }
         Object.values(o).forEach(walk);
