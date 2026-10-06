@@ -23,11 +23,10 @@ const shareButtonClass =
   "inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
 /** Builds the share copy: intro, title, deadline (when stated) and apply link. */
-export function buildShareMessage(opportunity: {
-  title: string;
-  deadline: string | null;
-  verified_status: Opportunity["verified_status"];
-}) {
+export function buildShareMessage(
+  opportunity: Pick<Opportunity, "title" | "deadline" | "verified_status">,
+  url: string,
+) {
   const intro =
     opportunity.verified_status === "verified"
       ? "Found this verified opportunity on ICK Opportunities:"
