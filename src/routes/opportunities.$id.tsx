@@ -27,8 +27,11 @@ const FALLBACK_DESCRIPTION =
   "Eligibility, benefits, deadline and the official application link for this opportunity.";
 const SITE_ORIGIN = "https://ickopportunities.lovable.app";
 
-/** Keep meta descriptions within search-engine display limits (~160 chars). */
-function truncateMetaDescription(text: string, max = 160) {
+/**
+ * Keep meta descriptions compact but never cut off the deadline sentence:
+ * social previews render ~200 chars even where search display truncates.
+ */
+function truncateMetaDescription(text: string, max = 200) {
   if (text.length <= max) return text;
   const cut = text.slice(0, max);
   const lastSpace = cut.lastIndexOf(" ");
