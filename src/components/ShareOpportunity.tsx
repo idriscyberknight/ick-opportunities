@@ -37,8 +37,12 @@ export function buildShareMessage(
   return lines.join("\n");
 }
 
+const SITE_ORIGIN = "https://ickopportunities.lovable.app";
+
 function shareUrl(id: string) {
-  return `${window.location.origin}/opportunities/${id}`;
+  // SSR has no window; fall back to the published origin there.
+  const origin = typeof window === "undefined" ? SITE_ORIGIN : window.location.origin;
+  return `${origin}/opportunities/${id}`;
 }
 
 export function ShareOpportunity({
