@@ -10,7 +10,7 @@ import { RecommendedSection } from "../components/RecommendedOpportunities";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ICK Opportunities — Find Scholarships, Jobs, Internships & Grants" },
+      { title: "Find Scholarships, Jobs, Internships & Grants in Nigeria | ICK Opportunities" },
       {
         name: "description",
         content:
@@ -18,7 +18,8 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:title",
-        content: "ICK Opportunities — Find Scholarships, Jobs, Internships & Grants",
+        content:
+          "Find Scholarships, Jobs, Internships & Grants in Nigeria | ICK Opportunities",
       },
       {
         property: "og:description",

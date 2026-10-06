@@ -21,25 +21,73 @@ import {
 import { SaveOpportunityButton } from "@/components/SaveOpportunityButton";
 import { TrackOpportunityButton } from "@/components/TrackOpportunityButton";
 
+/** Fallback metadata is used whenever the record is not publicly visible. */
+const FALLBACK_TITLE = "Opportunity details — ICK Opportunities";
+const FALLBACK_DESCRIPTION =
+  "Eligibility, benefits, deadline and the official application link for this opportunity.";
+const SITE_ORIGIN = "https://ickopportunities.lovable.app";
+
+/**
+ * Keep meta descriptions compact but never cut off the deadline sentence:
+ * social previews render ~200 chars even where search display truncates.
+ */
+function truncateMetaDescription(text: string, max = 200) {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${cut.slice(0, lastSpace > 0 ? lastSpace : max).trimEnd()}…`;
+}
+
+function buildMetaDescription(opportunity: {
+  title: string;
+  deadline: string | null;
+}) {
+  const deadlineSuffix = opportunity.deadline
+    ? ` Applications close ${formatDeadline(opportunity.deadline)}.`
+    : "";
+  return truncateMetaDescription(
+    `Apply for the ${opportunity.title}. View eligibility requirements, benefits, deadline and official application link.${deadlineSuffix}`,
+  );
+}
+
 export const Route = createFileRoute("/opportunities/$id")({
-  head: () => ({
-    meta: [
-      { title: "Opportunity details — ICK Opportunities" },
-      {
-        name: "description",
-        content:
-          "Eligibility, benefits, deadline and the official application link for this opportunity.",
-      },
-      { property: "og:title", content: "Opportunity details — ICK Opportunities" },
-      {
-        property: "og:description",
-        content:
-          "Eligibility, benefits, deadline and the official application link for this opportunity.",
-      },
-      { property: "og:type", content: "article" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  // Loads the record during SSR so metadata renders in the server HTML for
+  // crawlers and social previews. Uses the same query cache as the page.
+  loader: ({ params, context }) =>
+    context.queryClient
+      .ensureQueryData({
+        queryKey: ["opportunity", params.id],
+        queryFn: () => fetchOpportunityById(params.id),
+      })
+      .catch(() => null),
+  head: ({ params, loaderData }) => {
+    const opportunity = loaderData ?? null;
+    const canonicalUrl = `${SITE_ORIGIN}/opportunities/${params.id}`;
+
+    const title = opportunity
+      ? `${opportunity.title} | ICK Opportunities`
+      : FALLBACK_TITLE;
+    const description = opportunity
+      ? buildMetaDescription(opportunity)
+      : FALLBACK_DESCRIPTION;
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "article" },
+        { property: "og:url", content: canonicalUrl },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        // No publicly visible record -> keep it out of search indexes.
+        ...(opportunity ? [] : [{ name: "robots", content: "noindex" }]),
+      ],
+      links: [{ rel: "canonical", href: canonicalUrl }],
+    };
+  },
   component: OpportunityDetailPage,
 });
 
