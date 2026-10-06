@@ -20,6 +20,7 @@ import {
 } from "@/lib/opportunities";
 import { SaveOpportunityButton } from "@/components/SaveOpportunityButton";
 import { TrackOpportunityButton } from "@/components/TrackOpportunityButton";
+import { ShareOpportunity } from "@/components/ShareOpportunity";
 
 /** Fallback metadata is used whenever the record is not publicly visible. */
 const FALLBACK_TITLE = "Opportunity details — ICK Opportunities";
@@ -214,6 +215,8 @@ function OpportunityDetailPage() {
           </p>
         )}
       </div>
+
+      <ShareOpportunity opportunity={data} />
     </div>
   );
 }
