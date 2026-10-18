@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, FileText, ShieldCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck, UserPlus } from "lucide-react";
 
 import { SearchSection } from "./SearchSection";
 
@@ -7,8 +7,8 @@ const journey = ["Discover", "Match", "Prepare", "Apply"];
 
 const stats = [
   { value: "4", label: "Opportunity categories" },
-  { value: "100%", label: "Official source links" },
-  { value: "Daily", label: "Listing reviews" },
+  { value: "Linked", label: "Every listing shows its source" },
+  { value: "Reviewed", label: "By our team before publishing" },
 ];
 
 export function Hero() {
@@ -22,7 +22,7 @@ export function Hero() {
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground">
             <ShieldCheck className="h-3.5 w-3.5 text-success" />
-            Verified, Nigeria-first opportunities
+            Reviewed, Nigeria-first opportunities
           </span>
 
           <h1 className="mt-6 font-display text-[2.1rem] font-extrabold leading-[1.08] tracking-[-0.03em] text-foreground sm:text-5xl lg:text-[3.75rem]">
@@ -32,7 +32,7 @@ export function Hero() {
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             Discover scholarships, jobs, internships and grants matched to your
-            goals — and get the tools you need to apply with confidence.
+            goals — and keep track of everything you apply for.
           </p>
 
           <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
@@ -47,8 +47,8 @@ export function Hero() {
               to="/get-started"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-6 py-3.5 text-[15px] font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <FileText className="h-4 w-4" />
-              Build My CV
+              <UserPlus className="h-4 w-4" />
+              Create free account
             </Link>
           </div>
 
