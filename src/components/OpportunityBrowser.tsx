@@ -20,16 +20,22 @@ const fieldClass =
 
 export function OpportunityBrowser({
   fixedCategory,
+  initialSearch,
+  initialCategory,
   title,
   intro,
 }: {
   fixedCategory?: OpportunityCategory;
+  /** Pre-fills the search box (used by the homepage search). */
+  initialSearch?: string;
+  /** Pre-selects the category filter when the category is not fixed. */
+  initialCategory?: OpportunityCategory;
   title: string;
   intro: string;
 }) {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch ?? "");
   const [category, setCategory] = useState<OpportunityCategory | "all">(
-    fixedCategory ?? "all",
+    fixedCategory ?? initialCategory ?? "all",
   );
   const [country, setCountry] = useState("all");
 
@@ -133,10 +139,14 @@ export function OpportunityBrowser({
       ) : results.length === 0 ? (
         <div className="mt-12 rounded-xl border border-dashed border-border p-10 text-center">
           <p className="font-display text-lg font-bold text-foreground">
-            No opportunities published yet
+            {(data ?? []).length === 0
+              ? "No opportunities published yet"
+              : "No matching opportunities"}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Verified listings appear here as soon as they are published.
+            {(data ?? []).length === 0
+              ? "Reviewed listings appear here as soon as they are published."
+              : "Try a different keyword, category or country."}
           </p>
         </div>
       ) : (
@@ -162,7 +172,7 @@ export function OpportunityBrowser({
                     </span>
                     {o.verified_status === "verified" && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-success">
-                        <BadgeCheck className="h-3.5 w-3.5" /> Verified
+                        <BadgeCheck className="h-3.5 w-3.5" /> Reviewed
                       </span>
                     )}
                   </div>
