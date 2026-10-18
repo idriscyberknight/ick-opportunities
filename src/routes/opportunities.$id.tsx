@@ -25,7 +25,7 @@ import { ShareOpportunity } from "@/components/ShareOpportunity";
 /** Fallback metadata is used whenever the record is not publicly visible. */
 const FALLBACK_TITLE = "Opportunity details — ICK Opportunities";
 const FALLBACK_DESCRIPTION =
-  "Eligibility, benefits, deadline and the official application link for this opportunity.";
+  "Eligibility, benefits, deadline and the source link for this opportunity.";
 const SITE_ORIGIN = "https://ickopportunities.lovable.app";
 
 /**
@@ -47,7 +47,7 @@ function buildMetaDescription(opportunity: {
     ? ` Applications close ${formatDeadline(opportunity.deadline)}.`
     : "";
   return truncateMetaDescription(
-    `Apply for the ${opportunity.title}. View eligibility requirements, benefits, deadline and official application link.${deadlineSuffix}`,
+    `Apply for the ${opportunity.title}. View eligibility requirements, benefits, deadline and the source link.${deadlineSuffix}`,
   );
 }
 
@@ -160,7 +160,7 @@ function OpportunityDetailPage() {
         </span>
         {data.verified_status === "verified" ? (
           <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
-            <BadgeCheck className="h-4 w-4" /> Verified against official source
+            <BadgeCheck className="h-4 w-4" /> Reviewed by ICK
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
@@ -196,8 +196,8 @@ function OpportunityDetailPage() {
       <div className="mt-10 rounded-2xl border border-border bg-card p-6">
         <h2 className="font-display text-lg font-bold text-foreground">Ready to apply?</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Applications are submitted on the provider&apos;s official website. ICK
-          Opportunities never asks for application fees.
+          Check the deadline and requirements on the source page before you apply.
+          ICK Opportunities never asks for application fees.
         </p>
         {data.official_link ? (
           <a
@@ -206,12 +206,12 @@ function OpportunityDetailPage() {
             rel="noopener noreferrer"
             className="mt-4 inline-flex items-center gap-2 rounded-lg bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            Apply on Official Website
+            Go to source page
             <ExternalLink className="h-4 w-4" />
           </a>
         ) : (
           <p className="mt-4 text-sm font-medium text-muted-foreground">
-            No official application link has been recorded for this listing yet.
+            No source link has been recorded for this listing yet.
           </p>
         )}
       </div>
