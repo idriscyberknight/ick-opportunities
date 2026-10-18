@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { Hero } from "../components/Hero";
-import { FeaturedOpportunities } from "../components/FeaturedOpportunities";
 import { ValueJourney } from "../components/ValueJourney";
 import { TrustSection } from "../components/TrustSection";
 import { RecommendedSection } from "../components/RecommendedOpportunities";
@@ -38,7 +37,6 @@ function Index() {
     <>
       <Hero />
       <RecommendedSection className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8" />
-      <FeaturedOpportunities />
       <ValueJourney />
       <TrustSection />
     </>
