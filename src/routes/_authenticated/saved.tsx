@@ -101,7 +101,7 @@ function SavedPage() {
                     </span>
                     {o.verified_status === "verified" && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-success">
-                        <BadgeCheck className="h-3.5 w-3.5" /> Verified
+                        <BadgeCheck className="h-3.5 w-3.5" /> Reviewed
                       </span>
                     )}
                   </div>
