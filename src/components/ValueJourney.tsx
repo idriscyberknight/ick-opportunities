@@ -5,25 +5,25 @@ const steps = [
     icon: Compass,
     title: "Discover",
     description:
-      "Browse scholarships, jobs, internships and grants sourced from official Nigerian and international channels.",
+      "Browse scholarships, jobs, internships and grants that our team has reviewed, each with a link to its source page.",
   },
   {
     icon: Sparkles,
     title: "Match",
     description:
-      "Filter by field, level, location and deadline so you only see opportunities you are genuinely eligible for.",
+      "Tell us your field, interests and location, and we rank opportunities by how well they fit your profile.",
   },
   {
     icon: FileText,
     title: "Prepare",
     description:
-      "Build a strong CV and application materials with structured guidance and requirement checklists.",
+      "Coming soon: a CV builder and application checklists. They are not available yet.",
   },
   {
     icon: Send,
     title: "Apply",
     description:
-      "Go straight to the official application page — no middlemen, no pay-to-apply schemes.",
+      "Go to the listing's source page to apply. ICK Opportunities never asks for application fees.",
   },
   {
     icon: LineChart,
@@ -45,8 +45,8 @@ export function ValueJourney() {
             More than a listing site — an end-to-end opportunity workflow
           </h2>
           <p className="mt-3 text-[15px] leading-relaxed text-primary-foreground/70">
-            From finding the right opportunity to submitting a competitive
-            application, every step is designed to move you forward.
+            From finding the right opportunity to keeping track of your
+            applications, every step is designed to move you forward.
           </p>
         </div>
 

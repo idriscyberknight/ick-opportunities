@@ -3,7 +3,7 @@ import { OpportunityBrowser } from "@/components/OpportunityBrowser";
 
 const title = "Jobs — ICK Opportunities";
 const description =
-  "Graduate and early-career jobs across Nigeria and remote roles, linked to official employer listings.";
+  "Graduate and early-career jobs across Nigeria and remote roles, reviewed by our team, with a link to each source listing.";
 
 export const Route = createFileRoute("/jobs")({
   head: () => ({
@@ -24,7 +24,7 @@ function JobsPage() {
     <OpportunityBrowser
       fixedCategory="job"
       title="Jobs"
-      intro="Entry-level and early-career roles from employers hiring now, with links to the official application page."
+      intro="Entry-level and early-career roles from employers hiring now, with a link to each listing's source page."
     />
   );
 }

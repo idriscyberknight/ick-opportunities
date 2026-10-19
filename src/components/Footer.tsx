@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 
 const productLinks = [
   { to: "/opportunities", label: "Opportunities" },
-  { to: "/get-started", label: "Build My CV" },
   { to: "/get-started", label: "Get Started" },
   { to: "/signin", label: "Sign In" },
 ];
@@ -29,9 +28,9 @@ export function Footer() {
               </span>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              A Nigeria-first platform for discovering verified scholarships,
-              jobs, internships and grants — and preparing applications that
-              stand out.
+              A Nigeria-first platform for discovering reviewed scholarships,
+              jobs, internships and grants, and keeping track of your
+              applications.
             </p>
           </div>
 

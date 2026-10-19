@@ -1,30 +1,30 @@
 import { Link } from "@tanstack/react-router";
-import { ShieldCheck, FileCheck, Search, Flag, ArrowRight } from "lucide-react";
+import { ShieldCheck, FileCheck, Search, Clock, ArrowRight } from "lucide-react";
 
 const trustPoints = [
   {
-    icon: Search,
-    title: "Official sources only",
+    icon: FileCheck,
+    title: "Reviewed before publishing",
     description:
-      "Listings come from government portals, embassy pages, verified funders and company career sites.",
+      "Listings found by our discovery tools stay in draft until a member of our team reviews them. Nothing is published automatically.",
   },
   {
-    icon: FileCheck,
-    title: "Cross-checked details",
+    icon: Search,
+    title: "A source link on every listing",
     description:
-      "Deadlines, eligibility and application links are checked against the original source before publishing.",
+      "Each listing shows the page it came from. Always confirm the deadline and requirements there before you apply.",
   },
   {
     icon: ShieldCheck,
-    title: "No pay-to-apply",
+    title: "Never pay to apply",
     description:
-      "We flag opportunities that request suspicious upfront fees and prioritise transparent processes.",
+      "Be careful with any opportunity that asks for money to apply or to secure a place. ICK Opportunities never asks applicants for fees.",
   },
   {
-    icon: Flag,
-    title: "Community reporting",
+    icon: Clock,
+    title: "Details can change",
     description:
-      "Anyone can report an outdated or suspicious listing, and reports are reviewed before action.",
+      "Deadlines and requirements can change after a listing is reviewed. The source page always has the final word.",
   },
 ];
 
@@ -35,21 +35,22 @@ export function TrustSection() {
         <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
           <div className="max-w-md">
             <span className="text-xs font-semibold uppercase tracking-[0.14em] text-success">
-              Trust &amp; verification
+              Trust &amp; safety
             </span>
             <h2 className="mt-2 font-display text-2xl font-extrabold tracking-[-0.02em] text-foreground sm:text-3xl">
-              Verified opportunities, official application sources
+              Reviewed opportunities, with links to their sources
             </h2>
             <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
               Opportunity scams are common. ICK Opportunities exists to make the
-              search safe: we verify what we publish and always point you to the
-              official application page.
+              search safer: our team reviews what we publish, and every listing
+              links to its source page so you can check the details yourself
+              before you apply.
             </p>
             <Link
               to="/opportunities"
               className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-secondary transition-colors hover:text-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              Browse verified opportunities
+              Browse opportunities
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

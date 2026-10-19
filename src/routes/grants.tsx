@@ -3,7 +3,7 @@ import { OpportunityBrowser } from "@/components/OpportunityBrowser";
 
 const title = "Grants — ICK Opportunities";
 const description =
-  "Grants and funding for Nigerian founders, researchers and community projects, verified against official sources.";
+  "Grants and funding for Nigerian founders, researchers and community projects, reviewed by our team, with a link to each source page.";
 
 export const Route = createFileRoute("/grants")({
   head: () => ({

@@ -3,7 +3,7 @@ import { OpportunityBrowser } from "@/components/OpportunityBrowser";
 
 const title = "Scholarships — ICK Opportunities";
 const description =
-  "Verified scholarships for Nigerian students studying at home and abroad, with official application links.";
+  "Scholarships for Nigerian students studying at home and abroad, reviewed by our team, with a link to each source page.";
 
 export const Route = createFileRoute("/scholarships")({
   head: () => ({
@@ -24,7 +24,7 @@ function ScholarshipsPage() {
     <OpportunityBrowser
       fixedCategory="scholarship"
       title="Scholarships"
-      intro="Funding for undergraduate, postgraduate and research study, checked against official sources."
+      intro="Funding for undergraduate, postgraduate and research study, reviewed by our team. Check the details on each source page before you apply."
     />
   );
 }

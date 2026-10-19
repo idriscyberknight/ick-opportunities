@@ -1,21 +1,14 @@
 import { useState } from "react";
-import { Search, MapPin, LayoutGrid } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { Search, LayoutGrid } from "lucide-react";
+import type { OpportunityCategory } from "@/lib/opportunities";
 
-const categories = [
+const categories: { value: "all" | OpportunityCategory; label: string }[] = [
   { value: "all", label: "All categories" },
-  { value: "scholarships", label: "Scholarships" },
-  { value: "jobs", label: "Jobs" },
-  { value: "internships", label: "Internships" },
-  { value: "grants", label: "Grants" },
-];
-
-const locations = [
-  { value: "any", label: "Any location" },
-  { value: "nigeria", label: "Nigeria" },
-  { value: "lagos", label: "Lagos" },
-  { value: "abuja", label: "Abuja" },
-  { value: "remote", label: "Remote" },
-  { value: "abroad", label: "Abroad" },
+  { value: "scholarship", label: "Scholarships" },
+  { value: "job", label: "Jobs" },
+  { value: "internship", label: "Internships" },
+  { value: "grant", label: "Grants" },
 ];
 
 const quickFilters = [
@@ -23,28 +16,33 @@ const quickFilters = [
   "Fully funded",
   "Remote",
   "Graduate trainee",
-  "Closing soon",
 ];
 
 const fieldClass =
   "w-full appearance-none rounded-lg border border-input bg-background py-3 pl-10 pr-3 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-4 focus:ring-ring/15";
 
 export function SearchSection() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("all");
-  const [location, setLocation] = useState("any");
+  const [category, setCategory] = useState<"all" | OpportunityCategory>("all");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Placeholder: filtering is wired up in a later step.
-    console.log("Search:", { query, category, location });
+    const q = query.trim();
+    navigate({
+      to: "/opportunities",
+      search: {
+        q: q || undefined,
+        category: category === "all" ? undefined : category,
+      },
+    });
   };
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_12px_40px_-24px_rgba(16,24,40,0.45)] sm:p-5">
       <form
         onSubmit={handleSearch}
-        className="grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-center"
+        className="grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_auto] lg:items-center"
       >
         <div className="relative">
           <label htmlFor="search-query" className="sr-only">
@@ -69,31 +67,12 @@ export function SearchSection() {
           <select
             id="search-category"
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => setCategory(e.target.value as "all" | OpportunityCategory)}
             className={fieldClass}
           >
             {categories.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="relative">
-          <label htmlFor="search-location" className="sr-only">
-            Location
-          </label>
-          <MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <select
-            id="search-location"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className={fieldClass}
-          >
-            {locations.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.label}
               </option>
             ))}
           </select>
