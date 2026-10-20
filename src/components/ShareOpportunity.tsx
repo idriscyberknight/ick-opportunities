@@ -22,18 +22,18 @@ function TelegramIcon({ className }: { className?: string }) {
 const shareButtonClass =
   "inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
-/** Builds the share copy: intro, title, deadline (when stated) and details link. */
+/** Builds the share copy: intro, title, deadline (when stated) and apply link. */
 export function buildShareMessage(
   opportunity: Pick<Opportunity, "title" | "deadline" | "verified_status">,
   url: string,
 ) {
   const intro =
     opportunity.verified_status === "verified"
-      ? "Found this reviewed opportunity on ICK Opportunities:"
+      ? "Found this verified opportunity on ICK Opportunities:"
       : "Found this opportunity on ICK Opportunities:";
   const lines = [intro, "", opportunity.title];
   if (opportunity.deadline) lines.push("", `Deadline: ${formatDeadline(opportunity.deadline)}`);
-  lines.push("", "Details:", url);
+  lines.push("", "Apply here:", url);
   return lines.join("\n");
 }
 
