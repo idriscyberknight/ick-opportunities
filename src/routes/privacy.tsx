@@ -35,7 +35,7 @@ function PrivacyPage() {
           <h2 className="font-display text-xl font-bold text-foreground">1. Introduction</h2>
           <p className="mt-2 text-muted-foreground">
             ICK Technologies Ltd (&quot;ICK Opportunities&quot;, &quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) operates
-            the opportunity discovery platform at <strong>ickopportunities.lovable.app</strong>. We respect your
+            the opportunity discovery platform at <strong>ick-opportunities.vercel.app</strong>. We respect your
             privacy and are fully committed to protecting your personal data in accordance with the Nigeria Data
             Protection Act (NDPA) 2023 and applicable international data protection standards.
           </p>
@@ -91,7 +91,7 @@ function PrivacyPage() {
             If you have questions about this Privacy Policy or wish to exercise your data rights, contact us at:
           </p>
           <p className="mt-2 font-medium text-foreground">
-            Email: <a href="mailto:support@icktechnologies.com" className="text-primary underline">support@icktechnologies.com</a><br />
+            Email: <a href="mailto:ickopportunity@gmail.com" className="text-primary underline">ickopportunity@gmail.com</a><br />
             Company: ICK Technologies Ltd, Nigeria.
           </p>
         </section>
