@@ -12,13 +12,13 @@ export const Route = createFileRoute("/get-started")({
       {
         name: "description",
         content:
-          "Sign up for ICK Opportunities to discover verified scholarships, jobs, internships, and grants.",
+          "Sign up for ICK Opportunities to discover reviewed scholarships, jobs, internships, and grants.",
       },
       { property: "og:title", content: "Create Your Account — ICK Opportunities" },
       {
         property: "og:description",
         content:
-          "Sign up for ICK Opportunities to discover verified scholarships, jobs, internships, and grants.",
+          "Sign up for ICK Opportunities to discover reviewed scholarships, jobs, internships, and grants.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

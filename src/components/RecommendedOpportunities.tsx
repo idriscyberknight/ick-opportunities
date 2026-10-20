@@ -83,8 +83,8 @@ export function RecommendedOpportunities({ limit }: { limit?: number }) {
       <div className="rounded-xl border border-dashed border-border p-8 text-center">
         <p className="font-display text-base font-bold text-foreground">No strong matches yet</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          New verified listings are added regularly. Updating your skills and interests can also
-          widen your matches.
+          New listings are added once our team has reviewed them. Updating your skills and
+          interests can also widen your matches.
         </p>
       </div>
     );
