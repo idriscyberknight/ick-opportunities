@@ -27,9 +27,9 @@ export function OpportunityBrowser({
 }: {
   fixedCategory?: OpportunityCategory;
   /** Pre-fills the search box (used by the homepage search). */
-  initialSearch?: string;
+  initialSearch?: string | undefined;
   /** Pre-selects the category filter when the category is not fixed. */
-  initialCategory?: OpportunityCategory;
+  initialCategory?: OpportunityCategory | undefined;
   title: string;
   intro: string;
 }) {

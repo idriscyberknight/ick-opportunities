@@ -26,16 +26,19 @@ export function SearchSection() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<"all" | OpportunityCategory>("all");
 
+  // Opens the results page. Keys are only set when they have a value
+  // (the project uses exactOptionalPropertyTypes).
+  const goToResults = (rawQuery: string, selected: "all" | OpportunityCategory) => {
+    const search: { q?: string; category?: OpportunityCategory } = {};
+    const q = rawQuery.trim();
+    if (q) search.q = q;
+    if (selected !== "all") search.category = selected;
+    navigate({ to: "/opportunities", search });
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const q = query.trim();
-    navigate({
-      to: "/opportunities",
-      search: {
-        q: q || undefined,
-        category: category === "all" ? undefined : category,
-      },
-    });
+    goToResults(query, category);
   };
 
   return (
@@ -95,7 +98,10 @@ export function SearchSection() {
           <button
             key={filter}
             type="button"
-            onClick={() => setQuery(filter)}
+            onClick={() => {
+              setQuery(filter);
+              goToResults(filter, category);
+            }}
             className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-secondary/40 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {filter}
