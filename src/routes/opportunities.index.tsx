@@ -20,10 +20,18 @@ type OpportunitiesSearch = {
 
 export const Route = createFileRoute("/opportunities/")({
   // Lets the homepage search link here with ?q=...&category=...
+  // Written for exactOptionalPropertyTypes and noPropertyAccessFromIndexSignature:
+  // keys are only set when they have a value, and the index signature is read with brackets.
   validateSearch: (search: Record<string, unknown>): OpportunitiesSearch => {
-    const q = typeof search.q === "string" ? search.q.trim().slice(0, 100) : "";
-    const category = CATEGORY_VALUES.find((c) => c === search.category);
-    return { q: q || undefined, category };
+    const result: OpportunitiesSearch = {};
+    const rawQuery = search["q"];
+    if (typeof rawQuery === "string") {
+      const q = rawQuery.trim().slice(0, 100);
+      if (q) result.q = q;
+    }
+    const category = CATEGORY_VALUES.find((c) => c === search["category"]);
+    if (category) result.category = category;
+    return result;
   },
   head: () => ({
     meta: [
