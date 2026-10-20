@@ -77,12 +77,12 @@ export function Footer() {
             <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
               <li>ICK Technologies Ltd</li>
               <li>
-                <Link to="/" className="transition-colors hover:text-foreground">
+                <Link to="/privacy" className="transition-colors hover:text-foreground">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/" className="transition-colors hover:text-foreground">
+                <Link to="/terms" className="transition-colors hover:text-foreground">
                   Terms of Service
                 </Link>
               </li>
