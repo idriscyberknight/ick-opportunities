@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDeadline, type Opportunity } from "@/lib/opportunities";
+import { SITE_ORIGIN } from "@/lib/site";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -37,10 +38,8 @@ export function buildShareMessage(
   return lines.join("\n");
 }
 
-const SITE_ORIGIN = "https://ickopportunities.lovable.app";
-
 function shareUrl(id: string) {
-  // SSR has no window; fall back to the published origin there.
+  // SSR has no window; fall back to the site origin there (src/lib/site.ts).
   const origin = typeof window === "undefined" ? SITE_ORIGIN : window.location.origin;
   return `${origin}/opportunities/${id}`;
 }
