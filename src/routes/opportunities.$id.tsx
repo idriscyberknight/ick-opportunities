@@ -22,7 +22,8 @@ import { SaveOpportunityButton } from "@/components/SaveOpportunityButton";
 import { TrackOpportunityButton } from "@/components/TrackOpportunityButton";
 import { ShareOpportunity } from "@/components/ShareOpportunity";
 import { EligibilityQuickCheck } from "@/components/EligibilityQuickCheck";
-
+import { OrganizationAvatar } from "@/components/OrganizationAvatar";
+  
 /** Fallback metadata is used whenever the record is not publicly visible. */
 const FALLBACK_TITLE = "Opportunity details — ICK Opportunities";
 const FALLBACK_DESCRIPTION =
@@ -174,21 +175,26 @@ function OpportunityDetailPage() {
         </span>
       </div>
 
-      <h1 className="mt-3 font-display text-3xl font-extrabold tracking-[-0.02em] text-foreground sm:text-4xl">
-        {data.title}
-      </h1>
-
-      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <Building2 className="h-4 w-4" /> {data.organization}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <MapPin className="h-4 w-4" /> {locationLabel(data)}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <CalendarDays className="h-4 w-4" /> Deadline: {formatDeadline(data.deadline)}
-        </span>
-      </div>
+      <div className="mt-4 flex items-start gap-4">
+  <OrganizationAvatar name={data.organization} category={data.category} size="lg" />
+  <div className="min-w-0 flex-1">
+    <h1 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-foreground sm:text-4xl">
+      {data.title}
+    </h1>
+    <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+      <span className="flex items-center gap-1.5 font-medium text-foreground">
+        <Building2 className="h-4 w-4" /> {data.organization}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <MapPin className="h-4 w-4" /> {locationLabel(data)}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <CalendarDays className="h-4 w-4" /> Deadline: {formatDeadline(data.deadline)}
+      </span>
+    </div>
+  </div>
+</div>
+      
 <EligibilityQuickCheck opportunity={data} />
         
       <Section title="About this opportunity" body={data.description} />
