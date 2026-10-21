@@ -66,8 +66,10 @@ function getMonogram(name: string): string {
   const clean = name.replace(/[^\w\s]/g, " ").trim();
   const words = clean.split(/\s+/).filter(Boolean);
 
-  if (words.length >= 2) {
-    return (words[0][0] + words[1][0]).toUpperCase();
+  const first = words[0];
+  const second = words[1];
+  if (first && second && first[0] && second[0]) {
+    return (first[0] + second[0]).toUpperCase();
   }
   return clean.slice(0, 2).toUpperCase();
 }
@@ -80,8 +82,9 @@ function getPalette(name: string) {
     hash |= 0;
   }
   const index = Math.abs(hash) % COLOR_PALETTES.length;
-  return COLOR_PALETTES[index];
+  return COLOR_PALETTES[index] ?? COLOR_PALETTES[0]!;
 }
+
 
 /** Karamar alamar nau'in dama */
 function CategoryIcon({ category, size }: { category?: string; size: "sm" | "md" | "lg" }) {
