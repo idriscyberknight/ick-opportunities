@@ -23,12 +23,13 @@ import { TrackOpportunityButton } from "@/components/TrackOpportunityButton";
 import { ShareOpportunity } from "@/components/ShareOpportunity";
 import { EligibilityQuickCheck } from "@/components/EligibilityQuickCheck";
 import { OrganizationAvatar } from "@/components/OrganizationAvatar";
+import { SITE_ORIGIN } from "@/lib/site";
+import { buildOpportunityJsonLd, serializeJsonLd } from "@/lib/structured-data";
   
 /** Fallback metadata is used whenever the record is not publicly visible. */
 const FALLBACK_TITLE = "Opportunity details — ICK Opportunities";
 const FALLBACK_DESCRIPTION =
   "Eligibility, benefits, deadline and the source link for this opportunity.";
-const SITE_ORIGIN = "https://ickopportunities.lovable.app";
 
 /**
  * Keep meta descriptions compact but never cut off the deadline sentence:
@@ -89,6 +90,17 @@ export const Route = createFileRoute("/opportunities/$id")({
         ...(opportunity ? [] : [{ name: "robots", content: "noindex" }]),
       ],
       links: [{ rel: "canonical", href: canonicalUrl }],
+      // Structured data for search engines and AI assistants (see src/lib/structured-data.ts).
+      ...(opportunity
+        ? {
+            scripts: [
+              {
+                type: "application/ld+json",
+                children: serializeJsonLd(buildOpportunityJsonLd(opportunity)),
+              },
+            ],
+          }
+        : {}),
     };
   },
   component: OpportunityDetailPage,
