@@ -1,14 +1,17 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
+# One group for all crawlers. (A bot that has its own group ignores the "*" group,
+# so per-bot groups would bypass the Disallow rules below.)
+# Keep the Sitemap host in sync with SITE_ORIGIN in src/lib/site.ts.
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /onboarding
+Disallow: /profile
+Disallow: /recommended
+Disallow: /saved
+Disallow: /tracker
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /api/
+
+Sitemap: https://ick-opportunities.vercel.app/sitemap.xml
