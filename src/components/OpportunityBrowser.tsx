@@ -14,6 +14,7 @@ import {
 } from "@/lib/opportunities";
 import { SaveOpportunityButton } from "@/components/SaveOpportunityButton";
 import { TrackOpportunityButton } from "@/components/TrackOpportunityButton";
+import { OrganizationAvatar } from "@/components/OrganizationAvatar";
 
 const fieldClass =
   "w-full appearance-none rounded-lg border border-input bg-background py-2.5 pl-10 pr-3 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-4 focus:ring-ring/15";
@@ -182,12 +183,18 @@ export function OpportunityBrowser({
                   </div>
                 </div>
 
-                <h2 className="mt-3 font-display text-[17px] font-bold leading-snug tracking-[-0.01em] text-foreground">
-                  {o.title}
-                </h2>
-                <p className="mt-1 truncate text-sm font-medium text-muted-foreground">
-                  {o.organization}
-                </p>
+                <div className="mt-3 flex items-start gap-3">
+  <OrganizationAvatar name={o.organization} category={o.category} size="md" />
+  <div className="min-w-0 flex-1">
+    <h2 className="font-display text-[17px] font-bold leading-snug tracking-[-0.01em] text-foreground">
+      {o.title}
+    </h2>
+    <p className="mt-0.5 truncate text-sm font-medium text-muted-foreground">
+      {o.organization}
+    </p>
+  </div>
+</div>
+              
                 <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                   {o.description}
                 </p>
