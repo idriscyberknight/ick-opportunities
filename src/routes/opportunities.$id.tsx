@@ -21,6 +21,7 @@ import {
 import { SaveOpportunityButton } from "@/components/SaveOpportunityButton";
 import { TrackOpportunityButton } from "@/components/TrackOpportunityButton";
 import { ShareOpportunity } from "@/components/ShareOpportunity";
+import { EligibilityQuickCheck } from "@/components/EligibilityQuickCheck";
 
 /** Fallback metadata is used whenever the record is not publicly visible. */
 const FALLBACK_TITLE = "Opportunity details — ICK Opportunities";
@@ -188,7 +189,8 @@ function OpportunityDetailPage() {
           <CalendarDays className="h-4 w-4" /> Deadline: {formatDeadline(data.deadline)}
         </span>
       </div>
-
+<EligibilityQuickCheck opportunity={data} />
+        
       <Section title="About this opportunity" body={data.description} />
       <Section title="Eligibility" body={data.eligibility} />
       <Section title="Benefits" body={data.benefits} />
