@@ -176,7 +176,7 @@ export function EligibilityQuickCheck({ opportunity }: Props) {
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
           <h2 className="font-display text-sm font-bold tracking-tight text-foreground sm:text-base">
-            Eligibility Quick-Check (Matatar Cancanta)
+            Eligibility Quick-Check 
           </h2>
           <span className="ml-auto rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
             Fast Glance
