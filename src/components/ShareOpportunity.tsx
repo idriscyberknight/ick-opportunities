@@ -38,10 +38,8 @@ export function buildShareMessage(
   return lines.join("\n");
 }
 
-function shareUrl(id: string) {
-  // SSR has no window; fall back to the site origin there (src/lib/site.ts).
-  const origin = typeof window === "undefined" ? SITE_ORIGIN : window.location.origin;
-  return `${origin}/opportunities/${id}`;
+function shareUrl(id: string): string {
+  return `${SITE_ORIGIN}/opportunities/${encodeURIComponent(id)}`;
 }
 
 export function ShareOpportunity({
@@ -56,28 +54,62 @@ export function ShareOpportunity({
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(message)}`;
   const telegramHref = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(message)}`;
 
-  const copyLink = async () => {
+    const copyLink = async () => {
+    setCopied(false);
+    let didCopy = false;
+
     try {
       await navigator.clipboard.writeText(url);
+      didCopy = true;
     } catch {
-      // Clipboard API can be blocked (older browsers, permission prompts);
-      // fall back to a temporary selection-based copy.
+      // Compatibility fallback when the Clipboard API is unavailable
+      // or the browser rejects the request.
       const textarea = document.createElement("textarea");
+      const previousFocus = document.activeElement;
+
       textarea.value = url;
+      textarea.readOnly = true;
       textarea.style.position = "fixed";
+      textarea.style.top = "0";
+      textarea.style.left = "0";
       textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      textarea.remove();
+      textarea.style.fontSize = "16px";
+
+      try {
+        document.body.appendChild(textarea);
+        textarea.focus({ preventScroll: true });
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+
+        didCopy = document.execCommand("copy");
+      } catch {
+        didCopy = false;
+      } finally {
+        textarea.remove();
+
+        if (
+          previousFocus instanceof HTMLElement &&
+          previousFocus.isConnected
+        ) {
+          previousFocus.focus({ preventScroll: true });
+        }
+      }
     }
+
+    if (!didCopy) {
+      toast.error("Could not copy the link", {
+        description:
+          "Try again, or use the WhatsApp or Telegram share button.",
+      });
+      return;
+    }
+
     setCopied(true);
     toast.success("Link copied", {
       description: "Paste it into any chat, group or post.",
     });
     setTimeout(() => setCopied(false), 2000);
   };
-
   return (
     <section className="mt-6 rounded-2xl border border-border bg-card p-6">
       <h2 className="font-display text-lg font-bold text-foreground">
