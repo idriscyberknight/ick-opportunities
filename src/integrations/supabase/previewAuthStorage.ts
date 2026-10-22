@@ -24,13 +24,39 @@ interface BrokerReply {
 
 const RESULT = 'lovable-preview-auth:result';
 
-function readBrokerReply(data: unknown, requestId: string): BrokerReply | null {
-  if (typeof data !== 'object' || data === null) return null;
-  if (!('type' in data) || data.type !== RESULT) return null;
-  if (!('requestId' in data) || data.requestId !== requestId) return null;
+function readBrokerReply(
+  data: unknown,
+  requestId: string,
+): BrokerReply | null {
+  if (typeof data !== "object" || data === null) return null;
+
+  if (!("type" in data) || data.type !== RESULT) return null;
+
+  if (
+    !("requestId" in data) ||
+    data.requestId !== requestId
+  ) {
+    return null;
+  }
+
+  if (!("ok" in data) || typeof data.ok !== "boolean") {
+    return null;
+  }
+
+  if (
+    "value" in data &&
+    data.value !== null &&
+    typeof data.value !== "string"
+  ) {
+    return null;
+  }
+
   return {
-    ok: 'ok' in data && Boolean(data.ok),
-    value: 'value' in data && typeof data.value === 'string' ? data.value : null,
+    ok: data.ok,
+    value:
+      "value" in data && typeof data.value === "string"
+        ? data.value
+        : null,
   };
 }
 
@@ -81,11 +107,13 @@ export function brokeredPreviewStorage(): PreviewAuthStorage | undefined {
         window.removeEventListener('message', onMessage);
         resolve(reply);
       };
-      const onMessage = (e: MessageEvent<unknown>) => {
+        const onMessage = (e: MessageEvent<unknown>) => {
+        if (e.source !== parentWindow) return;
         if (!editorOrigins.includes(e.origin)) return;
+
         const reply = readBrokerReply(e.data, requestId);
         if (reply) finish(reply);
-      };
+      };a
       window.addEventListener('message', onMessage);
       const timer = setTimeout(() => { finish(null); }, TIMEOUT);
       const msg: BrokerRequest = { type, requestId, projectId, key };
