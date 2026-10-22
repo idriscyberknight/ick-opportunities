@@ -23,19 +23,14 @@ import { TrackOpportunityButton } from "@/components/TrackOpportunityButton";
 import { ShareOpportunity } from "@/components/ShareOpportunity";
 import { EligibilityQuickCheck } from "@/components/EligibilityQuickCheck";
 import { OrganizationAvatar } from "@/components/OrganizationAvatar";
+import { ApplicationBlueprint } from "@/components/ApplicationBlueprint";
 import { SITE_ORIGIN } from "@/lib/site";
 import { buildOpportunityJsonLd, serializeJsonLd } from "@/lib/structured-data";
-import { ApplicationBlueprint } from "@/components/ApplicationBlueprint";
 
-/** Fallback metadata is used whenever the record is not publicly visible. */
 const FALLBACK_TITLE = "Opportunity details — ICK Opportunities";
 const FALLBACK_DESCRIPTION =
   "Eligibility, benefits, deadline and the source link for this opportunity.";
 
-/**
- * Keep meta descriptions compact but never cut off the deadline sentence:
- * social previews render ~200 chars even where search display truncates.
- */
 function truncateMetaDescription(text: string, max = 200) {
   if (text.length <= max) return text;
   const cut = text.slice(0, max);
@@ -56,8 +51,6 @@ function buildMetaDescription(opportunity: {
 }
 
 export const Route = createFileRoute("/opportunities/$id")({
-  // Loads the record during SSR so metadata renders in the server HTML for
-  // crawlers and social previews. Uses the same query cache as the page.
   loader: ({ params, context }) =>
     context.queryClient
       .ensureQueryData({
@@ -87,11 +80,9 @@ export const Route = createFileRoute("/opportunities/$id")({
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
-        // No publicly visible record -> keep it out of search indexes.
         ...(opportunity ? [] : [{ name: "robots", content: "noindex" }]),
       ],
       links: [{ rel: "canonical", href: canonicalUrl }],
-      // Structured data for search engines and AI assistants (see src/lib/structured-data.ts).
       ...(opportunity
         ? {
             scripts: [
@@ -189,39 +180,33 @@ function OpportunityDetailPage() {
       </div>
 
       <div className="mt-4 flex items-start gap-4">
-  <OrganizationAvatar name={data.organization} category={data.category} size="lg" />
-  <div className="min-w-0 flex-1">
-    <h1 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-foreground sm:text-4xl">
-      {data.title}
-    </h1>
-    <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-      <span className="flex items-center gap-1.5 font-medium text-foreground">
-        <Building2 className="h-4 w-4" /> {data.organization}
-      </span>
-      <span className="flex items-center gap-1.5">
-        <MapPin className="h-4 w-4" /> {locationLabel(data)}
-      </span>
-      <span className="flex items-center gap-1.5">
-        <CalendarDays className="h-4 w-4" /> Deadline: {formatDeadline(data.deadline)}
-      </span>
-    </div>
-  </div>
-</div>
-      
-<EligibilityQuickCheck opportunity={data} />
-        
-      <Section title="About this opportunity" body={data.description} />
-      <Section title="Eligibility" body={data.eligibility} />
-      <Section title="Benefits" body={data.benefits} />
+        <OrganizationAvatar name={data.organization} category={data.category} size="lg" />
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-foreground sm:text-4xl">
+            {data.title}
+          </h1>
+          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5 font-medium text-foreground">
+              <Building2 className="h-4 w-4" /> {data.organization}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-4 w-4" /> {locationLabel(data)}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CalendarDays className="h-4 w-4" /> Deadline: {formatDeadline(data.deadline)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <EligibilityQuickCheck opportunity={data} />
+
       <Section title="About this opportunity" body={data.description} />
       <Section title="Eligibility" body={data.eligibility} />
       <Section title="Benefits" body={data.benefits} />
 
       <ApplicationBlueprint opportunity={data} />
 
-      <div className="mt-10 rounded-2xl border border-border bg-card p-6">
-        <h2 className="font-display text-lg font-bold text-foreground">Ready to apply?</h2>
-  
       <div className="mt-10 rounded-2xl border border-border bg-card p-6">
         <h2 className="font-display text-lg font-bold text-foreground">Ready to apply?</h2>
         <p className="mt-2 text-sm text-muted-foreground">
