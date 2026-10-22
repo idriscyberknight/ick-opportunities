@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SITE_ORIGIN } from "@/lib/site";
 
 const title = "Terms of Service — ICK Opportunities";
 const description =
@@ -34,7 +35,7 @@ function TermsPage() {
         <section>
           <h2 className="font-display text-xl font-bold text-foreground">1. Acceptance of Terms</h2>
           <p className="mt-2 text-muted-foreground">
-            By accessing or using ICK Opportunities (<strong>ickopportunities.lovable.app</strong>), you agree to be
+            By accessing or using ICK Opportunities (<strong>{new URL(SITE_ORIGIN).hostname}</strong>), you agree to be
             bound by these Terms of Service. If you do not agree to these terms, please do not use the platform.
           </p>
         </section>
