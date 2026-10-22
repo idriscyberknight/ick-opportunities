@@ -62,16 +62,29 @@ const COLOR_PALETTES = [
 
 /** Ciro haruffan farko na kungiya (Monogram) */
 function getMonogram(name: string): string {
-  if (!name || !name.trim()) return "ICK";
-  const clean = name.replace(/[^\w\s]/g, " ").trim();
-  const words = clean.split(/\s+/).filter(Boolean);
+  const words = name
+    .normalize("NFC")
+    .replace(/[^\p{L}\p{N}\p{M}\s]/gu, " ")
+    .trim()
+    .split(/\s+/u)
+    .filter(Boolean);
 
   const first = words[0];
+  if (!first) return "ICK";
+
+  const letters = (word: string): string[] =>
+    Array.from(word).filter((character) =>
+      /[\p{L}\p{N}]/u.test(character),
+    );
+
+  const firstLetters = letters(first);
   const second = words[1];
-  if (first && second && first[0] && second[0]) {
-    return (first[0] + second[0]).toUpperCase();
-  }
-  return clean.slice(0, 2).toUpperCase();
+
+  const initials = second
+    ? [firstLetters[0], letters(second)[0]]
+    : firstLetters.slice(0, 2);
+
+  return initials.filter(Boolean).join("").toUpperCase() || "ICK";
 }
 
 /** Tabbatar da kala iri daya a kowane lokaci ga wannan kungiyar */
@@ -98,7 +111,7 @@ function CategoryIcon({ category, size }: { category?: string; size: "sm" | "md"
   return <Building2 className={iconSize} />;
 }
 
-export function OrganizationAvatar({
+function OrganizationAvatarContent({
   name,
   category,
   logoUrl,
@@ -161,3 +174,16 @@ export function OrganizationAvatar({
     </div>
   );
 }
+export function OrganizationAvatar(props: OrganizationAvatarProps) {
+  const avatarKey = JSON.stringify([
+    props.name,
+    props.logoUrl ?? null,
+  ]);
+
+  return (
+    <OrganizationAvatarContent
+      key={avatarKey}
+      {...props}
+    />
+  );
+        }
