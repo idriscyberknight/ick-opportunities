@@ -14,6 +14,13 @@ export function AuthShell({
   return (
     <div className="mx-auto flex w-full max-w-md flex-col px-4 py-12 sm:py-16">
       <div className="mb-8">
+        <div className="mb-4">
+          <img
+            src="/ick-logo.png"
+            alt="ICK Opportunities"
+            className="h-12 w-12 rounded-xl object-cover shadow-sm ring-1 ring-border/50"
+          />
+        </div>
         <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
           {title}
         </h1>
