@@ -16,9 +16,12 @@ import { Route as GetStartedRouteImport } from './routes/get-started'
 import { Route as GrantsRouteImport } from './routes/grants'
 import { Route as InternshipsRouteImport } from './routes/internships'
 import { Route as JobsRouteImport } from './routes/jobs'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ScholarshipsRouteImport } from './routes/scholarships'
 import { Route as SigninRouteImport } from './routes/signin'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -67,6 +70,11 @@ const JobsRoute = JobsRouteImport.update({
   path: '/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -80,6 +88,16 @@ const ScholarshipsRoute = ScholarshipsRouteImport.update({
 const SigninRoute = SigninRouteImport.update({
   id: '/signin',
   path: '/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -160,9 +178,12 @@ export interface FileRoutesByFullPath {
   '/grants': typeof GrantsRoute
   '/internships': typeof InternshipsRoute
   '/jobs': typeof JobsRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -184,9 +205,12 @@ export interface FileRoutesByTo {
   '/grants': typeof GrantsRoute
   '/internships': typeof InternshipsRoute
   '/jobs': typeof JobsRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -210,9 +234,12 @@ export interface FileRoutesById {
   '/grants': typeof GrantsRoute
   '/internships': typeof InternshipsRoute
   '/jobs': typeof JobsRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -236,9 +263,12 @@ export interface FileRouteTypes {
     | '/grants'
     | '/internships'
     | '/jobs'
+    | '/privacy'
     | '/reset-password'
     | '/scholarships'
     | '/signin'
+    | '/sitemap.xml'
+    | '/terms'
     | '/dashboard'
     | '/onboarding'
     | '/profile'
@@ -260,9 +290,12 @@ export interface FileRouteTypes {
     | '/grants'
     | '/internships'
     | '/jobs'
+    | '/privacy'
     | '/reset-password'
     | '/scholarships'
     | '/signin'
+    | '/sitemap.xml'
+    | '/terms'
     | '/dashboard'
     | '/onboarding'
     | '/profile'
@@ -285,9 +318,12 @@ export interface FileRouteTypes {
     | '/grants'
     | '/internships'
     | '/jobs'
+    | '/privacy'
     | '/reset-password'
     | '/scholarships'
     | '/signin'
+    | '/sitemap.xml'
+    | '/terms'
     | '/_authenticated/dashboard'
     | '/_authenticated/onboarding'
     | '/_authenticated/profile'
@@ -311,9 +347,12 @@ export interface RootRouteChildren {
   GrantsRoute: typeof GrantsRoute
   InternshipsRoute: typeof InternshipsRoute
   JobsRoute: typeof JobsRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ScholarshipsRoute: typeof ScholarshipsRoute
   SigninRoute: typeof SigninRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermsRoute: typeof TermsRoute
   OpportunitiesIdRoute: typeof OpportunitiesIdRoute
   OpportunitiesIndexRoute: typeof OpportunitiesIndexRoute
   ApiPublicHooksDiscoveryRoute: typeof ApiPublicHooksDiscoveryRoute
@@ -370,6 +409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JobsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -389,6 +435,20 @@ declare module '@tanstack/react-router' {
       path: '/signin'
       fullPath: '/signin'
       preLoaderRoute: typeof SigninRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -522,9 +582,12 @@ const rootRouteChildren: RootRouteChildren = {
   GrantsRoute: GrantsRoute,
   InternshipsRoute: InternshipsRoute,
   JobsRoute: JobsRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ScholarshipsRoute: ScholarshipsRoute,
   SigninRoute: SigninRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermsRoute: TermsRoute,
   OpportunitiesIdRoute: OpportunitiesIdRoute,
   OpportunitiesIndexRoute: OpportunitiesIndexRoute,
   ApiPublicHooksDiscoveryRoute: ApiPublicHooksDiscoveryRoute,
