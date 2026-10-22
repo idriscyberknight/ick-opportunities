@@ -1,104 +1,99 @@
 import { Link } from "@tanstack/react-router";
 
-const productLinks = [
-  { to: "/opportunities", label: "Opportunities" },
-  { to: "/get-started", label: "Get Started" },
-  { to: "/signin", label: "Sign In" },
-];
-
-const categoryLinks = [
+const exploreLinks = [
+  { to: "/opportunities", label: "All opportunities" },
   { to: "/scholarships", label: "Scholarships" },
   { to: "/jobs", label: "Jobs" },
   { to: "/internships", label: "Internships" },
   { to: "/grants", label: "Grants" },
-];
+] as const;
+
+const accountLinks = [
+  { to: "/get-started", label: "Create an account" },
+  { to: "/signin", label: "Sign in" },
+  { to: "/saved", label: "Saved opportunities" },
+  { to: "/tracker", label: "Application tracker" },
+] as const;
+
+const policyLinks = [
+  { to: "/privacy", label: "Privacy policy" },
+  { to: "/terms", label: "Terms of service" },
+] as const;
 
 export function Footer() {
   return (
-    <footer className="w-full border-t border-border bg-background">
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-10 md:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] md:gap-8">
+    <footer className="w-full border-t border-border bg-card">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))] lg:gap-8">
           <div className="max-w-sm">
-            <div className="flex items-center gap-2.5">
+            <Link
+              to="/"
+              aria-label="ICK Opportunities home"
+              className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               <img
                 src="/ick-logo.png"
-                alt="ICK Opportunities"
-                className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-border/50"
+                alt=""
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-xl border border-border object-cover"
               />
-              <span className="font-display text-[15px] font-bold tracking-tight text-foreground">
+              <span className="font-display text-base font-extrabold text-foreground">
                 ICK Opportunities
               </span>
-            </div>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              A Nigeria-first platform for discovering reviewed scholarships,
-              jobs, internships and grants, and keeping track of your
-              applications.
+            </Link>
+            <p className="mt-4 text-sm leading-7 text-muted-foreground">
+              Discover scholarships, jobs, internships and grants with clear
+              source information. Always confirm details on the provider's official website.
+            </p>
+            <p className="mt-3 text-xs font-semibold text-muted-foreground">
+              A product of ICK Technologies
             </p>
           </div>
 
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
-              Product
-            </h3>
+          <nav aria-label="Footer: explore">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">Explore</h2>
             <ul className="mt-4 space-y-3">
-              {productLinks.map((link) => (
-                <li key={link.label}>
-                  <Link
-                    to={link.to}
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {link.label}
+              {exploreLinks.map(({ to, label }) => (
+                <li key={to}>
+                  <Link to={to} className="rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    {label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
-              Categories
-            </h3>
+          <nav aria-label="Footer: account">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">Your account</h2>
             <ul className="mt-4 space-y-3">
-              {categoryLinks.map((link) => (
-                <li key={link.label}>
-                  <Link
-                    to={link.to}
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {link.label}
+              {accountLinks.map(({ to, label }) => (
+                <li key={to}>
+                  <Link to={to} className="rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    {label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
-              Company
-            </h3>
-            <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-              <li>ICK Technologies Ltd</li>
-              <li>
-                <Link to="/privacy" className="transition-colors hover:text-foreground">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/terms" className="transition-colors hover:text-foreground">
-                  Terms of Service
-                </Link>
-              </li>
+          <nav aria-label="Footer: company and policies">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">Information</h2>
+            <ul className="mt-4 space-y-3">
+              {policyLinks.map(({ to, label }) => (
+                <li key={to}>
+                  <Link to={to} className="rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
-          </div>
+          </nav>
         </div>
 
-        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} ICK Technologies Ltd. All rights reserved.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Built for young Nigerians chasing their next big break.
-          </p>
+        <div className="mt-12 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} ICK Technologies. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">Nigeria-first. Designed for global opportunities.</p>
         </div>
       </div>
     </footer>
