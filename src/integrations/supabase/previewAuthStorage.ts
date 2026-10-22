@@ -113,7 +113,7 @@ export function brokeredPreviewStorage(): PreviewAuthStorage | undefined {
 
         const reply = readBrokerReply(e.data, requestId);
         if (reply) finish(reply);
-      };a
+      };
       window.addEventListener('message', onMessage);
       const timer = setTimeout(() => { finish(null); }, TIMEOUT);
       const msg: BrokerRequest = { type, requestId, projectId, key };
