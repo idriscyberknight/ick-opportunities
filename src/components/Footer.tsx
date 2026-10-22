@@ -16,7 +16,9 @@ const categoryLinks = [
 export function Footer() {
   return (
     <footer className="w-full border-t border-border bg-background">
-     <div className="max-w-sm">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid gap-10 md:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] md:gap-8">
+          <div className="max-w-sm">
             <div className="flex items-center gap-2.5">
               <img
                 src="/ick-logo.png"
@@ -25,9 +27,6 @@ export function Footer() {
               />
               <span className="font-display text-[15px] font-bold tracking-tight text-foreground">
                 ICK Opportunities
-              </span>
-            </div>
-        
               </span>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
