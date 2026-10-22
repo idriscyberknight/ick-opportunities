@@ -25,7 +25,8 @@ import { EligibilityQuickCheck } from "@/components/EligibilityQuickCheck";
 import { OrganizationAvatar } from "@/components/OrganizationAvatar";
 import { SITE_ORIGIN } from "@/lib/site";
 import { buildOpportunityJsonLd, serializeJsonLd } from "@/lib/structured-data";
-  
+import { ApplicationBlueprint } from "@/components/ApplicationBlueprint";
+
 /** Fallback metadata is used whenever the record is not publicly visible. */
 const FALLBACK_TITLE = "Opportunity details — ICK Opportunities";
 const FALLBACK_DESCRIPTION =
@@ -212,7 +213,15 @@ function OpportunityDetailPage() {
       <Section title="About this opportunity" body={data.description} />
       <Section title="Eligibility" body={data.eligibility} />
       <Section title="Benefits" body={data.benefits} />
+      <Section title="About this opportunity" body={data.description} />
+      <Section title="Eligibility" body={data.eligibility} />
+      <Section title="Benefits" body={data.benefits} />
 
+      <ApplicationBlueprint opportunity={data} />
+
+      <div className="mt-10 rounded-2xl border border-border bg-card p-6">
+        <h2 className="font-display text-lg font-bold text-foreground">Ready to apply?</h2>
+  
       <div className="mt-10 rounded-2xl border border-border bg-card p-6">
         <h2 className="font-display text-lg font-bold text-foreground">Ready to apply?</h2>
         <p className="mt-2 text-sm text-muted-foreground">
