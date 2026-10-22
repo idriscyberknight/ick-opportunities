@@ -24,6 +24,59 @@ interface BrokerReply {
 
 const RESULT = 'lovable-preview-auth:result';
 
+function createSafeBrowserStorage() {
+  const memory = new Map<string, string>();
+  let memoryOnly = false;
+
+  return {
+    getItem(key: string): string | null {
+      if (!memoryOnly) {
+        try {
+          const value = window.localStorage.getItem(key);
+
+          if (value === null) {
+            memory.delete(key);
+          } else {
+            memory.set(key, value);
+          }
+
+          return value;
+        } catch {
+          memoryOnly = true;
+        }
+      }
+
+      return memory.get(key) ?? null;
+    },
+
+    setItem(key: string, value: string): void {
+      memory.set(key, value);
+
+      if (!memoryOnly) {
+        try {
+          window.localStorage.setItem(key, value);
+        } catch {
+          memoryOnly = true;
+        }
+      }
+    },
+
+    removeItem(key: string): void {
+      memory.delete(key);
+
+      if (!memoryOnly) {
+        try {
+          window.localStorage.removeItem(key);
+        } catch {
+          // Stay in memory mode so this instance cannot reread
+          // a stale value that the browser refused to remove.
+          memoryOnly = true;
+        }
+      }
+    },
+  };
+}
+
 function readBrokerReply(
   data: unknown,
   requestId: string,
@@ -66,6 +119,8 @@ function readBrokerReply(
  */
 export function brokeredPreviewStorage(): PreviewAuthStorage | undefined {
   if (typeof window === 'undefined') return undefined;
+  
+  const browserStorage = createSafeBrowserStorage();
   const host = location.hostname;
   const PREVIEW_ZONES = ['lovableproject.com', 'lovableproject-dev.com', 'lovable.app', 'gpt-eng.com', 'gptengineer.run'];
   const onPreviewZone = PREVIEW_ZONES.some((z) => host === z || host.endsWith('.' + z));
