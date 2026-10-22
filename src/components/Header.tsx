@@ -21,9 +21,11 @@ function Wordmark() {
       to="/"
       className="flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-[13px] font-extrabold tracking-tight text-primary-foreground">
-        ICK
-      </span>
+      <img
+        src="/ick-logo.png"
+        alt="ICK Opportunities"
+        className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-border/50"
+      />
       <span className="flex min-w-0 flex-col leading-none">
         <span className="truncate font-display text-[15px] font-bold tracking-tight text-foreground">
           ICK Opportunities
@@ -35,6 +37,7 @@ function Wordmark() {
     </Link>
   );
 }
+
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
