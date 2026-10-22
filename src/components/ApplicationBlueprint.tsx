@@ -1,366 +1,270 @@
 import { useId, useState } from "react";
-import {
-  FileText,
-  ListChecks,
-  ShieldCheck,
-  AlertTriangle,
-  Clock,
-  Sparkles,
-} from "lucide-react";
-import { formatDeadline } from "@/lib/opportunities";
+import { ClipboardList, Info } from "lucide-react";
 
 interface Props {
   opportunity: {
-    id?: string;
-    title: string;
-    organization: string;
+    id: string;
     category: string;
-    country: string | null;
-    deadline: string | null;
-    official_link: string | null;
   };
 }
 
-interface ChecklistItem {
+interface PreparationItem {
   id: string;
   label: string;
   hint: string;
-  isCrucial?: boolean;
 }
 
-function getCategoryDocuments(category: string): ChecklistItem[] {
+function getSuggestions(category: string): PreparationItem[] {
   switch (category) {
     case "scholarship":
       return [
         {
-          id: "passport",
-          label: "Valid International Passport or National ID (NIN)",
-          hint: "Ensure your travel passport is valid for at least 6 months beyond the start date.",
-          isCrucial: true,
+          id: "academic",
+          label: "Academic records",
+          hint: "Check whether the provider requests transcripts, certificates or other academic evidence.",
         },
         {
-          id: "transcripts",
-          label: "Certified Academic Transcripts & Certificates",
-          hint: "Scanned in crisp high-resolution PDF format (under 2MB per file).",
-          isCrucial: true,
+          id: "statement",
+          label: "Personal statement",
+          hint: "Prepare one only if requested. Follow the provider's topic and word limit.",
         },
         {
-          id: "sop",
-          label: "Statement of Purpose / Motivation Essay",
-          hint: "A clear, tailored 500-1,000 word essay stating your background and academic goals.",
-          isCrucial: true,
-        },
-        {
-          id: "recommendations",
-          label: "2-3 Letters of Academic/Professional Recommendation",
-          hint: "Signed letters on official letterhead from former lecturers or supervisors.",
-        },
-        {
-          id: "cv",
-          label: "Updated Academic CV / Resume",
-          hint: "Highlight research, publications, leadership roles, and honors.",
-        },
-        {
-          id: "language",
-          label: "Language Proficiency Proof (if requested by institution)",
-          hint: "English proficiency letter from university, or IELTS/TOEFL if mandatory.",
+          id: "references",
+          label: "References",
+          hint: "Confirm whether references are needed and how referees should submit them.",
         },
       ];
+
     case "job":
       return [
         {
           id: "resume",
-          label: "Tailored ATS-Friendly Resume",
-          hint: "Reflect the specific keywords, tools, and technical competencies listed in the vacancy.",
-          isCrucial: true,
+          label: "CV or résumé",
+          hint: "Check the vacancy instructions and tailor your experience to the role.",
         },
         {
-          id: "cover_letter",
-          label: "Targeted Cover Letter",
-          hint: "Explain why you want to work with this company and the exact problem you will solve.",
-          isCrucial: true,
+          id: "cover-letter",
+          label: "Cover letter",
+          hint: "Include one if requested or accepted by the employer.",
         },
         {
-          id: "portfolio",
-          label: "Proof of Work / Portfolio / GitHub Link",
-          hint: "Live links showing real-world projects, repos, or published works.",
-        },
-        {
-          id: "references",
-          label: "Professional References",
-          hint: "Contact details of 2 past direct managers or team leads who can vouch for your work.",
+          id: "work-samples",
+          label: "Portfolio or work samples",
+          hint: "Provide relevant examples only when requested or appropriate.",
         },
       ];
+
     case "internship":
       return [
         {
-          id: "student_resume",
-          label: "Student or Early-Career Resume",
-          hint: "Emphasize coursework, projects, leadership, certifications, and soft skills.",
-          isCrucial: true,
+          id: "resume",
+          label: "CV or résumé",
+          hint: "Consider relevant coursework, projects and experience.",
         },
         {
-          id: "student_id",
-          label: "Student Identity / Introduction Letter",
-          hint: "Official letter from your department confirming current enrollment.",
-          isCrucial: true,
+          id: "status-evidence",
+          label: "Education or graduation evidence",
+          hint: "Check the actual eligibility rules. An internship may accept students, graduates or both.",
         },
         {
-          id: "motivation",
-          label: "Personal Statement of Interest",
-          hint: "Why you want this internship and what you hope to learn.",
-        },
-        {
-          id: "transcript",
-          label: "Recent Academic Transcript",
-          hint: "Official or unofficial university grades record.",
+          id: "statement",
+          label: "Statement of interest",
+          hint: "Prepare one if the application asks for it.",
         },
       ];
+
     case "grant":
       return [
         {
           id: "proposal",
-          label: "Project Proposal / Business Plan",
-          hint: "Outlining the problem, solution, target market, and measurable social impact.",
-          isCrucial: true,
+          label: "Project or business proposal",
+          hint: "Use the funder's requested format and explain the proposed work.",
         },
         {
           id: "budget",
-          label: "Itemized Budget & Milestones",
-          hint: "Clear spreadsheet detailing how every dollar/naira of the grant will be spent.",
-          isCrucial: true,
+          label: "Budget",
+          hint: "Check eligible costs, currency and any required budget template.",
         },
         {
-          id: "cac",
-          label: "Business Registration / Legal Identity (CAC)",
-          hint: "Certificate of incorporation or formal registered association papers (if applicable).",
-        },
-        {
-          id: "pitch_deck",
-          label: "Pitch Deck / Executive Summary",
-          hint: "A clean 10-12 slide presentation explaining your venture.",
+          id: "supporting-evidence",
+          label: "Supporting evidence",
+          hint: "Confirm whether registration documents, references or other evidence are required.",
         },
       ];
+
     default:
       return [
         {
-          id: "id_proof",
-          label: "Identity Document (Passport or NIN)",
-          hint: "Clear identification matching the exact name on your application.",
-          isCrucial: true,
+          id: "instructions",
+          label: "Application instructions",
+          hint: "Read the provider's current instructions before preparing documents.",
         },
         {
-          id: "qualifications",
-          label: "Educational / Professional Credentials",
-          hint: "Degrees, certificates, or evidence of eligibility.",
-          isCrucial: true,
-        },
-        {
-          id: "motivation",
-          label: "Statement of Intent / Motivation",
-          hint: "Detailed explanation of your goals and fit for this opportunity.",
+          id: "supporting-evidence",
+          label: "Supporting evidence",
+          hint: "Prepare only the documents requested for this opportunity.",
         },
       ];
   }
 }
 
-const applicationSteps = [
-  {
-    step: "01",
-    title: "Document & Eligibility Audit",
-    description:
-      "Gather and scan all required documents in PDF format. Keep each file under 2MB and name them clearly (e.g., 'Fullname_Transcript.pdf').",
-  },
-  {
-    step: "02",
-    title: "Register on the Official Portal",
-    description:
-      "Create your account using a professional personal email. Never use shared cyber café emails or give passwords to third parties.",
-  },
-  {
-    step: "03",
-    title: "Complete Form & Upload Verified Files",
-    description:
-      "Ensure your name spelling matches your official identity document exactly. Carefully upload each required file to its dedicated slot.",
-  },
-  {
-    step: "04",
-    title: "Final Review & Early Submission",
-    description:
-      "Submit at least 48 to 72 hours before the deadline to prevent server crashes. Download and save your submission confirmation receipt.",
-  },
-];
-
-export function ApplicationBlueprint({ opportunity }: Props) {
+function PreparationChecklist({ opportunity }: Props) {
   const headingId = useId();
-  const docs = getCategoryDocuments(opportunity.category);
-  const [completedDocs, setCompletedDocs] = useState<Record<string, boolean>>({});
+  const items = getSuggestions(opportunity.category);
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
 
-  const toggleDoc = (id: string) => {
-    setCompletedDocs((prev: Record<string, boolean>) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
+  const completedCount = items.filter(
+    (item) => checked[item.id] === true,
+  ).length;
 
-  const completedCount = Object.values(completedDocs).filter(Boolean).length;
-  const totalDocs = docs.length;
-  const progressPercent = Math.round((completedCount / totalDocs) * 100);
+  const progress = Math.round(
+    (completedCount / items.length) * 100,
+  );
 
   return (
     <section
       aria-labelledby={headingId}
-      className="mt-10 overflow-hidden rounded-2xl border border-border bg-card shadow-xs"
+      className="mt-10 overflow-hidden rounded-2xl border border-border bg-card"
     >
-      {/* Header */}
       <div className="border-b border-border bg-muted/40 p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <ListChecks className="h-5 w-5" />
-            </span>
-            <div>
-              <h2 id={headingId} className="font-display text-lg font-bold text-foreground">
-                Application Blueprint
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Step-by-step roadmap & document preparation checklist
-              </p>
-            </div>
-          </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-semibold text-success">
-            <ShieldCheck className="h-3.5 w-3.5" /> ₦0 Application Fee Guaranteed
-          </span>
+        <div className="flex items-center gap-3">
+          <ClipboardList
+            className="h-6 w-6 shrink-0 text-primary"
+            aria-hidden="true"
+          />
+          <h2
+            id={headingId}
+            className="font-display text-lg font-bold text-foreground"
+          >
+            Application Preparation
+          </h2>
         </div>
 
-        {/* Progress Tracker */}
-        <div className="mt-5 rounded-xl border border-border/80 bg-background/80 p-3.5 sm:p-4">
-          <div className="flex items-center justify-between text-xs sm:text-sm">
-            <span className="font-medium text-foreground">
-              Document Readiness:{" "}
-              <strong className="text-primary">
-                {completedCount} of {totalDocs} prepared
-              </strong>
-            </span>
-            <span className="font-semibold text-muted-foreground">{progressPercent}%</span>
-          </div>
-          <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          {progressPercent === 100 && (
-            <p className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-success">
-              <Sparkles className="h-3.5 w-3.5" /> All documents marked ready! You are prepared to apply on the official portal.
-            </p>
-          )}
-        </div>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          These are general preparation suggestions for this category,
+          not a verified list of this provider&apos;s requirements.
+          Some suggestions may not apply, and additional documents may
+          be required. Follow the current instructions on the provider&apos;s
+          own application page.
+        </p>
       </div>
 
-      <div className="p-5 sm:p-6 space-y-8">
-        {/* Document Checklist */}
-        <div>
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <FileText className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold">Required Documents Checklist</h3>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Check off each document as you prepare and scan it into PDF format.
+      <div className="space-y-6 p-5 sm:p-6">
+        <div className="rounded-xl border border-border bg-background p-4">
+          <p
+            role="status"
+            className="text-sm font-medium text-foreground"
+          >
+            {completedCount} of {items.length} preparation suggestions
+            marked reviewed
           </p>
 
-          <fieldset className="mt-3.5 space-y-2.5">
-            <legend className="sr-only">Document preparation checklist</legend>
-            {docs.map((doc) => {
-              const isChecked = !!completedDocs[doc.id];
-              return (
-                <label
-                  key={doc.id}
-                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors ${
-                    isChecked
-                      ? "border-primary/40 bg-primary/5"
-                      : "border-border/80 bg-background hover:bg-muted/30"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => toggleDoc(doc.id)}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded accent-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`text-sm font-medium ${
-                          isChecked ? "text-primary line-through" : "text-foreground"
-                        }`}
-                      >
-                        {doc.label}
-                      </span>
-                      {doc.isCrucial && (
-                        <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
-                          Mandatory
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">{doc.hint}</p>
-                  </div>
-                </label>
-              );
-            })}
-          </fieldset>
+          <progress
+            value={completedCount}
+            max={items.length}
+            aria-label="Preparation suggestions reviewed"
+            className="mt-3 block h-2 w-full accent-primary"
+          >
+            {progress}%
+          </progress>
+
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            This records your own review only. It does not confirm
+            eligibility, document completeness, submission or selection.
+            Selections are temporary and are not saved to your account.
+          </p>
         </div>
 
-        {/* 4-Step Application Roadmap */}
-        <div>
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Clock className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold">Step-by-Step Portal Submission Roadmap</h3>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Follow these sequential stages to complete your official application without errors.
-          </p>
+        <fieldset>
+          <legend className="text-sm font-semibold text-foreground">
+            Suggested preparation — check what applies
+          </legend>
 
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {applicationSteps.map((s) => (
-              <div
-                key={s.step}
-                className="relative rounded-xl border border-border/70 bg-background/50 p-4 transition-colors hover:border-border"
+          <div className="mt-3 space-y-3">
+            {items.map((item) => (
+              <label
+                key={item.id}
+                className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-background p-4"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-secondary/10 font-mono text-xs font-bold text-secondary">
-                    {s.step}
+                <input
+                  type="checkbox"
+                  checked={checked[item.id] === true}
+                  onChange={(event) => {
+                    const nextChecked = event.currentTarget.checked;
+
+                    setChecked((previous) => ({
+                      ...previous,
+                      [item.id]: nextChecked,
+                    }));
+                  }}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                />
+
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-foreground">
+                    {item.label}
                   </span>
-                  <h4 className="text-sm font-semibold text-foreground">{s.title}</h4>
-                </div>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  {s.description}
-                </p>
-              </div>
+                  <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
+                    {item.hint}
+                  </span>
+                </span>
+              </label>
             ))}
           </div>
+        </fieldset>
+
+        <div className="rounded-xl border border-border bg-muted/30 p-4">
+          <h3 className="text-sm font-semibold text-foreground">
+            Before submitting
+          </h3>
+
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted-foreground">
+            <li>
+              Confirm that applications are open and check the closing
+              date, time and time zone with the provider.
+            </li>
+            <li>
+              Confirm eligibility, required documents, file formats,
+              upload limits and any translation requirements.
+            </li>
+            <li>
+              Check application fees and other costs directly with the
+              provider. This checklist does not verify fee information.
+            </li>
+            <li>
+              Review your answers before submitting and retain any
+              confirmation supplied by the application portal.
+            </li>
+          </ul>
         </div>
 
-        {/* Security / Scam Advisory Notice */}
-        <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 text-xs text-foreground">
-          <div className="flex items-start gap-2.5">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
-            <div className="space-y-1">
-              <strong className="font-semibold">Important Security Reminder:</strong>
-              <p className="leading-relaxed text-muted-foreground">
-                Never pay money or agent fees to anyone promising guaranteed admission or selection.
-                Official portals for {opportunity.organization} handle applications through their own
-                secured domain. Always confirm deadline:{" "}
-                <span className="font-medium text-foreground">
-                  {formatDeadline(opportunity.deadline)}
-                </span>
-                .
-              </p>
-            </div>
-          </div>
+        <div className="flex items-start gap-3 rounded-xl border border-border p-4">
+          <Info
+            className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+            aria-hidden="true"
+          />
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Verify the provider&apos;s website before entering personal
+            information or paying any stated fee. Do not share passwords
+            or one-time codes with anyone promising admission, funding
+            or employment.
+          </p>
         </div>
       </div>
     </section>
   );
-    }
-          
+}
+
+export function ApplicationBlueprint({ opportunity }: Props) {
+  const checklistKey = JSON.stringify([
+    opportunity.id,
+    opportunity.category,
+  ]);
+
+  return (
+    <PreparationChecklist
+      key={checklistKey}
+      opportunity={opportunity}
+    />
+  );
+          }
