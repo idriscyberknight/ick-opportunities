@@ -1,208 +1,365 @@
-// ICK-owned auth storage. Derived from the reviewed Lovable broker protocol.
-// Review alongside vite.config.ts when the generated integration changes.
+import { useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import {
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  ExternalLink,
+  Globe2,
+  GraduationCap,
+  MapPin,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { formatDeadline, type Opportunity } from "@/lib/opportunities";
 
-/** Storage accepted by Supabase's `auth.storage` option; `localStorage` and the editor broker both satisfy it. */
-export interface PreviewAuthStorage {
-  getItem: (key: string) => string | null | Promise<string | null>;
-  setItem: (key: string, value: string) => void | Promise<void>;
-  removeItem: (key: string) => void | Promise<void>;
+export const Route = createFileRoute("/scholarship-navigator")({
+  head: () => ({
+    meta: [
+      { title: "Scholarship Navigator — ICK Opportunities" },
+      {
+        name: "description",
+        content:
+          "Explore Islamic universities, European scholarship sources, and ICK's reviewed scholarship listings. Always check official requirements.",
+      },
+      { property: "og:title", content: "Scholarship Navigator — ICK Opportunities" },
+      { property: "og:type", content: "website" },
+    ],
+  }),
+  component: ScholarshipNavigatorPage,
+});
+
+type Region = "all" | "islamic" | "europe";
+
+type OfficialResource = {
+  name: string;
+  location: string;
+  region: Exclude<Region, "all">;
+  description: string;
+  href: string;
+};
+
+// Institutional and programme information pages, NOT claims of an open scholarship.
+// These links must be maintained by the ICK editorial team.
+const OFFICIAL_RESOURCES: OfficialResource[] = [
+  {
+    name: "Islamic University of Madinah",
+    location: "Saudi Arabia",
+    region: "islamic",
+    description: "University admission and registration information.",
+    href: "https://iu.edu.sa/en-us/Deanship-Admission-Registration",
+  },
+  {
+    name: "Al-Azhar — International Students",
+    location: "Egypt",
+    region: "islamic",
+    description: "Official guidance and scholarship information for international students.",
+    href: "https://azhar.eg/foreignstudent/en/Enrollment-and-Registration",
+  },
+  {
+    name: "International Islamic University Malaysia",
+    location: "Malaysia",
+    region: "islamic",
+    description: "Official admissions and programme information.",
+    href: "https://www.iium.edu.my/admissions/",
+  },
+  {
+    name: "Erasmus Mundus Joint Masters",
+    location: "Europe (multiple destinations)",
+    region: "europe",
+    description: "European Commission programme information and course search.",
+    href: "https://erasmus-plus.ec.europa.eu/opportunities/individuals/students/erasmus-mundus-joint-masters",
+  },
+  {
+    name: "DAAD Scholarships",
+    location: "Germany",
+    region: "europe",
+    description: "Official German scholarship information and funding database guidance.",
+    href: "https://www.daad.de/en/studying-in-germany/scholarships/daad-scholarships/",
+  },
+];
+
+const REGION_OPTIONS: Array<{
+  value: Region;
+  title: string;
+  description: string;
+}> = [
+  { value: "all", title: "All scholarships", description: "Global opportunities" },
+  { value: "islamic", title: "Islamic universities", description: "University starting points" },
+  { value: "europe", title: "European scholarships", description: "European funding sources" },
+];
+
+const EUROPEAN_COUNTRIES = new Set([
+  "austria", "belgium", "denmark", "finland", "france", "germany", "greece",
+  "ireland", "italy", "netherlands", "norway", "poland", "portugal", "spain",
+  "sweden", "switzerland", "united kingdom", "uk", "europe", "european union",
+]);
+
+const ISLAMIC_INSTITUTION_NAMES = [
+  "islamic university of madinah",
+  "islamic university of medinah",
+  "al-azhar",
+  "al azhar",
+  "international islamic university malaysia",
+  "iium",
+];
+
+function isFromRegion(opportunity: Opportunity, region: Region): boolean {
+  if (region === "all") return true;
+  const name = `${opportunity.title} ${opportunity.organization}`.toLowerCase();
+  if (region === "islamic") {
+    return ISLAMIC_INSTITUTION_NAMES.some((namePart) => name.includes(namePart));
+  }
+  const country = opportunity.country?.toLowerCase().trim() ?? "";
+  return EUROPEAN_COUNTRIES.has(country) || /erasmus|daad|european union|european commission/.test(name);
 }
 
-
-/**
- * Preserve normal cross-tab localStorage reads. If a write is blocked,
- * keep that key in memory for this page lifetime.
- * A failed durable deletion is reported rather than silently called success.
- */
-export function createSafeBrowserStorage(
-  getStorage: () => Storage = () => window.localStorage,
-): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> {
-  const pending = new Map<string, string | null>();
-  const cache = new Map<string, string | null>();
-  return {
-    getItem(key) {
-      if (pending.has(key)) return pending.get(key) ?? null;
-      try {
-        const value = getStorage().getItem(key) || null;
-        cache.set(key, value);
-        return value;
-      } catch {
-        return cache.get(key) ?? null;
-      }
-    },
-    setItem(key, value) {
-      cache.set(key, value);
-      try {
-        getStorage().setItem(key, value);
-        pending.delete(key);
-      } catch {
-        pending.set(key, value);
-      }
-    },
-    removeItem(key) {
-      cache.delete(key);
-      pending.set(key, null);
-      try {
-        getStorage().removeItem(key);
-        pending.delete(key);
-      } catch {
-        try {
-          // Existing broker protocol uses an empty string as a logout tombstone.
-          getStorage().setItem(key, '');
-          pending.delete(key);
-        } catch {
-          throw new Error(
-            'Auth storage could not be cleared. Allow site storage and retry sign out.',
-          );
-        }
-      }
-    },
-  };
+function localDateISO(): string {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-type BrokerRequestType = 'lovable-preview-auth:get' | 'lovable-preview-auth:set' | 'lovable-preview-auth:remove';
-
-interface BrokerRequest {
-  type: BrokerRequestType;
-  requestId: string;
-  projectId: string;
-  key: string;
-  value?: string;
+async function fetchReviewedScholarships(): Promise<Opportunity[]> {
+  // Apply visibility criteria explicitly even when an admin is signed in.
+  // RLS must independently enforce public access at the database level.
+  const { data, error } = await supabase
+    .from("opportunities")
+    .select("*")
+    .eq("category", "scholarship")
+    .eq("status", "active")
+    .eq("verified_status", "verified")
+    .not("published_at", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? []).filter((opportunity) =>
+    !opportunity.deadline || opportunity.deadline >= localDateISO(),
+  );
 }
 
-interface BrokerReply {
-  ok: boolean;
-  value: string | null;
-}
+function ScholarshipNavigatorPage() {
+  const [region, setRegion] = useState<Region>("all");
+  const [keyword, setKeyword] = useState("");
+  const [destination, setDestination] = useState("all");
+  const { data = [], isPending, isError, refetch } = useQuery({
+    queryKey: ["scholarship-navigator", "reviewed-scholarships", "v1"],
+    queryFn: fetchReviewedScholarships,
+    staleTime: 60_000,
+  });
 
-const RESULT = 'lovable-preview-auth:result';
+  const destinations = useMemo(
+    () => Array.from(new Set([
+      ...OFFICIAL_RESOURCES.map((item) => item.location),
+      ...data.map((item) => item.country).filter((v): v is string => !!v),
+    ])).sort(),
+    [data],
+  );
 
-function readBrokerReply(data: unknown, requestId: string): BrokerReply | null {
-  if (typeof data !== 'object' || data === null) return null;
-  if (!('type' in data) || data.type !== RESULT) return null;
-  if (!('requestId' in data) || data.requestId !== requestId) return null;
-  if (!('ok' in data) || typeof data.ok !== 'boolean') return null;
-  if (!('value' in data) || (data.value !== null && typeof data.value !== 'string')) return null;
-  return {
-    ok: data.ok,
-    value: data.value,
-  };
-}
+  const term = keyword.trim().toLowerCase();
+  const visibleResources = OFFICIAL_RESOURCES.filter((resource) => {
+    if (region !== "all" && resource.region !== region) return false;
+    if (destination !== "all" && resource.location !== destination) return false;
+    return !term || [resource.name, resource.location, resource.description]
+      .some((text) => text.toLowerCase().includes(term));
+  });
 
-/**
- * On a Lovable preview surface, broker the auth session to the editor over
- * postMessage so the project's preview surfaces share one login; else localStorage.
- */
-export function brokeredPreviewStorage(): PreviewAuthStorage | undefined {
-  if (typeof window === 'undefined') return undefined;
-  const browserStorage = createSafeBrowserStorage();
-  const host = location.hostname;
-  const PREVIEW_ZONES = ['lovableproject.com', 'lovableproject-dev.com', 'lovable.app', 'gpt-eng.com', 'gptengineer.run'];
-  const onPreviewZone = PREVIEW_ZONES.some((z) => host === z || host.endsWith('.' + z));
-  // Read the id only from non-user-controlled host positions, so a user-named
-  // preview--<name> host can't smuggle another project's id.
-  const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}';
-  const projectId = onPreviewZone
-    ? (new RegExp('^(?:id-preview(?:-[a-z0-9]+)?|project)--(' + UUID + ')(?:-dev)?(?=\\.|$)', 'i').exec(host)?.[1]
-        ?? new RegExp('^(' + UUID + ')(?=[.-])', 'i').exec(host)?.[1])
-    : undefined;
-  // lib.dom types window.parent and location.ancestorOrigins as always set, but a
-  // detached frame has no parent and not every browser implements ancestorOrigins.
-  const parentWindow = window.parent as Window | null;
-  const framed = parentWindow !== null && parentWindow !== window;
-  if (!projectId || !framed) return browserStorage;
+  const visibleScholarships = data.filter((opportunity) => {
+    if (!isFromRegion(opportunity, region)) return false;
+    if (destination !== "all" && opportunity.country !== destination) return false;
+    return !term || [
+      opportunity.title,
+      opportunity.organization,
+      opportunity.country,
+      opportunity.description,
+    ].filter(Boolean).some((text) => text!.toLowerCase().includes(term));
+  });
 
-  // Post only to the real editor ancestor, validated as a Lovable origin, so the
-  // session token can never reach an untrusted embedder.
-  const dev = host.endsWith('.lovableproject-dev.com') || host.endsWith('.gpt-eng.com');
-  const EDITOR = dev
-    ? /^https:\/\/([a-z0-9-]+\.)*(lovable\.dev|gptengineer\.app)$|^http:\/\/localhost:3000$/
-    : /^https:\/\/([a-z0-9-]+\.)*(lovable\.dev|gptengineer\.app)$/;
-  const ancestorOrigins = location.ancestorOrigins as DOMStringList | undefined;
-  let referrerOrigin = '';
-  try { referrerOrigin = document.referrer ? new URL(document.referrer).origin : ''; } catch { /* Ignore malformed referrers. */ }
-  const ancestor = ancestorOrigins?.[0] ?? referrerOrigin;
-  const editorOrigins = ancestor && EDITOR.test(ancestor)
-    ? [ancestor]
-    : (dev ? ['https://lovable.dev', 'http://localhost:3000'] : ['https://lovable.dev']);
-  const TIMEOUT = 2000;
-  const newId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <section className="border-b border-border bg-card">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground">
+            <GraduationCap aria-hidden="true" className="h-4 w-4 text-secondary" />
+            ICK Scholarship Navigator · Beta
+          </div>
+          <h1 className="mt-5 max-w-3xl font-display text-3xl font-extrabold tracking-tight sm:text-5xl">
+            Explore universities. Find scholarship opportunities.
+          </h1>
+          <p className="mt-5 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            Begin with Islamic universities, European scholarship programmes and global funding.
+            Browse official information, then check reviewed ICK listings when available.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a href="#navigator-search" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              Find a scholarship <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </a>
+            <Link to="/scholarships" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              All scholarship listings
+            </Link>
+          </div>
+        </div>
+      </section>
 
-  const request = (type: BrokerRequestType, key: string, value?: string): Promise<BrokerReply | null> =>
-    new Promise((resolve) => {
-      const requestId = newId();
-      let done = false;
-      const finish = (reply: BrokerReply | null) => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        window.removeEventListener('message', onMessage);
-        resolve(reply);
-      };
-      const onMessage = (e: MessageEvent<unknown>) => {
-        if (e.source !== parentWindow) return;
-        if (!editorOrigins.includes(e.origin)) return;
-        const reply = readBrokerReply(e.data, requestId);
-        if (reply) finish(reply);
-      };
-      window.addEventListener('message', onMessage);
-      const timer = setTimeout(() => { finish(null); }, TIMEOUT);
-      const msg: BrokerRequest = { type, requestId, projectId, key };
-      if (value !== undefined) msg.value = value;
-      // targetOrigin per trusted editor origin, so a session token never reaches an arbitrary embedder.
-      try {
-        for (const origin of editorOrigins) parentWindow.postMessage(msg, origin);
-      } catch {
-        finish(null);
+      <div className="mx-auto max-w-7xl space-y-12 px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+        <section aria-labelledby="path-heading">
+          <h2 id="path-heading" className="font-display text-xl font-bold sm:text-2xl">Choose where to explore</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            These browse categories are guides, not proof that a scholarship is accepting applications.
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {REGION_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={region === option.value}
+                onClick={() => { setRegion(option.value); setDestination("all"); }}
+                className={`min-h-24 rounded-xl border p-5 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${region === option.value ? "border-secondary bg-secondary/10" : "border-border bg-card hover:bg-muted"}`}
+              >
+                <span className="block font-display text-base font-bold">{option.title}</span>
+                <span className="mt-1 block text-sm text-muted-foreground">{option.description}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section aria-labelledby="search-heading" id="navigator-search">
+          <h2 id="search-heading" className="font-display text-xl font-bold sm:text-2xl">Search the navigator</h2>
+          <div className="mt-5 grid gap-4 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2 sm:p-6">
+            <div>
+              <label htmlFor="scholarship-keyword" className="mb-2 block text-sm font-semibold">University, programme or keyword</label>
+              <div className="relative">
+                <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  id="scholarship-keyword"
+                  value={keyword}
+                  onChange={(event) => setKeyword(event.target.value)}
+                  placeholder="e.g. Madinah, Erasmus, engineering"
+                  className="min-h-11 w-full rounded-lg border border-input bg-background py-2.5 pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="scholarship-destination" className="mb-2 block text-sm font-semibold">Institution location / listing destination</label>
+              <select
+                id="scholarship-destination"
+                value={destination}
+                onChange={(event) => setDestination(event.target.value)}
+                className="min-h-11 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                <option value="all">All destinations</option>
+                {destinations.map((place) => <option key={place} value={place}>{place}</option>)}
+              </select>
+            </div>
+          </div>
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            This first version searches official resource cards and a limited set of published ICK records.
+            Nationality, course eligibility and current admission cycles are not verified by this search.
+          </p>
+        </section>
+
+        <section aria-labelledby="resources-heading">
+          <div className="flex items-center gap-3">
+            <Globe2 aria-hidden="true" className="h-5 w-5 text-secondary" />
+            <h2 id="resources-heading" className="font-display text-xl font-bold sm:text-2xl">Official starting points</h2>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            These are information sources, not confirmed open scholarships. Always check dates, funding and eligibility on each provider's site.
+          </p>
+          {visibleResources.length === 0 ? (
+            <div className="mt-5 rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
+              No official resource cards match these filters. Try a different search.
+            </div>
+          ) : (
+            <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {visibleResources.map((resource) => (
+                <article key={resource.href} className="flex flex-col rounded-xl border border-border bg-card p-5">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                    <MapPin aria-hidden="true" className="h-4 w-4" />{resource.location}
+                  </div>
+                  <h3 className="mt-3 font-display text-lg font-bold">{resource.name}</h3>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{resource.description}</p>
+                  <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                    Scholarship application status: not confirmed here
+                  </p>
+                  <a href={resource.href} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-secondary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+                    Visit official source <ExternalLink aria-hidden="true" className="h-4 w-4" />
+                    <span className="sr-only">(opens a new tab)</span>
+                  </a>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section aria-labelledby="listings-heading">
+          <div className="flex items-center gap-3">
+            <BookOpen aria-hidden="true" className="h-5 w-5 text-secondary" />
+            <h2 id="listings-heading" className="font-display text-xl font-bold sm:text-2xl">Reviewed ICK scholarship listings</h2>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Only published, verified-status scholarship records appear here. Final application requirements come from the provider.
+          </p>
+
+          {isPending ? (
+            <p className="mt-6 text-sm text-muted-foreground" role="status">Loading scholarship records…</p>
+          ) : isError ? (
+            <div className="mt-5 rounded-xl border border-destructive/40 bg-card p-5">
+              <p className="text-sm text-destructive" role="alert">Scholarship listings could not be loaded.</p>
+              <button type="button" onClick={() => void refetch()} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold hover:bg-muted">
+                <RefreshCw aria-hidden="true" className="h-4 w-4" /> Try again
+              </button>
+            </div>
+          ) : visibleScholarships.length === 0 ? (
+            <div className="mt-5 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+              <ShieldCheck aria-hidden="true" className="mx-auto h-8 w-8 text-success" />
+              <h3 className="mt-4 font-display text-lg font-bold">No matching published scholarships</h3>
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                There are no published ICK listings matching these filters at the moment.
+                You can still consult the official resources above. This does not mean applications are closed everywhere.
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="mt-5 text-sm text-muted-foreground" role="status">
+                {visibleScholarships.length} matching listing{visibleScholarships.length === 1 ? "" : "s"} within the current result set
+              </p>
+              <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {visibleScholarships.map((opportunity) => (
+                  <article key={opportunity.id} className="flex flex-col rounded-xl border border-border bg-card p-5">
+                    <span className="w-fit rounded-md bg-success/10 px-2 py-1 text-xs font-semibold text-success">Reviewed record</span>
+                    <h3 className="mt-3 font-display text-lg font-bold leading-snug">{opportunity.title}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{opportunity.organization}</p>
+                    <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+                      <p className="flex items-center gap-2"><MapPin aria-hidden="true" className="h-4 w-4" />{opportunity.country || "Destination not specified"}</p>
+                      <p className="flex items-center gap-2"><CalendarDays aria-hidden="true" className="h-4 w-4" />{formatDeadline(opportunity.deadline)}</p>
+                    </div>
+                    <Link to="/opportunities/$id" params={{ id: opportunity.id }} className="mt-5 inline-flex min-h-11 items-center gap-2 border-t border-border pt-3 text-sm font-semibold text-secondary hover:underline">
+                      Check listing details <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                    </Link>
+                  </article>
+                ))}
+              </div>
+              {data.length >= 200 && (
+                <p className="mt-4 text-xs text-muted-foreground">
+                  This beta searches only the newest 200 eligible records; further pagination is planned.
+                </p>
+              )}
+            </>
+          )}
+        </section>
+
+        <aside className="rounded-2xl border border-border bg-muted/50 p-5 sm:p-7" aria-labelledby="guidance-heading">
+          <h2 id="guidance-heading" className="font-display text-lg font-bold">Before applying</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Confirm the current admission cycle, nationality rules, academic qualifications,
+            funding and application deadline directly with the university or scholarship provider.
+            ICK Opportunities is not an official admissions agent and cannot guarantee eligibility or admission.
+          </p>
+        </aside>
+      </div>
+    </div>
+  );
       }
-    });
-
-  // The editor may not be listening yet at the first getItem, so retry once.
-  let firstGet = true;
-  const RETRY_DELAY = 250;
-  // Blocked third-party storage throws here; seeding must not break broker reads.
-  const readLocal = (key: string): string | null | undefined => { try { return browserStorage.getItem(key); } catch { return undefined; } };
-
-  return {
-    getItem: async (key) => {
-      // Sent with GET and REMOVE so an editor that never cached this session can check or revoke it.
-      const local = readLocal(key);
-      let res = await request('lovable-preview-auth:get', key, local ?? undefined);
-      if (!res && firstGet) {
-        await new Promise<void>((resolve) => setTimeout(resolve, RETRY_DELAY));
-        res = await request('lovable-preview-auth:get', key, local ?? undefined);
-      }
-      firstGet = false;
-      // '' is the logout tombstone: clear the local copy too so it can't resurrect if
-      // the broker later goes silent. A null value means never-synced -> keep local.
-      if (res?.ok && res.value !== null) {
-        if (res.value === '') {
-          if (local !== undefined && readLocal(key) === local) browserStorage.removeItem(key);
-          return null;
-        }
-        // Seed this origin so a new tab, whose editor holds no session, stays signed in.
-        if (local === null && readLocal(key) === null) {
-          try { browserStorage.setItem(key, res.value); } catch { /* storage full: still return the editor's session */ }
-        }
-        return res.value;
-      }
-      return browserStorage.getItem(key);
-    },
-    setItem: (key, value) => {
-      browserStorage.setItem(key, value);
-      return request('lovable-preview-auth:set', key, value).then((res) => {
-        if (res?.ok && res.value !== null && browserStorage.getItem(key) === value) {
-          if (res.value === '') browserStorage.removeItem(key);
-          else browserStorage.setItem(key, res.value);
-        }
-      });
-    },
-    removeItem: (key) => {
-      const local = readLocal(key);
-      browserStorage.removeItem(key);
-      return request('lovable-preview-auth:remove', key, local ?? undefined).then(() => {});
-    },
-  };
-}
-
-        
