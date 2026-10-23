@@ -74,82 +74,8 @@ export async function reviewOpportunity(
   edits: TablesUpdate<"opportunities"> = {},
 ) {
   const { data: u } = await supabase.auth.getUser();
-    const uid = u.user?.id;
-
-  if (!uid) {
-    throw new Error("Not signed in");
-  }
-
-  // Preliminary validation before approval or publication.
-  // This client-side check is NOT a database security boundary.
-  if (action === "approved" || action === "published") {
-    if (Object.keys(edits).length > 0) {
-      throw new Error(
-        "Save your changes before approving or publishing."
-      );
-    }
-
-    const { data: record, error: readError } = await supabase
-      .from("opportunities")
-      .select(
-        "status, verified_status, title, organization, description, official_link, deadline"
-      )
-      .eq("id", item.id)
-      .single();
-
-    if (readError) throw readError;
-
-    if (!record) {
-      throw new Error("Opportunity not found.");
-    }
-
-    if (record.status !== "draft") {
-      throw new Error("Only drafts can be reviewed.");
-    }
-
-    if (
-      !record.title.trim() ||
-      !record.organization.trim() ||
-      !record.description.trim()
-    ) {
-      throw new Error(
-        "Required opportunity information is missing."
-      );
-    }
-
-    let officialUrl: URL;
-
-    try {
-      officialUrl = new URL(record.official_link ?? "");
-    } catch {
-      throw new Error("A valid official source URL is required.");
-    }
-
-    if (officialUrl.protocol !== "https:") {
-      throw new Error(
-        "The official source must use HTTPS."
-      );
-    }
-
-    if (
-      record.deadline &&
-      record.deadline < new Date().toISOString().slice(0, 10)
-    ) {
-      throw new Error(
-        "This opportunity has an expired deadline."
-      );
-    }
-
-    if (
-      action === "published" &&
-      record.verified_status !== "verified"
-    ) {
-      throw new Error(
-        "Approve this opportunity before publishing."
-      );
-    }
-  }
-
+  const uid = u.user?.id;
+  if (!uid) throw new Error("Not signed in");
   const now = new Date().toISOString();
   const patch: TablesUpdate<"opportunities"> = { ...edits, reviewed_by: uid, reviewed_at: now };
   if (action === "approved") patch.verified_status = "verified";
