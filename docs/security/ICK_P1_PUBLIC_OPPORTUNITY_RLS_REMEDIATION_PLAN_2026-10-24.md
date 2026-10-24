@@ -173,6 +173,23 @@ Each test query returned **3 visible fixture rows** from 4 inserted; `draft` was
 
 **Next safe gate:** At next available read-only database action, confirm staging has 0 remaining fixtures. Then independently test a real anonymous request and a deliberately created **staging-only** signed-in/admin account under secure credentials and explicit approval. Test the revised RLS on staging only after review of proper isolation, backup/rollback and permission impact. No automatic migration or policy deployment.
 
+## 1D. Proposed policy applied **temporarily**, anonymous SQL-role test PASSED — 2026-10-24
+
+**Important scope:** This is the *dedicated Lovable Security Staging PostgreSQL server* only, not ICK Opportunities Production or a Vercel preview. The test's DDL and nine synthetic fixture inserts were inside **one `BEGIN ... ROLLBACK` transaction**, so it was designed to leave neither the candidate policy nor synthetic records persisted. No real user accounts or credentials were used.
+
+**Preflight finally passed, read-only:** Before running the candidate test, Staging returned **zero total opportunity rows**, **zero leftover previous rollback fixtures**, and the unchanged old `Public can view live opportunities` policy predicate (`status='active' AND (deadline IS NULL OR deadline>=CURRENT_DATE)`).
+
+**Candidate RLS smoke test (actual temporary `ALTER POLICY` in Staging):**
+- Nine fabricated opportunities were inserted *in the transaction*, representing unreviewed drafts; active-unverified; active-verified-unpublished; future publication timestamp; missing review metadata; two legitimate reviewed/published rows (deadline valid or NULL); expired; and rejected.
+- The proposed `ALTER POLICY ... TO anon, authenticated USING (active AND verified AND published_at nonfuture AND reviewed_at/ reviewed_by populated AND deadline valid)` was executed **in the same transaction**, with no permanent migration recorded.
+- `SET LOCAL ROLE anon` selected **exactly 2 of 9** fixtures: **2 expected valid rows, 0 unauthorized rows**. This is an **actual candidate-policy RLS SQL-role pass**, distinct from the earlier pure-predicate simulation.
+- The transaction explicitly ended with `RESET ROLE; ROLLBACK;`.
+- **Independent read-only readback PASSED:** Staging again returned **0 total opportunity rows, 0 remaining candidate test fixtures, and the original public SELECT policy**. Thus both fixture rollback and the old RLS policy restoration were separately confirmed.
+
+**Caveats:** This does **not** test a real anonymous HTTP/PostgREST request with a publishable key; it does not exercise admin user privileges, signed JWTs, production, or frontend regression. SQL `anon` role simulation and actual browser/API authentication are separate tests. A separate attempt to test the candidate policy under SQL role `authenticated` was **REJECTED BEFORE EXECUTION** by the Lovable free-plan MCP action quota. Do not claim it passed or that data from it needs cleanup: **that query was not run**.
+
+**Result:** A1.4/P1 proposed public RLS policy now has a **verified staging anonymous SQL-role transaction test and verified independent rollback**. The **production policy has not been modified**, and the P1 release gate is **STILL BLOCKED** on authenticated/admin/HTTP tests, grants, recovery and explicit Founder production approval.
+
 ## 2. Existing application behavior and limitations
 
 - The general public page read functions `fetchPublicOpportunities()` and `fetchOpportunityById()` in `src/lib/opportunities.ts` use Supabase queries whose effective public visibility depends on database RLS.
