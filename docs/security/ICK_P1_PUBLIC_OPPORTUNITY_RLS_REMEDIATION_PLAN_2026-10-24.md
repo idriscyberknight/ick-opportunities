@@ -276,6 +276,49 @@ Two files already on GitHub `main` provide useful **documented intended grant co
 
 **Current release classification:** **P1 publication predicate tested in SQL roles; STAGING PRIVILEGE PARITY FAIL; real HTTP/JWT & Admin tests NOT RUN; Production fix NOT APPLIED.**
 
+## 1H. NEW C5 SOURCE AUDIT — default future function EXECUTE is NOT fully fail-closed
+
+**Evidence level: VERIFIED source-level semantics, RUNTIME DEFAULT-ACL RESULT NOT VERIFIED.** During read-only comparison with PostgreSQL 17 and current Supabase documentation, an additional weakness was identified in the **existing, checked-in** migration `supabase/migrations/20261008100000_c5_tighten_database_privileges.sql` (GitHub `main`).
+
+The migration claims that "new tables, sequences and functions must not be born open to client roles" but applies this **per-schema only** to functions:
+
+```sql
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated;
+```
+
+**Why this alone is insufficient:** PostgreSQL grants `EXECUTE` on newly created functions to `PUBLIC` by **global default**. `anon` and `authenticated` inherit `PUBLIC` grants. A per-schema `REVOKE` does **not** cancel this global default; PostgreSQL 17 explicitly documents that per-schema defaults may add to, but not subtract from, global defaults. Supabase's current database-functions documentation likewise requires a **separate global** default-privilege change to revoke `EXECUTE` from `PUBLIC` when the intended model is deny-by-default. An `IN SCHEMA public REVOKE` from named API roles is not equivalent to revoking the global `PUBLIC` default.
+
+Further, the C5 post-condition in the same file looks only at `pg_default_acl` with `n.nspname = 'public'` and `x.grantee IN (anon, authenticated)`. It does **not** detect **global defaults** (`defaclnamespace=0`) or `PUBLIC` as grantee (`grantee=0`). Therefore it cannot independently certify that future function defaults are locked down.
+
+**Impact boundary:** This is a **verified limitation of the SQL remediation design**, **NOT direct evidence** that a specific newly created function can presently be called anonymously in Production. Actual defaults may have been changed separately outside this migration. The independent live ACL evidence in section 1G is **about existing objects** (especially `has_role`), not necessarily future-function defaults.
+
+**Read-only audit to run when Lovable database action quota permits** (once per correctly identified Lovable database; do not query the unrelated standalone Supabase project):
+
+```sql
+SELECT
+  CASE WHEN d.defaclnamespace = 0 THEN '(global)' ELSE n.nspname END AS scope,
+  pg_get_userbyid(d.defaclrole) AS owner_role,
+  d.defaclobjtype AS object_type,
+  CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END AS grantee,
+  a.privilege_type
+FROM pg_default_acl d
+LEFT JOIN pg_namespace n ON n.oid = d.defaclnamespace
+CROSS JOIN LATERAL aclexplode(d.defaclacl) a
+WHERE d.defaclrole = 'postgres'::regrole::oid AND d.defaclobjtype = 'f'
+ORDER BY scope, grantee, privilege_type;
+```
+
+An empty global-default rowset is **not** proof `PUBLIC` lacks default `EXECUTE`: built-in defaults also apply when no `pg_default_acl` entry exists. Compare the global defaults with official PostgreSQL semantics and check the owner role under which new functions are created.
+
+**Proposed remediation for review only — NOT APPLIED:** Security owners should scope a separate change that (a) explicitly revokes `EXECUTE` from `PUBLIC` on security-sensitive existing functions as appropriate; (b) evaluates a **global** `ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;` together with necessary function-specific re-grants and impact on other schemas; (c) tightens the migration's post-condition to account for inherited `PUBLIC`/global defaults. Global default ACL changes are broad, affect *future objects* and could break legitimate Supabase/auth/helper workflows. **Do not run these statements blindly or apply them as part of the P1 SELECT-policy migration.**
+
+**Official references:**
+- PostgreSQL 17: https://www.postgresql.org/docs/17/sql-alterdefaultprivileges.html
+- Supabase Database Functions: https://supabase.com/docs/guides/database/functions
+
+**P1 release gate remains blocked** on staging privilege parity and real HTTP/JWT/admin-persona tests. This C5 finding should be triaged as a related, independently reviewed privilege-hardening work item; its presence does not invalidate the two earlier, rollback-verified SQL-role candidate-publication tests.
+
 ## 2. Existing application behavior and limitations
 
 - The general public page read functions `fetchPublicOpportunities()` and `fetchOpportunityById()` in `src/lib/opportunities.ts` use Supabase queries whose effective public visibility depends on database RLS.
