@@ -12,7 +12,7 @@ export const Route = createFileRoute("/scholarship-navigator_/universities_/$slu
     const item = getUniversity(params.slug);
     return { meta: [
       { title: item ? `${item.name} — ICK University Directory` : "University not found — ICK Opportunities" },
-      { name: "description", content: item ? `Official information source for ${item.name}. Current admission and scholarship cycles are not confirmed.` : "University directory entry unavailable." },
+      { name: "description", content: item ? `Directory entry for ${item.name}. Website ownership and current admission or scholarship cycles may not be confirmed.` : "University directory entry unavailable." },
       ...(!item ? [{ name: "robots", content: "noindex" }] : []),
     ] };
   },
@@ -50,11 +50,21 @@ function UniversityProfilePage() {
             <MapPin aria-hidden="true" className="h-4 w-4" />{university.location ? `${university.location}, ` : ""}{university.country}
           </p>
           <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground">{university.description}</p>
+          {university.websiteVerification === "needs_review" && (
+            <div role="status" className="mt-6 rounded-xl border border-warning/40 bg-warning/10 p-4">
+              <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <ShieldAlert aria-hidden="true" className="h-4 w-4 text-warning" /> Website verification pending
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{university.websiteReviewNote}</p>
+            </div>
+          )}
           <div className="mt-6 flex flex-wrap gap-3">
-            <a href={university.officialWebsite} target="_blank" rel="noopener noreferrer"
-              className={`inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 ${focusStyles}`}>
-              Official university website <ExternalLink aria-hidden="true" className="h-4 w-4" />
-            </a>
+            {university.websiteVerification !== "needs_review" && (
+              <a href={university.officialWebsite} target="_blank" rel="noopener noreferrer"
+                className={`inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 ${focusStyles}`}>
+                Visit listed university website <ExternalLink aria-hidden="true" className="h-4 w-4" />
+              </a>
+            )}
             <Link to="/scholarships" className={`inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-5 text-sm font-semibold hover:bg-muted ${focusStyles}`}>
               Browse ICK scholarship listings <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
@@ -79,7 +89,7 @@ function UniversityProfilePage() {
               <p className="font-semibold">Current scholarship status: not confirmed</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">No scholarship application cycle, deadline, funding amount or nationality eligibility has been verified for this institution in the ICK directory. Inclusion does not imply an open application.</p>
             </div>
-            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">For current admission requirements, teaching languages, study levels and programme choices, use the institution's official website.</p>
+            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{university.websiteVerification === "needs_review" ? "For current admissions and funding, seek a university contact through the independently listed sources before sharing documents or making payments." : "For current admissions, programmes and scholarships, consult the listed university website and verify application requirements."}</p>
           </section>
         </div>
         <aside className="space-y-6">
@@ -91,6 +101,12 @@ function UniversityProfilePage() {
               className={`mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-secondary hover:underline ${focusStyles}`}>
               View institutional source <ExternalLink aria-hidden="true" className="h-4 w-4" />
             </a>
+            {university.additionalInstitutionalSources?.map((source) => (
+              <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer"
+                className={`mt-3 flex min-h-11 items-center gap-2 text-sm font-semibold text-secondary hover:underline ${focusStyles}`}>
+                {source.label} <ExternalLink aria-hidden="true" className="h-4 w-4" />
+              </a>
+            ))}
           </section>
           <section className="rounded-2xl border border-border bg-muted/40 p-6">
             <h2 className="font-display text-lg font-bold">Safety checklist</h2>
