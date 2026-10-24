@@ -180,6 +180,14 @@ Each test query returned **3 visible fixture rows** from 4 inserted; `draft` was
 - The review function in `src/lib/review.ts` updates an opportunity and then inserts an audit log in a **second request**, without checking the audit insertion error. Publication and audit are not currently guaranteed atomic.
 - Existing PR #19 documents architectural work; **this PR is the distinct P1 policy remediation design** and must not be mistaken for completion of that architecture review.
 
+## 2A. Additional P2 finding: public column minimization (CODE-LEVEL ONLY)
+
+**New source inspection:** `src/lib/opportunities.ts` on GitHub `main` currently uses `.from("opportunities").select("*")` in both `fetchPublicOpportunities()` and `fetchOpportunityById()`. The checked-in generated `src/integrations/supabase/types.ts` says that an opportunity row includes internal-looking fields such as `created_by`, `reviewed_by`, `reviewed_at`, `discovered_at`, `source_id`, `relevance_score`, `nigeria_score`, `africa_score`, `remote_score`, and `global_score` alongside normal published listing fields.
+
+**Risk / confidence:** **VERIFIED code-level design** and **potential P2 overexposure**, **NOT a demonstrated data leak**. PostgreSQL row-level security protects *which rows* can be read, but does not automatically restrict *which columns* of an allowed row can be returned. Earlier production metadata confirmed `anon` SELECT privilege at the table level. Since there were **zero publicly qualifying opportunities** in that snapshot, no concrete private fields were observed through a public API in this review.
+
+**Separate remediation, not part of the P1 policy migration:** Agree on a minimum public field contract (`id`, `title`, `description`, `category`, `organization`, `country`, `deadline`, `official_link`, `benefits`, `eligibility`, and necessary public metadata). Inspect every public consumption site. Introduce an appropriately secured public projection/API (with a row-level filter, safe grants and RLS-preserving `security_invoker` where applicable), and verify raw table access is not still returning internal fields directly. Changing client code from `select("*")` to an explicit list improves least-privilege usage but **does not alone prevent direct PostgREST users from requesting other granted columns**. Do not revoke grants or change public API behavior until isolated staging tests and separate Founder authorization.
+
 ## 3. Proposed fail-closed public SELECT rule (NOT APPLIED)
 
 The following is an **illustrative change for staging review only**. It requires a schema diff, explicit risk assessment, automated role-based tests and a migration generated via the installed Supabase CLI workflow before deployment.
