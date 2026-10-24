@@ -20,6 +20,10 @@ export type UniversityRecord = {
   officialWebsite: string;
   institutionalSource: string;
   sourceCheckedOn: string;
+  /** Whether the listed website has unresolved independent verification concerns. */
+  websiteVerification?: "needs_review";
+  websiteReviewNote?: string;
+  additionalInstitutionalSources?: readonly { label: string; url: string }[];
 };
 
 const SOURCE_CHECK_DATE = "2026-10-23";
@@ -66,9 +70,15 @@ export const STARTER_UNIVERSITIES: readonly UniversityRecord[] = [
     country: "Niger", countryCode: "NE", location: "Say / Niamey",
     types: ["islamic", "islamic_studies"],
     description: "OIC-associated university in Niger with institutional information on its official site.",
-    officialWebsite: "https://www.uin-ne.org/en/",
-    institutionalSource: "https://www.uin-ne.org/en/",
-    sourceCheckedOn: SOURCE_CHECK_DATE,
+    // The OIC and WHED list this URL, but current availability/ownership are not independently confirmed.
+    officialWebsite: "https://universite-say.com/",
+    institutionalSource: "https://www.oic-oci.org/en/organs/islamic-universities",
+    sourceCheckedOn: "2026-10-24",
+    websiteVerification: "needs_review",
+    websiteReviewNote: "OIC and WHED list universite-say.com, but we could not confirm the website is currently reachable or independently operated by the institution. A previously listed uin-ne.org address is also unverified. Do not send documents, personal details or payments via an unverified application website.",
+    additionalInstitutionalSources: [
+      { label: "WHED institution record", url: "https://www.whed.net/institutions/IAU-019741" },
+    ],
   },
   {
     slug: "islamic-university-in-uganda",
