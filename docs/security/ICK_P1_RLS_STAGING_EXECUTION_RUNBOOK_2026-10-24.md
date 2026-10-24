@@ -8,6 +8,19 @@
 
 > **Do not run any of these test activities on Production, Vercel Preview, or the unrelated standalone ICK Technologies Supabase account.** A branch/preview is not proof of an isolated database. No one should paste scripts into the Lovable production SQL editor. Any live production migration still requires *separate explicit Founder approval* and formal backup/rollback review.
 
+## 0. Latest verified execution result — 2026-10-24
+
+**STAGING-ONLY ACTUAL CANDIDATE POLICY TEST, TRANSACTIONAL AND REVERTED.**
+
+- **Preflight read-only PASS:** 0 opportunity rows, 0 previous rollback-test rows, public SELECT predicate still the original permissive one.
+- Executed a staging SQL **`BEGIN`**, inserted **9 synthetic opportunity fixtures**, performed the candidate **`ALTER POLICY`** in the same transaction, set the PostgreSQL role to **`anon`**, read the test cases and ended with **`RESET ROLE; ROLLBACK;`**.
+- Actual RLS behavior under candidate policy: **2 visible legitimate fixtures out of 9 total**, **0 unexpected visible fixtures**. **PASS under the SQL `anon` role**.
+- **Independent read-only post-test verification PASS:** staging has **0 total rows**, **0 remaining fixtures**, and **the original public policy is restored**. No policy mutation, test data or migration persisted.
+- Candidate policy test under SQL **`authenticated`** role **was NOT executed** because Lovable rejected the query at the free-plan action limit. Do not count it as a pass, or imply a failed/half-applied migration.
+- Real HTTP/JWT (anonymous, ordinary signed-in and admin), service role separation, negative INSERT grant behavior, complete regression and production release tests **NOT RUN**. No credentials retrieved or real identities created. **No Production change**.
+
+**Status transition:** The earlier section describing rollback-readback as pending is a *historical state* from an earlier check; the clean rollback and policy restoration have now been independently verified. Candidate anonymous SQL-role test has passed, but the P1 release gate **still does not pass**. Continue only with tests authorized for separate Staging; no production SQL without separate approval.
+
 ## 1. Current evidence and precise blocker
 
 Production and Security Staging Lovable Cloud databases have different PostgreSQL server addresses and versions (**17.6** vs **17.11** at inspection) and distinct configured project refs (`xzxfodukvzzfwbwokhxt` vs `ckdfdjvlqvopzlqtwapf`). Staging is a candidate for controlled tests. Vercel environment metadata lists `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_SUPABASE_PROJECT_ID` for **both Production and Preview**; never assume a feature preview safely points at staging.
@@ -22,7 +35,7 @@ Earlier staging-only tests:
 
 **Latest attempt (2026-10-24):** A staging-only **readback SELECT** to confirm the second rollback was refused by the Lovable **free-plan MCP database action limit**. The provider explicitly reported that the query **was not executed**. **NO new RLS test, ALTER POLICY, data insert, migration or production change occurred in this attempt.**
 
-### Follow-up gate outcome — independent readback still pending
+### Earlier gate outcome — independent readback was pending then (now resolved above)
 
 A further **read-only** preflight query was attempted against the connected **Security Staging** Lovable Cloud database to check both the remaining synthetic fixture count and the current public RLS predicate. Lovable rejected it under the **free-plan database action quota**, explicitly indicating **the query was not executed**. This attempt did not access or modify Production and did not create an authorization test account.
 
