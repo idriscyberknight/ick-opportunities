@@ -55,6 +55,26 @@ Until verified staging-only API connectivity and secure synthetic test users exi
 
 **Result:** Source snapshot and runtime-config architecture **VERIFIED**; staging migration execution history and runtime API binding **NOT VERIFIED**; live SQL-role tests remain a pass, real HTTP/JWT/admin checks remain pending.
 
+## 0D. Release STOP: verified Staging-versus-Production ACL mismatch — 2026-10-24
+
+**Source:** independent non-mutating queries of actual PostgreSQL ACLs (`pg_class.relacl`, `pg_proc.proacl`, `aclexplode`) against **both** known Lovable Cloud projects; queries were successful. They did not read credentials or personal user rows.
+
+- **Production `anon` on `public.opportunities`: `SELECT` only.** **Staging `anon`: all eight privileges (`SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER, MAINTAIN`)**. Staging `authenticated` also has all eight; Production `authenticated` has `SELECT, INSERT, UPDATE, DELETE`.
+- **Staging `public.has_role`: `EXECUTE` granted directly to `PUBLIC` and `anon`** (also `authenticated` and `service_role`). **Production `public.has_role`: `EXECUTE` granted only to `authenticated` and `service_role` among inspected client roles (no `PUBLIC`, no `anon`).**
+- The standard relation `supabase_migrations.schema_migrations` **exists on Production and does not exist on Staging**. This is a migration-tracking difference, **not** a complete historical record or evidence that migrations were never run.
+- Live aggregate counts in that comparison: Production **14** opportunities and **10** auth users; Staging **0** opportunities and **0** auth users.
+- A follow-up inspection of specific Production migration version rows was blocked by tool safety checks before execution; there is no verified version-by-version comparison.
+
+**Classification: STAGING ACL PARITY FAIL / P1 HTTP-JWT TESTS BLOCKED**. Staging `anon` even holds direct `TRUNCATE` SQL permission, a class of capability not restricted by RLS; that alone is **NOT a proof** that the web Data API exposes `TRUNCATE`. Treat the grant as a hardening and test-equivalence issue, not as a demonstrated public exploit. Retain the two **PASS** rollback-only candidate-policy SQL-role SELECT tests, but do not promote them to a full authorization sign-off.
+
+**Safe gates before any Staging ACL correction:**
+1. Qualified review of full least-privilege ACL differences and documented GitHub C5 migration intent; avoid blind C5 replay and overly broad rollback.
+2. Create a **small targeted Staging-only GRANT/REVOKE proposal** and complete privilege compatibility checks for normal users, admin workflows and required platform functions, with explicit Founder approval before running DDL.
+3. Independently verify intended postconditions, negative API probes, proper JWT isolation, and controlled admin test identities (not currently present).
+4. Keep production public SELECT policy and deployment unchanged until staging role/REST regression tests, backups and separate Founder production approval are complete.
+
+**NO database/production changes were executed for this finding.** Only documentation on GitHub feature branch was updated.
+
 ## 1. Current evidence and precise blocker
 
 Production and Security Staging Lovable Cloud databases have different PostgreSQL server addresses and versions (**17.6** vs **17.11** at inspection) and distinct configured project refs (`xzxfodukvzzfwbwokhxt` vs `ckdfdjvlqvopzlqtwapf`). Staging is a candidate for controlled tests. Vercel environment metadata lists `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_SUPABASE_PROJECT_ID` for **both Production and Preview**; never assume a feature preview safely points at staging.
