@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, BookOpen, Globe2, MapPin, Search, ShieldAlert, University } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Globe2, Search, ShieldAlert } from "lucide-react";
+import { UniversityCard } from "@/components/universities/UniversityCard";
 import {
   STARTER_UNIVERSITIES,
   filterUniversities,
@@ -126,25 +127,7 @@ function UniversityDirectoryPage() {
           ) : (
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {results.map((item) => (
-                <article key={item.slug} className="flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
-                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"><MapPin aria-hidden="true" className="h-4 w-4" />{item.country}</span>
-                  <span className="mt-4 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary/10 text-secondary"><University aria-hidden="true" className="h-6 w-6" /></span>
-                  <h3 className="mt-4 font-display text-lg font-extrabold leading-snug">{item.name}</h3>
-                  {item.location && <p className="mt-1 text-sm text-muted-foreground">{item.location}</p>}
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Source link recorded: <time dateTime={item.sourceCheckedOn}>{item.sourceCheckedOn}</time>.
-                    This is not a funding or accreditation check.
-                  </p>
-                  {item.websiteVerification === "needs_review" && (
-                    <p className="mt-4 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs font-semibold text-foreground">University website: verification pending</p>
-                  )}
-                  <p className="mt-5 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground">Scholarship applications: not confirmed</p>
-                  <Link to="/scholarship-navigator/universities/$slug" params={{ slug: item.slug }}
-                    className={`mt-4 inline-flex min-h-11 items-center justify-between gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 ${focusStyles}`}>
-                    View university profile <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                  </Link>
-                </article>
+                <UniversityCard key={item.slug} university={item} />
               ))}
             </div>
           )}
@@ -152,7 +135,7 @@ function UniversityDirectoryPage() {
 
         <aside className="rounded-2xl border border-border bg-muted/40 p-6" aria-label="Using this directory safely">
           <div className="flex items-center gap-2"><BookOpen aria-hidden="true" className="h-5 w-5 text-secondary" /><h2 className="font-display text-lg font-bold">Before applying</h2></div>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">An institution's appearance here does not mean it has a scholarship open today. Always check the university's official website for programmes, funding, deadlines and nationality rules.</p>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">An institution's appearance here does not mean it has a scholarship open today. Verify who operates each listed website or application portal, then confirm funding, eligibility and deadlines before applying.</p>
         </aside>
       </div>
     </div>
