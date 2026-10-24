@@ -21,6 +21,16 @@
 
 **Status transition:** The earlier section describing rollback-readback as pending is a *historical state* from an earlier check; the clean rollback and policy restoration have now been independently verified. Candidate anonymous SQL-role test has passed, but the P1 release gate **still does not pass**. Continue only with tests authorized for separate Staging; no production SQL without separate approval.
 
+## 0A. Additional 2026-10-24 staging test result — authenticated SQL role
+
+**NEW VERIFIED PASS:** Staging-only, transactional **proposed `ALTER POLICY`** test succeeded under PostgreSQL SQL role **`authenticated`**. The nine fabricated fixtures and candidate policy existed **only inside `BEGIN ... ROLLBACK`**. The `authenticated` role read **2 expected approved/published rows** and **0 unexpected rows**; `auth.uid()` was null (no JWT or actual user session). **Independent read-only post-test query confirmed 0 remaining records and restoration of the original RLS policy.**
+
+**Admin and API gate not passed:** At test time Staging had 0 `auth.users` and 0 admin assignments. An actual admin/signed-in JWT session or REST persona test remains **NOT EXECUTED**. Read-only `pg_policies` inspection verified the admin policies call `has_role(auth.uid(), 'admin'::app_role)`.
+
+**Additional environment drift:** Staging currently permits the `anon` SQL role to execute `public.has_role(uuid, app_role)` (a public-schema `SECURITY DEFINER` helper that accepts a user-supplied UUID); a read-only check showed that **Production `anon` does NOT have this EXECUTE privilege**. Staging also had `anon` table-level `INSERT` grant while the earlier verified Production check did not. These differences matter when interpreting future staging persona results. **Do not make grant changes without reviewed scope and approval.** No real users, production table data, authentication tokens or actual RPC probes were involved.
+
+**Current candidate-policy verification summary:** `anon` SQL-role candidate RLS test **PASS**, `authenticated` SQL-role candidate RLS test **PASS**, both independently restored via readback **PASS**. Full HTTP/JWT and admin regression **BLOCKED/NOT RUN**, Production rollout **NOT AUTHORIZED**.
+
 ## 1. Current evidence and precise blocker
 
 Production and Security Staging Lovable Cloud databases have different PostgreSQL server addresses and versions (**17.6** vs **17.11** at inspection) and distinct configured project refs (`xzxfodukvzzfwbwokhxt` vs `ckdfdjvlqvopzlqtwapf`). Staging is a candidate for controlled tests. Vercel environment metadata lists `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_SUPABASE_PROJECT_ID` for **both Production and Preview**; never assume a feature preview safely points at staging.
