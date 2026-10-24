@@ -41,6 +41,20 @@ Until verified staging-only API connectivity and secure synthetic test users exi
 
 **Safe next action:** finish the read-only ACL provenance audit when the existing database action allowance permits; compare `PUBLIC` and direct grants with checked-in C5 migration intent and privilege inheritance. Do not replay migrations or try credentials/keys from Production.
 
+## 0C. Independent staging source-snapshot and migration-provenance check — 2026-10-24
+
+**Read-only Lovable project observations:**
+- Staging project was created `2026-10-23T23:38:37.854Z`, project source snapshot ref `13653bfa5d63a4d05aadafe2ff355a44ea0911cd`, and Lovable reports `is_published=false`.
+- A complete two-page file listing of **157 source files** in that Staging snapshot contained **`supabase/config.toml`** but **NO `supabase/migrations/` file entries**. The config contains separate project ID `ckdfdjvlqvopzlqtwapf`.
+- The staging source `src/integrations/supabase/client.ts` obtains URL/key from runtime environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, server equivalents). It does **not** hardcode either the production or staging project ref. **A separate project ID in config.toml is not proof of the application's runtime API binding**. No environment variable values or secrets were inspected or copied.
+- GitHub `main` **does** contain `supabase/migrations/20260904011046_f6bf51cb-ff57-4594-96d3-ea6278bd1383.sql` (the function `PUBLIC, anon` EXECUTE REVOKE) and `supabase/migrations/20261008100000_c5_tighten_database_privileges.sql` (the excessive table-GRANT cleanup). The Lovable source-file list being different from GitHub `main` does **NOT prove** that either database migration was never executed.
+
+**Release implication:** The origin of the live Staging `anon` grants is still **UNKNOWN**, despite clearly verified grant drift. Do not infer migration history from source files alone, especially as this staged Lovable snapshot was created **after** the dated GitHub C5 migration and appears to be a separate source lineage. Proper evidence requires **read-only actual PostgreSQL ACL provenance and migration-history checks**, then targeted Staging-only design review. The first attempted `relacl`/`proacl` queries for both environments were rejected before execution by the provider's MCP quota; no SQL was changed.
+
+**Additional caution:** The GitHub `docs/security/c5-tighten-database-privileges/rollback.sql` intentionally restores its historical *overly broad* privileges in an emergency. **Never execute that broad rollback just to align Staging**, and never merge it as a normal migration. It is not an appropriate fix for staging ACL drift.
+
+**Result:** Source snapshot and runtime-config architecture **VERIFIED**; staging migration execution history and runtime API binding **NOT VERIFIED**; live SQL-role tests remain a pass, real HTTP/JWT/admin checks remain pending.
+
 ## 1. Current evidence and precise blocker
 
 Production and Security Staging Lovable Cloud databases have different PostgreSQL server addresses and versions (**17.6** vs **17.11** at inspection) and distinct configured project refs (`xzxfodukvzzfwbwokhxt` vs `ckdfdjvlqvopzlqtwapf`). Staging is a candidate for controlled tests. Vercel environment metadata lists `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_SUPABASE_PROJECT_ID` for **both Production and Preview**; never assume a feature preview safely points at staging.
