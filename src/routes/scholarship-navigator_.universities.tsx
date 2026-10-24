@@ -122,6 +122,9 @@ function UniversityDirectoryPage() {
                   <h3 className="mt-4 font-display text-lg font-extrabold leading-snug">{item.name}</h3>
                   {item.location && <p className="mt-1 text-sm text-muted-foreground">{item.location}</p>}
                   <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+                  {item.websiteVerification === "needs_review" && (
+                    <p className="mt-4 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs font-semibold text-foreground">University website: verification pending</p>
+                  )}
                   <p className="mt-5 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground">Scholarship applications: not confirmed</p>
                   <Link to="/scholarship-navigator/universities/$slug" params={{ slug: item.slug }}
                     className={`mt-4 inline-flex min-h-11 items-center justify-between gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 ${focusStyles}`}>
