@@ -6,12 +6,12 @@ import {
   ArrowRight,
   BookOpen,
   GraduationCap,
-  MapPin,
   Search,
   ShieldAlert,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { UniversityCard } from "@/components/universities/UniversityCard";
 import {
   formatDeadline,
   type Opportunity,
@@ -558,56 +558,7 @@ function GlobalSearchBeta() {
 
                 {universities.map((university) => (
 
-                  <article
-                    key={university.slug}
-                    className="flex flex-col rounded-2xl border border-border bg-card p-5"
-                  >
-
-                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
-
-                      <MapPin
-                        aria-hidden="true"
-                        className="h-4 w-4"
-                      />
-
-                      {university.country}
-
-                    </p>
-
-                    <h3 className="mt-3 font-display text-lg font-bold">
-                      {university.name}
-                    </h3>
-
-                    <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-                      {university.description}
-                    </p>
-
-                    {university.websiteVerification === "needs_review" && (
-                      <p className="mt-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs font-semibold text-foreground">University website verification pending.</p>
-                    )}
-                    <p className="mt-4 text-xs text-muted-foreground">
-                      Editorial institution entry.
-                      Current scholarship status unknown.
-                    </p>
-
-                    <Link
-                      to="/scholarship-navigator/universities/$slug"
-                      params={{
-                        slug: university.slug,
-                      }}
-                      className={`mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-secondary hover:underline ${focusRing}`}
-                    >
-
-                      View university profile
-
-                      <ArrowRight
-                        aria-hidden="true"
-                        className="h-4 w-4"
-                      />
-
-                    </Link>
-
-                  </article>
+                  <UniversityCard key={university.slug} university={university} />
 
                 ))}
 

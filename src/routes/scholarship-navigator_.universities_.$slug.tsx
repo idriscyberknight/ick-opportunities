@@ -37,7 +37,7 @@ function UniversityProfilePage() {
   }
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <section className="border-b border-border bg-card">
+      <section className="border-b border-border bg-gradient-to-br from-card via-card to-muted/70">
         <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
           <Link to="/scholarship-navigator/universities" className={`inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-secondary hover:underline ${focusStyles}`}>
             <ArrowLeft aria-hidden="true" className="h-4 w-4" /> All universities
@@ -50,6 +50,20 @@ function UniversityProfilePage() {
             <MapPin aria-hidden="true" className="h-4 w-4" />{university.location ? `${university.location}, ` : ""}{university.country}
           </p>
           <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground">{university.description}</p>
+          <div className="mt-7 grid gap-3 sm:grid-cols-3" aria-label="Institution at a glance">
+            <div className="rounded-2xl border border-border bg-background p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Country</p>
+              <p className="mt-2 font-display text-base font-bold">{university.country}</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-background p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Institutional source</p>
+              <p className="mt-2 font-display text-base font-bold">Recorded in directory</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-background p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Scholarship cycle</p>
+              <p className="mt-2 font-display text-base font-bold">Not confirmed</p>
+            </div>
+          </div>
           {university.websiteVerification === "needs_review" && (
             <div role="status" className="mt-6 rounded-xl border border-warning/40 bg-warning/10 p-4">
               <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -76,8 +90,8 @@ function UniversityProfilePage() {
         </div>
       </section>
       <div className="mx-auto grid max-w-5xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-3 lg:px-8">
-        <div className="space-y-6 lg:col-span-2">
-          <section className="rounded-2xl border border-border bg-card p-6">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
+          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
             <h2 className="font-display text-xl font-bold">Institution overview</h2>
             <dl className="mt-5 space-y-4 text-sm">
               <div><dt className="font-semibold text-muted-foreground">Official name</dt><dd className="mt-1 text-foreground">{university.name}</dd></div>
@@ -87,7 +101,7 @@ function UniversityProfilePage() {
               <div><dt className="font-semibold text-muted-foreground">Directory categories</dt><dd className="mt-1 text-foreground">{university.types.map((t) => t === "islamic" ? "Islamic institutional identity" : "Islamic studies tradition / programmes").join(" · ")}</dd></div>
             </dl>
           </section>
-          <section className="rounded-2xl border border-border bg-card p-6">
+          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
             <div className="flex items-center gap-2"><GraduationCap aria-hidden="true" className="h-5 w-5 text-secondary" /><h2 className="font-display text-xl font-bold">Admissions & scholarships</h2></div>
             <div className="mt-4 rounded-xl border border-border bg-muted/40 p-4">
               <p className="font-semibold">Current scholarship status: not confirmed</p>
@@ -95,11 +109,37 @@ function UniversityProfilePage() {
             </div>
             <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{university.websiteVerification === "needs_review" ? "For current admissions and funding, seek a university contact through the independently listed sources before sharing documents or making payments." : "For current admissions, programmes and scholarships, consult the listed university website and verify application requirements."}</p>
           </section>
+          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6" aria-labelledby="profile-checklist-heading">
+            <h2 id="profile-checklist-heading" className="font-display text-xl font-bold">Before you apply</h2>
+            <ol className="mt-5 space-y-4">
+              <li className="flex items-start gap-3">
+                <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-sm font-bold text-secondary">1</span>
+                <div>
+                  <h3 className="font-semibold">Verify the programme and institution</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Confirm the course and admissions route using an independently validated institutional source.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-sm font-bold text-secondary">2</span>
+                <div>
+                  <h3 className="font-semibold">Check scholarship details for the exact year</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Confirm eligibility, nationalities, coverage and application dates from the provider's announcement.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-sm font-bold text-secondary">3</span>
+                <div>
+                  <h3 className="font-semibold">Protect your documents and payments</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Check who owns the application portal before sending personal information or paying fees.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
         </div>
         <aside className="space-y-6">
-          <section className="rounded-2xl border border-border bg-card p-6">
+          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
             <div className="flex items-center gap-2"><ShieldAlert aria-hidden="true" className="h-5 w-5 text-secondary" /><h2 className="font-display text-lg font-bold">Evidence & review</h2></div>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Institutional information source was checked for the starter directory on <time dateTime={university.sourceCheckedOn}>{university.sourceCheckedOn}</time>.</p>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">An institutional source link was recorded on <time dateTime={university.sourceCheckedOn}>{university.sourceCheckedOn}</time>. The date is not confirmation of current website ownership, accreditation or admission status.</p>
             <p className="mt-3 text-sm text-muted-foreground">This is not an accreditation check or a verification of open scholarships.</p>
             <a href={university.institutionalSource} target="_blank" rel="noopener noreferrer"
               className={`mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-secondary hover:underline ${focusStyles}`}>
@@ -113,8 +153,8 @@ function UniversityProfilePage() {
             ))}
           </section>
           <section className="rounded-2xl border border-border bg-muted/40 p-6">
-            <h2 className="font-display text-lg font-bold">Safety checklist</h2>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Confirm programme availability, current admissions, nationality requirements, scholarship coverage and official deadlines before applying.</p>
+            <h2 className="font-display text-lg font-bold">Important reminder</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">ICK is an editorial starting point, not an admissions agency. Official sources determine programme eligibility, funding, and deadlines.</p>
           </section>
         </aside>
       </div>
