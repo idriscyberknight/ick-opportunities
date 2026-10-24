@@ -51,6 +51,16 @@ function UniversityDirectoryPage() {
             Begin with Islamic universities and Islamic studies providers from different regions.
             This is a small, expanding, source-linked collection — not a complete global directory.
           </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link to="/scholarship-navigator/global-search"
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 ${focusStyles}`}>
+              Search universities &amp; scholarships <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+            <Link to="/scholarships"
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-5 py-3 text-sm font-semibold hover:bg-muted ${focusStyles}`}>
+              Browse scholarship listings
+            </Link>
+          </div>
           <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="rounded-full border border-border px-3 py-1.5">{STARTER_UNIVERSITIES.length} starter institutions</span>
             <span className="rounded-full border border-border px-3 py-1.5">{countries.length} countries represented</span>
@@ -66,7 +76,7 @@ function UniversityDirectoryPage() {
               <label htmlFor="university-keyword" className="mb-2 block text-sm font-semibold">Name, Arabic name, city or keyword</label>
               <div className="relative">
                 <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                <input id="university-keyword" type="search" autoComplete="off" maxLength={120} value={keyword}
+                <input id="university-keyword" type="search" dir="auto" autoComplete="off" maxLength={120} value={keyword}
                   onChange={(event) => setKeyword(event.target.value)} placeholder="e.g. Madinah, Niger, IIUM, الأزهر"
                   className={`min-h-12 w-full rounded-xl border border-input bg-background py-3 pl-11 pr-3 text-sm text-foreground placeholder:text-muted-foreground ${focusStyles}`} />
               </div>
@@ -122,6 +132,10 @@ function UniversityDirectoryPage() {
                   <h3 className="mt-4 font-display text-lg font-extrabold leading-snug">{item.name}</h3>
                   {item.location && <p className="mt-1 text-sm text-muted-foreground">{item.location}</p>}
                   <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Source link recorded: <time dateTime={item.sourceCheckedOn}>{item.sourceCheckedOn}</time>.
+                    This is not a funding or accreditation check.
+                  </p>
                   {item.websiteVerification === "needs_review" && (
                     <p className="mt-4 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs font-semibold text-foreground">University website: verification pending</p>
                   )}

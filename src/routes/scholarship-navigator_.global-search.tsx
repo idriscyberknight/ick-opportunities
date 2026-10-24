@@ -336,6 +336,16 @@ function GlobalSearchBeta() {
             A university listing does not mean
             funding is currently available.
           </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link to="/scholarship-navigator/universities"
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-5 text-sm font-semibold text-foreground hover:bg-muted ${focusRing}`}>
+              Browse university directory <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+            <Link to="/scholarships"
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 ${focusRing}`}>
+              Explore scholarship listings <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          </div>
 
         </div>
       </section>
@@ -367,6 +377,7 @@ function GlobalSearchBeta() {
             <input
               id="ick-global-keyword"
               type="search"
+              dir="auto"
               autoComplete="off"
               maxLength={120}
               value={keyword}

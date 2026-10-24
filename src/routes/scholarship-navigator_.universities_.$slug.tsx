@@ -65,8 +65,12 @@ function UniversityProfilePage() {
                 Visit listed university website <ExternalLink aria-hidden="true" className="h-4 w-4" />
               </a>
             )}
+            <Link to="/scholarship-navigator/global-search"
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-5 text-sm font-semibold hover:bg-muted ${focusStyles}`}>
+              Search universities &amp; scholarships <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
             <Link to="/scholarships" className={`inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-5 text-sm font-semibold hover:bg-muted ${focusStyles}`}>
-              Browse ICK scholarship listings <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              All ICK scholarship listings <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
           </div>
         </div>
@@ -87,7 +91,7 @@ function UniversityProfilePage() {
             <div className="flex items-center gap-2"><GraduationCap aria-hidden="true" className="h-5 w-5 text-secondary" /><h2 className="font-display text-xl font-bold">Admissions & scholarships</h2></div>
             <div className="mt-4 rounded-xl border border-border bg-muted/40 p-4">
               <p className="font-semibold">Current scholarship status: not confirmed</p>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">No scholarship application cycle, deadline, funding amount or nationality eligibility has been verified for this institution in the ICK directory. Inclusion does not imply an open application.</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">No scholarship application cycle, deadline, funding amount or nationality eligibility has been verified for this institution in the ICK directory. Inclusion does not imply an open application. Global search may show unrelated listings; always check the provider's official announcement.</p>
             </div>
             <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{university.websiteVerification === "needs_review" ? "For current admissions and funding, seek a university contact through the independently listed sources before sharing documents or making payments." : "For current admissions, programmes and scholarships, consult the listed university website and verify application requirements."}</p>
           </section>

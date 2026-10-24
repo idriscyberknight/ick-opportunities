@@ -22,10 +22,12 @@ import { supabase } from "@/integrations/supabase/client";
 const primaryLinks = [
   { to: "/opportunities", label: "Explore" },
   { to: "/scholarships", label: "Scholarships" },
-  { to: "/jobs", label: "Jobs" },
+  { to: "/scholarship-navigator/universities", label: "Universities" },
 ] as const;
 
 const additionalLinks = [
+  { to: "/scholarship-navigator/global-search", label: "Global search" },
+  { to: "/jobs", label: "Jobs" },
   { to: "/internships", label: "Internships" },
   { to: "/grants", label: "Grants" },
 ] as const;
