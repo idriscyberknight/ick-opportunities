@@ -249,6 +249,33 @@ Two files already on GitHub `main` provide useful **documented intended grant co
 
 **Safety gate:** Full HTTP/JWT/admin results are still **NOT VERIFIED**. There are no staging admin accounts from previous aggregate inspection. Creating test users, changing grants, applying a durable policy or running a production migration still requires a separately scoped and reviewed action. P1 has **not** been deployed to Production.
 
+## 1G. LIVE ACL PROVENANCE COMPARISON — VERIFIED 2026-10-24 (READ ONLY)
+
+**NEW HIGH-PRIORITY ENVIRONMENT FINDING.** Following restored Lovable MCP database access, independent **read-only** `pg_class.relacl`, `pg_proc.proacl` inspections with `aclexplode` were completed against the two separate Lovable Cloud PostgreSQL projects. The queries collected only grant metadata, table-level record counts, and the boolean presence of the standard migration-history relation. **No JWTs, user IDs, passwords, tokens or personal records were fetched.**
+
+| Control / evidence | ICK Opportunities **Production** | Lovable **Security Staging** |
+| --- | --- | --- |
+| `anon` direct `public.opportunities` table privileges | **SELECT only** | **DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE** |
+| `authenticated` direct `public.opportunities` privileges | **SELECT, INSERT, UPDATE, DELETE** | **DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE** |
+| `public.has_role` explicit `PUBLIC` function `EXECUTE` | **NOT GRANTED** | **GRANTED** |
+| `public.has_role` explicit `anon` `EXECUTE` | **NOT GRANTED** | **GRANTED** |
+| `public.has_role` explicit `authenticated` `EXECUTE` | **GRANTED** | **GRANTED** |
+| `supabase_migrations.schema_migrations` relation present | **YES** | **NO** |
+| Opportunity row count at readback | **14** | **0** |
+| Auth user count (aggregate only) | **10** | **0** |
+
+**Interpretation:** This proves that Staging's explicit table/function ACLs **have not been reconciled to Production's least-privilege state**. The Stage `anon` SQL role is **directly granted TRUNCATE**, which is **not controlled by PostgreSQL row-level security**. Whether any exposed web/API endpoint lets an outsider exercise that SQL capability was **NOT TESTED**; ordinary PostgREST table routes do not provide an SQL `TRUNCATE` operation. Do not equate `anon` database grants with a confirmed public HTTP exploit. Still, this broad grant is a **security hardening failure** and a **blocker for staging/production parity**. The separately confirmed public-schema `SECURITY DEFINER` `has_role` function is executable by `PUBLIC` in staging, broadening its callable surface. The Stage database has **no standard Supabase migration-history table**, while Production does. This is **NOT proof** that zero SQL changes or migrations have ever been applied to Staging; they may have been provisioned or applied by other pathways.
+
+**Production caveat:** Only presence/absence of the migration-history relation was checked. An additional attempt to read individual Production migration versions was **blocked by tool safety checks** before execution; no claim about any specific version row follows from that failed attempt. Distinguish source-controlled C5 intent and the observed Production post-condition from evidence of particular version execution.
+
+**Consequences for P1 candidate acceptance:**
+1. The earlier SQL-role candidate-publication-policy tests (both `anon` and `authenticated`, with independently verified rollback) **remain VALID tests of candidate SELECT-row visibility** under existing isolated Staging RLS.
+2. They do **NOT establish broader authorization equivalence** between Staging and Production, because Stage has anomalously broad direct permissions and a public-executable definer helper.
+3. **Block staging HTTP/JWT admin and production-release conclusions** until a separately approved, targeted staging ACL reconciliation plan exists, followed by negative INSERT/DELETE, role-metadata/RPC and admin-persona testing. Avoid blindly replaying all of C5: its privilege changes touch numerous tables and defaults. Capture safe before/after ACL snapshots, explicit rollback, and platform approval before any privilege DDL.
+4. No SQL changes, migrations, grants, published URLs, user accounts or Production application code were modified.
+
+**Current release classification:** **P1 publication predicate tested in SQL roles; STAGING PRIVILEGE PARITY FAIL; real HTTP/JWT & Admin tests NOT RUN; Production fix NOT APPLIED.**
+
 ## 2. Existing application behavior and limitations
 
 - The general public page read functions `fetchPublicOpportunities()` and `fetchOpportunityById()` in `src/lib/opportunities.ts` use Supabase queries whose effective public visibility depends on database RLS.
