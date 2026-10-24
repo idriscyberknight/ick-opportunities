@@ -319,6 +319,23 @@ An empty global-default rowset is **not** proof `PUBLIC` lacks default `EXECUTE`
 
 **P1 release gate remains blocked** on staging privilege parity and real HTTP/JWT/admin-persona tests. This C5 finding should be triaged as a related, independently reviewed privilege-hardening work item; its presence does not invalidate the two earlier, rollback-verified SQL-role candidate-publication tests.
 
+## 1I. VERIFIED source-level public-browsing parity gap for admin sessions — 2026-10-24
+
+**Source-level review only; no new DB fixture test or privileged-user session was run.** The planned P1 RLS tightening still preserves a separate permissive policy `Admins can view all opportunities` on `public.opportunities`. PostgreSQL OR-combines applicable permissive SELECT policies. Therefore an **authorized administrator's own SQL/JWT session is intentionally allowed to view drafts, expired and rejected rows** for administration even after the public-policy fix.
+
+**Additional app behavior:** The current `main` code uses the *same shared Supabase client* and unfiltered row reads in `src/lib/opportunities.ts`:
+- `fetchPublicOpportunities()`: `.from("opportunities").select("*")` with optional category/country/search filters, but **no explicit** `status='active'`, `verified_status='verified'`, `published_at <= now()`, review-metadata or deadline eligibility predicates. `OpportunityBrowser.tsx` uses this function for public browsing.
+- `fetchOpportunityById()`: `.select("*").eq("id", id).maybeSingle()` with **no additional public-eligibility predicates**. The `/opportunities/$id` route uses this function for public details.
+- `RecommendedOpportunities.tsx` fetches the same public opportunities; `rankOpportunities()` in `src/lib/matching.ts` filters `status='active'` and non-expired deadline but **not** verification, publication timestamp or review metadata.
+
+**Consequence:** For **administrators browsing the ostensibly public UI while authenticated**, these public-list/detail/recommendation functions can show unpublished or incompletely reviewed records that they are allowed to read for administrative work. This is a **VERIFIED source-path/authorization interaction and a predicted UI parity bug**—**NOT evidence of unauthorized anonymous exposure under the corrected RLS policy**. A real admin JWT/UI regression is still needed to observe it. P1 acceptance should assert public screens show public-eligible records for *every* persona including admin, while dedicated admin queue and admin listing still show all authorized records.
+
+**Proposed separate safe fix:** Use an explicit **public-eligibility query contract** on public listing/detail/recommendation paths, while keeping dedicated admin queries separate. Match the database's status, verified, publication, reviewed metadata and deadline rules; centralize/synchronize criteria to avoid drift. Frontend filters are **defense-in-depth / UI consistency**, **not** a substitute for RLS or secure grants. Add regression fixtures for an admin viewing public pages and for direct public detail links. Preserve reviewer access in `fetchAllOpportunities()`, `fetchReviewQueue()` and administrative UIs.
+
+**Additional editorial-governance finding:** `src/lib/review.ts` allows the `published` action to set `verified_status='verified'`, `status='active'`, `published_at=now()`, `reviewed_by` and `reviewed_at` in one client-side operation. `admin.review.tsx` renders a Publish button for draft rows independent of their approved state, with a simple confirmation prompt. Thus an admin can **publish without performing the separate `approved` UI action**. This is not a documented unauthorized-access exploit (the action is admin-only through RLS) but may violate a required **approve-then-publish editorial process**. The proposed public RLS policy checks metadata existence, **not that independent review happened or source evidence was verified**. If two-step or two-person approval is a business requirement, enforce it in a reviewed server-side state transition with atomic audit, not only in the UI.
+
+**Release status:** Admin-public-surface parity and editorial approval rules **PENDING FOUNDER PRODUCT DECISION + STAGING TESTS**. No frontend code, admin workflow or production security setting was modified.
+
 ## 2. Existing application behavior and limitations
 
 - The general public page read functions `fetchPublicOpportunities()` and `fetchOpportunityById()` in `src/lib/opportunities.ts` use Supabase queries whose effective public visibility depends on database RLS.
@@ -395,20 +412,20 @@ A SQL SELECT policy is not the whole publication system. Plan a **separate**, li
 | A: Inventory | Live RLS / table grants / counts / status combinations | COMPLETE — read-only 2026-10-24 snapshot |
 | B: Isolation | Staging database is provably distinct and production credentials not shared | PARTIAL — separate Lovable project and different count, binding not proven |
 | C: Restore | Pre-migration backup, restore test and reversal workflow documented | NOT VERIFIED |
-| D: SQL tests | Syntax and policy tests with synthetic fixtures run in isolated staging | NOT RUN |
+| D: SQL tests | Candidate RLS policy tests on isolated staging for `anon` and `authenticated` PostgreSQL roles; both transactionally rolled back and independently checked | **SQL-ROLE PASS; REAL JWT/ADMIN STILL NOT RUN** |
 | E: Regression | Public + admin UI/API tests pass, count changes approved | NOT RUN |
 | F: Release | Founder explicitly approves reviewed migration with deployment window and rollback | NOT AUTHORIZED |
 | G: Verification | Live read-only policies, grants and role visibility rechecked after deployment | NOT APPLICABLE YET |
 
 **Rollback design** (requires separate approval): preserve the exact original policy definition and a reviewed migration to revert if the new policy unexpectedly blocks legitimate access. Do **not** revert to an unsafe policy automatically in response to an incident. Instead pause release, investigate, and use an approved fallback. Backup/restore requirements are independent of simply undoing DDL.
 
-**Deployment boundary:** No SQL has been executed here. No RLS, auth, user account, table row, university data, Vercel production deployment or Lovable agent was modified. This PR only creates documentation under `docs/security/`.
+**Deployment boundary:** No executable migration or application-code change has been committed in this PR. Temporary candidate RLS and synthetic-row SQL were executed **only within isolated Staging rollback transactions** (see 1D–1E), with independent verification of restored policy and empty staging fixture sets. No persistent RLS, auth, user account, table row, university data, Vercel production deployment or Lovable agent change was made by those tests. This PR changes only documentation under `docs/security/`.
 
 ## 7. Recommended next action
 
 1. Maintain **Lovable Cloud** as the current ICK Opportunities production backend, per Founder Option A.
 2. Confirm staging-bound environment variables, database project refs, isolation and synthetic test accounts.
-3. Test the policy draft and RLS role matrix in isolated staging *only when a separate, explicit approval authorizes staging writes*.
+3. The candidate SQL-role tests already passed under transactional rollback (sections 1D–1E). **Still required:** real HTTP/JWT authenticated/admin tests and privilege-parity remediation under an independently authorized staging-only plan, plus public-browsing parity checks for admin sessions.
 4. After evidence passes, prepare an actual migration and ask the Founder for **separate production approval**.
 5. Keep University Registry schema and scholarship-cycle work separate until this P1 issue is addressed.
 
