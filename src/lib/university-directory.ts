@@ -69,7 +69,7 @@ export const STARTER_UNIVERSITIES: readonly UniversityRecord[] = [
     aliases: ["Université Islamique au Niger", "UIN", "Islamic University of Niger"],
     country: "Niger", countryCode: "NE", location: "Say / Niamey",
     types: ["islamic", "islamic_studies"],
-    description: "OIC-associated university in Niger with institutional information on its official site.",
+    description: "OIC-listed Islamic university in Niger. The university website address is still under independent review.",
     // The OIC and WHED list this URL, but current availability/ownership are not independently confirmed.
     officialWebsite: "https://universite-say.com/",
     institutionalSource: "https://www.oic-oci.org/en/organs/islamic-universities",
@@ -132,7 +132,14 @@ export function getUniversity(slug: string): UniversityRecord | undefined {
 }
 
 export function normalizeUniversityTerm(value: string): string {
-  return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase().trim();
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f\u064b-\u065f\u0670\u0640]/g, "")
+    .replace(/[\u0622\u0623\u0625\u0671]/g, "\u0627")
+    .replace(/\u0649/g, "\u064a")
+    .toLocaleLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function filterUniversities(options: {

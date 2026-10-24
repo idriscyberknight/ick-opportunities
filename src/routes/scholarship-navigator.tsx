@@ -196,6 +196,9 @@ function ScholarshipNavigatorPage() {
             <a href="#navigator-search" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
               Find a scholarship <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </a>
+            <Link to="/scholarship-navigator/global-search" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              Global scholarship search (beta) <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
             <Link to="/scholarships" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
               All scholarship listings
             </Link>
