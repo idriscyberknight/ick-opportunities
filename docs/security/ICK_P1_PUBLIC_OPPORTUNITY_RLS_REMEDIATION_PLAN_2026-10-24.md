@@ -336,6 +336,48 @@ An empty global-default rowset is **not** proof `PUBLIC` lacks default `EXECUTE`
 
 **Release status:** Admin-public-surface parity and editorial approval rules **PENDING FOUNDER PRODUCT DECISION + STAGING TESTS**. No frontend code, admin workflow or production security setting was modified.
 
+## 1J. ACTUAL GRANT SCOPE, DEFAULT ACL AND MIGRATION-VERSION FOLLOW-UP — VERIFIED 2026-10-24
+
+**Mode: strictly READ-ONLY.** New metadata queries succeeded against the separately identified Lovable Cloud Security Staging and Production PostgreSQL servers. These are live measurements of current *database privileges* and migration-tracker metadata. No SQL DDL/DML, account creation, API key retrieval, paid feature, deployment or `main` modification was performed.
+
+### Public tables: privilege blast radius (new hardening evidence)
+
+| Metric (live `pg_class` and `has_table_privilege`) | Security Staging | Production |
+| --- | ---: | ---: |
+| Public tables counted | 14 | 14 |
+| Public tables where `anon` has `SELECT` | **14 / 14** | **1 / 14** |
+| Public tables where `anon` has `INSERT` | **14 / 14** | **0 / 14** |
+| Public tables where `anon` has `TRUNCATE` | **14 / 14** | **0 / 14** |
+| Public tables with RLS enabled | 14 / 14 | 14 / 14 |
+| Total public RLS policies | 24 | 24 |
+
+**Interpretation:** Staging is **not** simply a two-grant mismatch. Its `anon` role has broad SQL grants across all **14** public tables. **RLS is enabled on all fourteen** and may block SELECT/INSERT/UPDATE/DELETE at the row level; therefore table GRANT presence **does not establish a successful public API data leak or write**. **SQL `TRUNCATE` is not governed by RLS**; a SQL grant is serious staging hardening drift, but this finding alone does **not** prove a browser/PostgREST user can issue TRUNCATE. Do not expose or publish this staging application to untrusted users merely to test it.
+
+### Default privileges for future objects (new verified live evidence)
+
+Read-only `pg_default_acl` and `aclexplode` inspection for **schema `public`** found:
+
+- **Security Staging, owner role `postgres`:** direct default grants to `anon` and `authenticated` for **all eight table privileges**, sequence privileges, and **function EXECUTE**.
+- **Production, owner role `postgres`:** **no direct `anon`/`authenticated` entries** for schema-`public` default table/sequence/function privileges in the recorded ACLs; `postgres` and `service_role` still appear where configured for function defaults.
+- **Both environments, owner role `supabase_admin`:** schema-`public` default grants for `anon` and `authenticated` remain broad (including table privileges and function EXECUTE).
+
+This establishes an **actual difference in future-object grant defaults**, consistent with the intended C5 tightening for `postgres` in Production but not in Staging. It does **not** imply the C5 migration itself was recorded as executed; other SQL can produce identical ACLs. It also does **not** mean Production future function access is fail-closed globally: PostgreSQL's **global built-in PUBLIC EXECUTE default**, owner-role differences and `supabase_admin` defaults still need a separate, dedicated review (see §1H). A separate query of recorded global `pg_default_acl` entries did not disclose an explicit global function-default override; absence of entries cannot disprove built-in `PUBLIC` behavior. Do not change global defaults casually; they are broad.
+
+### Migration-history follow-up (new verified version-level fact)
+
+- Staging: the standard relation `supabase_migrations.schema_migrations` was **not present in the catalog**.
+- Production: that relation **exists**.
+- Production read-only query `SELECT version ... WHERE version IN ('20260904011046','20261008100000')` returned **`20260904011046`** (the source-controlled `has_role` privilege-hardening migration), **but did not return `20261008100000`** (the source-controlled C5 general privilege-hardening migration).
+- Production's live least-privilege table/function ACLs **do resemble C5's intended end state**, despite the queried C5 version not being recorded in the standard tracker.
+
+**Precisely what this proves:** these two version identifiers have different recorded states in the inspected tracker. It **does NOT** prove that C5 was never executed; direct SQL console actions, alternate deployment mechanisms, manual GRANT/REVOKE operations or different history records could cause the same result. Do not edit or backfill migration history. Investigate the actual rollout route before any new migration.
+
+### Decision: P1 staging parity gate remains BLOCKED
+
+**VERIFIED:** two SQL-role candidate public-SELECT tests passed under transaction/rollback; 14/14 public-table grants and default-ACL drift materially differ from Production; migration-history tracking differs. **NOT VERIFIED:** real signed-in/admin JWT REST authorization, anon ability to mutate over HTTP, actual stage API isolation, rollout/backup, and a production-ready migration. **NO PRODUCTION FIX APPLIED.**
+
+**Next review-only activity:** design a *targeted* staging permission parity plan with precise before/after ACL snapshots, preserved admin and service workflows, special treatment of `PUBLIC` EXECUTE and `supabase_admin` defaults, verification/rollback, and explicit authorization **before any staging GRANT/REVOKE**. Never replay C5 or its deliberately permissive rollback wholesale, and do not merge executable schema changes into `main` at this stage.
+
 ## 2. Existing application behavior and limitations
 
 - The general public page read functions `fetchPublicOpportunities()` and `fetchOpportunityById()` in `src/lib/opportunities.ts` use Supabase queries whose effective public visibility depends on database RLS.
