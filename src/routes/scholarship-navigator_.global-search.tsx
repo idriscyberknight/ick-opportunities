@@ -571,6 +571,9 @@ function GlobalSearchBeta() {
                       {university.description}
                     </p>
 
+                    {university.websiteVerification === "needs_review" && (
+                      <p className="mt-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs font-semibold text-foreground">University website verification pending.</p>
+                    )}
                     <p className="mt-4 text-xs text-muted-foreground">
                       Editorial institution entry.
                       Current scholarship status unknown.
