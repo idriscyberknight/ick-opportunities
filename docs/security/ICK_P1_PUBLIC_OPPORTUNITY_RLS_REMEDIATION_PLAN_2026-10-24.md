@@ -102,6 +102,48 @@ During the follow-up, the Lovable Cloud MCP query tool returned **free-plan data
 4. Exercise `anon`, signed-in ordinary-user and admin role access against the proposed RLS; record negative and positive tests and ensure no production data is touched.
 5. Require Founder review again before any permanent staging schema modification or production rollout. A successful Vercel build is not evidence that RLS passes.
 
+## 1B. P1 predicate-only synthetic tests — 2026-10-24
+
+**TEST EXECUTED** directly against the *separate Lovable Security Staging PostgreSQL server* as a **read-only `WITH cases AS (VALUES ...)` query**. The query used nine fabricated in-memory cases; no persistent records, identities, permissions, policies, or tables were modified.
+
+For each fabricated case the query compared (A) the currently deployed *old* public rule and (B) the **proposed** stricter predicate (active, verified, not-future published, reviewed_by, reviewed_at, deadline) with an expected visibility value:
+
+| Test case | Old rule visible? | New proposed rule visible? | Expected? |
+| --- | --- | --- | --- |
+| Draft awaiting review | No | No | PASS |
+| Active but unverified | **Yes** | No | PASS |
+| Active, verified, publication timestamp missing | **Yes** | No | PASS |
+| Active, verified, publication timestamp in future | **Yes** | No | PASS |
+| Active, verified, review metadata missing | **Yes** | No | PASS |
+| Active, verified, reviewed, future deadline | Yes | Yes | PASS |
+| Active, verified, reviewed, no deadline recorded | Yes | Yes | PASS |
+| Active, fully reviewed, past deadline | No | No | PASS |
+| Rejected, otherwise reviewed | No | No | PASS |
+
+**Result: 9 of 9 pure-predicate unit cases passed.** Under the deliberately simulated conditions, the old rule would have made **four** invalid specimens visible; the proposed expression suppressed those four while preserving the two valid specimens.
+
+**IMPORTANT SCOPE LIMITATION:** These were synthetic **boolean predicate evaluations**, **NOT** row-level access tests under actual `anon`, normal `authenticated`, admin and service-role sessions. The proposed `ALTER POLICY` SQL has **not** been run, database migration has **not** been tested, and successful predicate checks **do not prove** safe role grants, RLS combination behavior, frontend compatibility or availability of official scholarships.
+
+### Additional staging grant drift detected
+
+A staging-only, read-only privilege check returned:
+
+- RLS **enabled** on `public.opportunities`.
+- `anon` has `SELECT` privilege **and also `INSERT` privilege at the SQL GRANT level**.
+- `authenticated` has `SELECT` and `INSERT` privileges.
+- The staging RLS `INSERT` policy was reported as `TO authenticated` with an admin-role predicate, and there was **no anonymous INSERT policy in the earlier staging inventory**.
+
+**Interpretation:** An `anon` table-level `INSERT` grant in this environment is unnecessarily broad compared with the earlier production check (`anon` INSERT was false). Its existence **does not by itself prove anonymous INSERT can succeed**, because RLS also controls row writes; staging testing must independently demonstrate denial with an anonymous session. Treat the difference as **permission drift requiring review**, and do not copy staging grants blindly into production. **Do not revoke privileges yet** without the intended policy baseline and impact review.
+
+### Current release gates
+
+- [x] Distinct PostgreSQL server identities verified via Lovable.
+- [x] Nine in-memory predicate truth-table cases passed, with no write.
+- [x] Staging SQL GRANT drift detected for `anon` INSERT.
+- [ ] Actual staging policy change tested against synthetic persistent/transactional fixtures with rollback controls.
+- [ ] Real anonymous, ordinary signed-in, admin and privileged-server RLS/REST tests.
+- [ ] Full app regression tests, backups, restoration and Founder-approved production change.
+
 ## 2. Existing application behavior and limitations
 
 - The general public page read functions `fetchPublicOpportunities()` and `fetchOpportunityById()` in `src/lib/opportunities.ts` use Supabase queries whose effective public visibility depends on database RLS.
