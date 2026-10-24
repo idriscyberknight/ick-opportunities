@@ -39,6 +39,37 @@ The expired + pending_review + published timestamp combination warrants later **
 
 The Lovable project **ICK Opportunities - Security Staging** (project 887e7515-30c6-4fa3-bafc-fb8d8d610315) separately reports a supabase-backed database. A read-only table-name query found existing opportunities and audit tables; a count query found **0 total opportunity records** in that project. This establishes that our two read-only contexts currently return different datasets, **not yet** that all hosting, secrets, auth, migrations, and background jobs are independently isolated. Explicitly verify that preview builds cannot reach the production database before any staging write or migration.
 
+## 1A. Staging isolation check — 2026-10-24 read-only follow-up
+
+**Founder authorization in chat:** Proceed with *staging verification and safe tests* for the P1 RLS proposal. **Production writes remain prohibited.**
+
+### Source-level staging mapping — confirmed
+
+| Evidence | Production Lovable project | Security Staging Lovable project |
+| --- | --- | --- |
+| Project ID | `433a53c8-8872-49f2-b7b8-3e8dc7e96e35` | `887e7515-30c6-4fa3-bafc-fb8d8d610315` |
+| Project name | ICK-Opportunities | ICK Opportunities - Security Staging |
+| Lovable Cloud DB enabled | Yes | Yes |
+| Backend stack | supabase | supabase |
+| `supabase/config.toml` project ref | `xzxfodukvzzfwbwokhxt` | `ckdfdjvlqvopzlqtwapf` |
+| Last reported opportunity rows from read-only session | 14 | 0 |
+
+The two projects have **different Lovable IDs and different repository Supabase project refs**; their recorded opportunity counts were also different. This is **strong evidence of distinct configured projects**, but **not full verification of live runtime environment variable binding, background-job isolation, database connections or backups**. Both client files rely on `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` environment values rather than hardcoded refs. Do **not** treat a repository ref alone as definitive proof of deployed connection binding.
+
+### Tooling blocker — no changes made
+
+During the follow-up, the Lovable Cloud MCP query tool returned **free-plan database action limit reached** before any new identity, policy, or runtime-isolation queries could execute. The provider confirmed **those queries were not executed**. No SQL writes, test fixtures, `ALTER POLICY`, migrations, or changes to either database were attempted. The staging RLS persona matrix remains **NOT TESTED**.
+
+**Consequence:** Do not proceed with staging data writes or DDL until environment isolation is independently confirmed and database action access is available. Do not purchase an upgrade merely for this check; an approved free/local test environment is an alternative after prerequisites and tooling are verified.
+
+### Next safe checks when access is available
+
+1. In **read-only mode**, confirm actual database connection identities and server-side environment bindings for both Lovable projects without revealing credentials.
+2. Confirm the staging project cannot access production auth, database or storage with its client credentials.
+3. Establish an isolated, synthetic-data-only staging test fixture and reviewed restoration strategy.
+4. Exercise `anon`, signed-in ordinary-user and admin role access against the proposed RLS; record negative and positive tests and ensure no production data is touched.
+5. Require Founder review again before any permanent staging schema modification or production rollout. A successful Vercel build is not evidence that RLS passes.
+
 ## 2. Existing application behavior and limitations
 
 - The general public page read functions `fetchPublicOpportunities()` and `fetchOpportunityById()` in `src/lib/opportunities.ts` use Supabase queries whose effective public visibility depends on database RLS.
