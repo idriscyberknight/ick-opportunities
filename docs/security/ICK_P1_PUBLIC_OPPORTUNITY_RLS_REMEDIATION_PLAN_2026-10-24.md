@@ -56,6 +56,20 @@ The Lovable project **ICK Opportunities - Security Staging** (project 887e7515-3
 
 The two projects have **different Lovable IDs and different repository Supabase project refs**; their recorded opportunity counts were also different. This is **strong evidence of distinct configured projects**, but **not full verification of live runtime environment variable binding, background-job isolation, database connections or backups**. Both client files rely on `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` environment values rather than hardcoded refs. Do **not** treat a repository ref alone as definitive proof of deployed connection binding.
 
+### Vercel project environment — additional read-only evidence
+
+The production Vercel project `ick-opportunities` was inspected through the Vercel environment **metadata list with decryption disabled**. Three **sensitive** variable names were present:
+
+- `VITE_SUPABASE_PROJECT_ID`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_URL`
+
+**All three Vercel variable records list both `production` and `preview` as targets.** No separate Git-branch override was apparent among those returned metadata records. Variable **values and credentials were not retrieved or disclosed**.
+
+**Security implication:** Treat Vercel Preview deployments of the *production repository* as **potentially connected to the production Lovable Cloud database**, even when source code is on a feature branch. A successful feature-branch preview or distinct Lovable Security Staging project does **not** by itself prove Vercel preview database isolation. **Never insert synthetic test rows, run RLS policy writes, migrate schemas, or exercise privileged test accounts in ordinary Vercel Preview until its resolved backend project ref is independently verified.**
+
+**Safe staging target candidate:** The *separate* Lovable Security Staging project, which reports a different `supabase/config.toml` project ref. Its runtime bindings still require verification. Do not print decrypted environment-variable values during testing; compare only nonsecret project identities or backend-connection identifiers.
+
 ### Tooling blocker — no changes made
 
 During the follow-up, the Lovable Cloud MCP query tool returned **free-plan database action limit reached** before any new identity, policy, or runtime-isolation queries could execute. The provider confirmed **those queries were not executed**. No SQL writes, test fixtures, `ALTER POLICY`, migrations, or changes to either database were attempted. The staging RLS persona matrix remains **NOT TESTED**.
