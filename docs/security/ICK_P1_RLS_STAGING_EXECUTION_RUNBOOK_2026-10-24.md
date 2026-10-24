@@ -22,6 +22,14 @@ Earlier staging-only tests:
 
 **Latest attempt (2026-10-24):** A staging-only **readback SELECT** to confirm the second rollback was refused by the Lovable **free-plan MCP database action limit**. The provider explicitly reported that the query **was not executed**. **NO new RLS test, ALTER POLICY, data insert, migration or production change occurred in this attempt.**
 
+### Follow-up gate outcome — independent readback still pending
+
+A further **read-only** preflight query was attempted against the connected **Security Staging** Lovable Cloud database to check both the remaining synthetic fixture count and the current public RLS predicate. Lovable rejected it under the **free-plan database action quota**, explicitly indicating **the query was not executed**. This attempt did not access or modify Production and did not create an authorization test account.
+
+**Gate 1 (post-rollback readback): BLOCKED, NOT PASSED.** The same first-stage gate must be completed when read-only database access is permitted. Do not re-run writes to "test" a potentially dirty staging environment merely because the old transaction ended with `ROLLBACK`; verify the current persisted row count first.
+
+**Prior verified evidence remains unchanged:** the anonymous and authenticated SQL-role tests demonstrated that the pre-remediation RLS policy exposes synthetic active/unverified and active/unpublished rows in Staging. The replacement RLS policy and real API/JWT role matrix remain **untested**. The draft PR contains **only documentation**, not an applied security fix.
+
 ## 2. Mandatory preflight BEFORE any future staging write
 
 1. Confirm the target Lovable project ID and its actual runtime PostgreSQL server identity. Only proceed if it matches the separate Security Staging project; never run the test in the primary Lovable project or Vercel Preview.
