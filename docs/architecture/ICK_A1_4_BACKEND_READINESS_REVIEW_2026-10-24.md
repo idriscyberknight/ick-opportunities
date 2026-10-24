@@ -2,27 +2,39 @@
 
 **Document type:** Evidence-based architecture reconciliation / read-only security assessment  
 **Date:** 2026-10-24  
-**Status:** DRAFT — NOT AN IMPLEMENTATION OR A PRODUCTION SECURITY CERTIFICATE  
+**Status:** DRAFT — NOT AN IMPLEMENTATION OR A PRODUCTION SECURITY CERTIFICATE; updated after read-only Lovable Cloud inspection  
 **Reference production code:** `main` commit `72b596fea8c807b4c0b84d5738b46825c4071e0c` (merged PR #18)  
 **Scope:** Global Universities & Scholarship Navigator. Preserve existing opportunities, authentication, administration, recommendations and user information.
 
 > This document is NON-EXECUTABLE. Do not paste the proposed design into a production SQL editor or merge a schema file to `supabase/migrations` on its authority. No live database data, schema, RLS policy, environment variable, API key, payment setting or deployment is changed here.
+
+## Founder decision — 2026-10-24
+
+**APPROVED strategic Option A:** Keep the existing **Lovable Cloud database** running as the ICK Opportunities backend now; **plan** a possible future migration to an ICK-controlled Supabase project only after business need, export/import support, user/auth/session strategy, backup/rollback, isolated staging, security and cost have been separately reviewed. **This approval does not authorize migration, DDL, publication-policy changes, credential changes or production deployment.**
+
+### Updated live read-only evidence via Lovable connection (no writes)
+
+- Confirmed linked Lovable project **ICK-Opportunities** (`433a53c8-8872-49f2-b7b8-3e8dc7e96e35`) reports `database.enabled=true`, `stack=supabase`. This is the project's **Lovable Cloud database**, not the unrelated standalone Supabase project.
+- `information_schema.tables` on this Lovable Cloud database lists `opportunities`, `opportunity_sources`, and `opportunity_audit_logs`; none of the four university-registry tables appeared in this scoped table-name query.
+- Actual `pg_policies` SELECT rule for **Public can view live opportunities** is `status='active' AND (deadline IS NULL OR deadline >= CURRENT_DATE)` for `anon` and `authenticated` — **confirmed in live database metadata**, not just checked-in SQL.
+- Read-only aggregate query returned **14 total opportunity rows, 0 rows satisfying the public active/deadline policy, and 0 candidates under the additional unverified/unpublished condition** at the inspection moment. This does **not** prove there have never been exposed rows, or rule out later issues.
+- Remaining unknowns: direct anonymous REST checks, policy change/backfill regression impact, backups, restoration tests, isolated staging and full auth role-matrix. These checks must precede any policy alteration.
 
 ## 1. Executive findings (with confidence)
 
 | ID | Finding | Evidence / confidence | Implication |
 | --- | --- | --- | --- |
 | A14-F01 | University directory currently uses exactly **8 static editorial records**, not database-backed university data | **VERIFIED in repository**: `src/lib/university-directory.ts` | World-wide searchable university registry is **not implemented**. |
-| A14-F02 | The checked-in 14 `supabase/migrations/*.sql` files do **not** create university-registry tables | **VERIFIED in checked-in migration history only** | Cannot infer current live database inventory; historical untracked SQL is possible. |
+| A14-F02 | The checked-in 14 `supabase/migrations/*.sql` files do **not** create university-registry tables; the scoped live metadata query also did not list the four registry tables | **VERIFIED in repository and via Lovable Cloud read-only table-name query** | No registry tables observed; the eight institutions remain static for the current public interface. |
 | A14-F03 | A detailed four-table registry architecture and draft SQL already exist | **VERIFIED in repository**: `docs/architecture/ICK_GLOBAL_UNIVERSITY_REGISTRY_V1.md`, `docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql` | **Reuse and reconcile** them; do not create duplicate competing schema designs. |
 | A14-F04 | The draft schema is intentionally **fail-closed**: no public university reads and a CHECK blocking `published` state | **VERIFIED by reading draft SQL**, **NOT TESTED against PostgreSQL** | Staging test first; it cannot power public directory search merely by being applied. |
-| A14-F05 | The checked-in opportunity public SELECT RLS predicate requires active status and an acceptable deadline but **does not require** `verified_status='verified'` or non-null `published_at` | **VERIFIED in migration source code**, current live RLS **NOT RE-VERIFIED** | **P1 potential unintended visibility** if records are active yet unreviewed/unpublished. Distinct security remediation track. |
+| A14-F05 | The deployed opportunity public SELECT RLS predicate requires active status and an acceptable deadline but **does not require** `verified_status='verified'` or non-null `published_at` | **VERIFIED in repo AND in live Lovable Cloud `pg_policies` metadata** | **P1 permission weakness**, even though snapshot aggregate query showed **0 currently qualifying public rows**. Distinct security remediation track. |
 | A14-F06 | `fetchPublicOpportunities()` and `fetchOpportunityById()` use `select("*")` and trust RLS for public rows | **VERIFIED in repository**: `src/lib/opportunities.ts` | Frontend filters cannot repair permissive database authorization. |
 | A14-F07 | `reviewOpportunity()` updates an opportunity then inserts an audit log in a separate request, without checking the audit insert error | **VERIFIED in repository**: `src/lib/review.ts` | A review action can succeed while its audit record fails; transactional review/publish operation requires design. |
-| A14-F08 | The only Supabase project currently visible to this ChatGPT Supabase connection is an **unrelated** project named `ICk technologies` (`ojnibatohrnzikiswuuw`); `supabase/config.toml` identifies `xzxfodukvzzfwbwokhxt` | **VERIFIED connection inventory and repository config**, not proof of live deployment binding | **DO NOT QUERY OR MIGRATE THE UNRELATED PROJECT.** Connect and independently verify the actual production/staging environment. |
-| A14-F09 | A repository document dated 2026-10-23 reports prior read-only schema probes | **HISTORICAL DOCUMENT CLAIM**, not reproduced through today's connection | Keep historical results, but re-run live read-only checks against the correct database before authorizing implementation. |
+| A14-F08 | The standalone Supabase connector lists an unrelated `ICk technologies` project (`ojnibatohrnzikiswuuw`), but the Lovable plugin independently reached the project's **Lovable Cloud database**; repository config names `xzxfodukvzzfwbwokhxt` | **VERIFIED Lovable project status and database metadata; standalone project remains unrelated** | Continue safe inspections through **Lovable read-only tools**, not the unrelated standalone project; migration target and staging isolation still require separate validation. |
+| A14-F09 | 2026-10-24 read-only aggregate count found 14 total opportunities, none qualifying for public visibility at inspection time | **VERIFIED in Lovable Cloud database snapshot**, subject to the query's role/permissions | No currently visible qualifying rows found in this query; **not** proof that the public RLS predicate is secure. |
 
-**Assessment:** A1.4 architecture groundwork exists and should be reused. **Backend implementation readiness is blocked by unverified authoritative database access, isolated staging, and a publication RLS risk.**
+**Assessment:** The actual **Lovable Cloud database is now reachable for read-only checks**; the current backend must **remain on Lovable Cloud per Founder decision A**. A1.4 implementation remains blocked by absence of verified isolated staging, a reviewed publication RLS correction, role-level tests and restore/rollback evidence.
 
 ## 2. Reconcile with existing plans — no duplicate architecture
 
@@ -53,14 +65,14 @@ In `supabase/migrations/20260904011034_0bbc687a-4920-445e-b959-b0a6f9b30207.sql`
 USING (status = 'active' AND (deadline IS NULL OR deadline >= CURRENT_DATE))
 ```
 
-This predicate is **not** restricted to `verified_status = 'verified'` or `published_at IS NOT NULL`. Client functions under `src/lib/opportunities.ts` rely on database RLS. Some specialised scholarship queries apply additional frontend filters, but those cannot stop direct Data API requests to a permissive table policy.
+This predicate is **not** restricted to `verified_status = 'verified'` or `published_at IS NOT NULL`. **Read-only `pg_policies` inspection of the actual Lovable Cloud database on 2026-10-24 confirmed the same predicate.** Client functions under `src/lib/opportunities.ts` rely on database RLS. Some specialised scholarship queries apply additional frontend filters, but those cannot stop direct Data API requests to a permissive table policy. The inspected database had **0 rows qualifying for public visibility** at the time of the aggregate query.
 
 **Potential impact:** a row that is marked `active` without being approved/published could become publicly readable if the deployed policy matches the checked-in one. This finding **does not assert that such rows currently exist or were accessed**.
 
 **Required independent security track — NOT implemented by this document:**
 
-1. Verify the deployed policy text on the **correct** project; do not treat repo migrations as authoritative live state.
-2. Audit counts (only counts, no sensitive row values) of active, unverified and unpublished opportunities, and existing published records with null timestamps.
+1. **Completed:** verified the deployed public SELECT predicate via Lovable Cloud `pg_policies` read-only metadata. Recheck immediately before any eventual remediation.
+2. **Initial snapshot completed:** 14 total rows, 0 matching old public predicate and 0 in the inspected potential-exposure subset. Repeat aggregates before remediation and examine historical review/audit consistency without exposing sensitive row values.
 3. Define publication invariants: `status='active'`, `verified_status='verified'`, non-null `published_at` not in the future, valid deadline, evidence and admin authorization.
 4. Design a **separate** reviewed policy-and-publication change with regression tests. A tight policy applied without a legacy-data impact review can unexpectedly hide approved listings.
 5. Validate direct REST/API access using anonymous and signed-in identities, not merely UI testing.
@@ -143,9 +155,9 @@ Zero candidate count under query C does **not** prove the policy is safe; verify
 | Gate | Required result | Current status (2026-10-24) |
 | --- | --- | --- |
 | G0. Architecture reconciliation | Reuse existing four-table design, record risks and changes needed | **THIS DOCUMENT, DRAFT** |
-| G1. Environment identity | Verify deployed frontend binds to the intended Supabase project; confirm current project ID and change authority | **BLOCKED — NOT VERIFIED** |
+| G1. Environment identity | Confirm Lovable Cloud project, DB enablement and controlled read-only access; verify deployment-binding before any future migration | **PARTIAL — LOVABLE DB REACHED, DEPLOYMENT BINDING NOT FULLY PROVEN** |
 | G2. Isolated database | Separate staging/local Supabase with safe seed data, backups, rollback and no production user-data copying | **NOT VERIFIED** |
-| G3. Existing RLS security | Independently inspect current policy, active/unreviewed row counts, direct API visibility and remediate in separate reviewed change | **REQUIRES TESTING** |
+| G3. Existing RLS security | Deployed policy and initial aggregate count inspected; next perform direct anonymous REST and role tests, impact analysis and separate reviewed remediation | **P1 VERIFIED IN LIVE POLICY; NO WRITES; MORE TESTING REQUIRED** |
 | G4. Staging SQL | Run existing four-table schema draft in **isolated** Postgres/Supabase; validate DDL, indexes, same-university evidence FK, grants, RLS and no publication | **NOT EXECUTED** |
 | G5. Role-matrix tests | `anon`, normal signed-in user, admin and service role: no accidental access, no drafts leaking, no unauthorized writes | **NOT EXECUTED** |
 | G6. Approved seed ingestion | Transfer **only** the eight starter institutions as drafts; check aliases, website provenance and dedup; no blanket verification | **NOT EXECUTED** |
@@ -178,9 +190,9 @@ Zero candidate count under query C does **not** prove the policy is safe; verify
 
 **Recommendation for Founder approval:** Option A — adopt the **existing four-table fail-closed university-registry draft** for controlled staging testing, and **separately prioritize** opportunity publication-policy verification. Option B — adding scholarship-cycle tables at once — is premature before stage-one evidence safety is established.
 
-**Next authorized read-only actions:** connect the correct ICK Opportunities production/staging Supabase project (not the unrelated `ICk technologies` project); confirm deployment binding and list only table metadata, policies, and aggregate exposure counts. Then perform a static SQL review and create a staged testing plan for the existing draft. **Do not execute any migration or release a public API without explicit authorization.**
+**Next authorized read-only actions:** continue through the **connected Lovable Cloud database**, confirm preview/production database binding and separately verify whether an isolated staging database truly exists. Read only remaining role/grant/policy metadata; perform a static SQL review and plan the independent P1 publication-policy remediation. **Do not execute migrations, change policy or release a public API without explicit authorization.**
 
-**Not done / not claimed:** no Supabase SQL execution against ICK Opportunities; no new university tables; no source seeding; no publication; no deployment; no live breach finding; no security certificate.
+**Not done / not claimed:** the ICK Opportunities Lovable Cloud database was queried **read-only** for schema, policies and aggregate counts; **no SQL writes**; no university tables created; no source seeding; no publication, deployment or migration; no live breach finding; no security certificate.
 
 ### Reference materials already in repository
 
