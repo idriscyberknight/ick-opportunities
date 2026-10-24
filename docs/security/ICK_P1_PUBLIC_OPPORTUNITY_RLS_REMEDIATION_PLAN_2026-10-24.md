@@ -54,7 +54,25 @@ The Lovable project **ICK Opportunities - Security Staging** (project 887e7515-3
 | `supabase/config.toml` project ref | `xzxfodukvzzfwbwokhxt` | `ckdfdjvlqvopzlqtwapf` |
 | Last reported opportunity rows from read-only session | 14 | 0 |
 
-The two projects have **different Lovable IDs and different repository Supabase project refs**; their recorded opportunity counts were also different. This is **strong evidence of distinct configured projects**, but **not full verification of live runtime environment variable binding, background-job isolation, database connections or backups**. Both client files rely on `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` environment values rather than hardcoded refs. Do **not** treat a repository ref alone as definitive proof of deployed connection binding.
+The two projects have **different Lovable IDs and different repository Supabase project refs**; their recorded opportunity counts were also different. This was **initial configuration evidence**; the independent PostgreSQL-instance check immediately below now provides stronger runtime database separation evidence, while deployment binding, background-job isolation and backups remain unverified. Both client files rely on `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` environment values rather than hardcoded refs. Do **not** treat a repository ref alone as definitive proof of deployed connection binding.
+
+### Independent Lovable Cloud database-instance check — VERIFIED 2026-10-24
+
+Read-only `SELECT current_database(), current_user, inet_server_addr(), current_setting('server_version')` completed **successfully on both actual Lovable Cloud projects** (no SQL writes, credentials, raw personal data or test fixtures).
+
+| Property | Production Lovable Cloud | Security Staging Lovable Cloud |
+| --- | --- | --- |
+| PostgreSQL database name | `postgres` | `postgres` |
+| Query role | `postgres` | `postgres` |
+| PostgreSQL server address | **Different from staging** (raw IP withheld) | **Different from production** (raw IP withheld) |
+| Server version reported | **17.6** | **17.11** |
+| Connection verified via | Lovable project `433a53c8-8872-49f2-b7b8-3e8dc7e96e35` | Lovable project `887e7515-30c6-4fa3-bafc-fb8d8d610315` |
+
+**Conclusion:** This is strong **runtime evidence that these Lovable Cloud database connections target distinct PostgreSQL server instances**, beyond the separate repository project refs previously observed. It does **not** prove all Vercel Preview environment values, storage buckets, service-role integrations, cron jobs, edge functions, or production/staging auth identities are isolated. Treat **Lovable Security Staging project direct SQL** as the better candidate for future synthetic tests; never assume normal Vercel feature previews are staging.
+
+A further read-only query against **Security Staging** confirms the same pre-remediation `Public can view live opportunities` SELECT predicate (active status + valid deadline only), as in production. No RLS change was made.
+
+**Remaining access constraint:** Subsequent read-only queries were rejected by the Lovable free-plan database action limit **without execution**. Therefore permissions/persona tests and positive/negative test-fixture cases are still **NOT RUN**. No charge or upgrade was initiated.
 
 ### Vercel project environment — additional read-only evidence
 
