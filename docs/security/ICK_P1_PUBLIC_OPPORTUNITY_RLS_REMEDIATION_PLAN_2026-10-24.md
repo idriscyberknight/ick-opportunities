@@ -190,6 +190,43 @@ Each test query returned **3 visible fixture rows** from 4 inserted; `draft` was
 
 **Result:** A1.4/P1 proposed public RLS policy now has a **verified staging anonymous SQL-role transaction test and verified independent rollback**. The **production policy has not been modified**, and the P1 release gate is **STILL BLOCKED** on authenticated/admin/HTTP tests, grants, recovery and explicit Founder production approval.
 
+## 1E. Proposed policy temporarily tested with authenticated SQL role — VERIFIED 2026-10-24
+
+**Execution target:** Lovable Security Staging PostgreSQL project `887e7515-30c6-4fa3-bafc-fb8d8d610315`, **not Production**.
+
+**Read-only preflight PASS:** Staging had **0** opportunity rows, **0** remaining earlier candidate fixtures, the **original** live public SELECT policy, **0** `auth.users` and **0** admin role assignments. No production data were copied.
+
+**Transaction-only real RLS test:** Inside `BEGIN ... ROLLBACK`, inserted nine fabricated opportunity rows, ran the **proposed `ALTER POLICY`**, and selected with `SET LOCAL ROLE authenticated` (PostgreSQL SQL role, **no actual JWT: `auth.uid() IS NULL`**). The query reported:
+
+| Observation | Result |
+| --- | --- |
+| Synthetic rows inserted inside transaction | 9 |
+| Allowed approved and published rows visible | **2** |
+| Unexpected/unapproved rows visible | **0** |
+| SQL role | `authenticated` |
+| Real authenticated Supabase user/JWT | **NO** |
+
+**Independent post-test readback PASS:** **0 total opportunities**, **0 remaining authenticated-test fixtures**, and **the original live public SELECT predicate restored**. The proposed policy is **not installed** in Staging or Production.
+
+**Scope/caveat:** With the previous Staging `anon` SQL-role candidate test also **PASS**, both PostgreSQL SQL roles have now passed controlled candidate-policy read tests and rollback. These tests **do NOT** prove signed-in-user JWT/HTTP behavior, admin read/review operations, publish/audit atomicity or production release readiness.
+
+### Additional VERIFIED staging-vs-production authorization drift
+
+A fresh read-only `pg_policies` inspection in Staging confirmed that admin SELECT/INSERT/UPDATE/DELETE operations use `public.has_role(auth.uid(), 'admin'::app_role)`; ordinary users have a separate `Users can read their own roles` policy on `public.user_roles`. With **zero staging users and zero admin-role assignments**, there is no real admin session to exercise, and a SQL-role `authenticated` smoke test alone cannot stand in for that test.
+
+Read-only metadata/function-definition inspection found:
+
+| Control | Staging | Production | Significance |
+| --- | --- | --- | --- |
+| `anon` table-level INSERT grant on `public.opportunities` | **Yes** | **No** (prior verified production check) | Grant drift; no proof of successful anonymous INSERT because RLS still restricts it. |
+| `public.has_role(uuid, app_role)` is `SECURITY DEFINER` | **Yes** | **Yes** | Sensitive privilege-boundary helper; examine the exact intent and exposure. |
+| `anon` can EXECUTE `public.has_role` | **Yes** | **No** | **Additional staging permission drift**; production metadata does **not** show anonymous execution allowed. |
+| `authenticated` can EXECUTE `public.has_role` | **Yes** | **Yes** | Expected role-dependent RLS use; still requires JWT/persona testing. |
+
+The Staging function accepts a **caller-supplied user UUID** and checks that user's membership in `public.user_roles`. Since staging permits anonymous execution, this is a **potential role-membership disclosure/oracle in Staging if target UUIDs become known**, not a verified production exploit. Do **not** claim production anonymous RPC exposure: read-only production metadata found `anon` **cannot** execute the function. No vulnerable endpoint was exploited or user records accessed.
+
+**Action gate:** Reconcile staging grants/role-helper behavior with the intended production security baseline **before** interpreting a staging HTTP/JWT test as production-equivalent. Do not blindly copy either environment's GRANTs or revoke privileges without a separate impact review and explicit authorization.
+
 ## 2. Existing application behavior and limitations
 
 - The general public page read functions `fetchPublicOpportunities()` and `fetchOpportunityById()` in `src/lib/opportunities.ts` use Supabase queries whose effective public visibility depends on database RLS.
