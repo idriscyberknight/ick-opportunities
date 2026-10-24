@@ -31,6 +31,16 @@
 
 **Current candidate-policy verification summary:** `anon` SQL-role candidate RLS test **PASS**, `authenticated` SQL-role candidate RLS test **PASS**, both independently restored via readback **PASS**. Full HTTP/JWT and admin regression **BLOCKED/NOT RUN**, Production rollout **NOT AUTHORIZED**.
 
+## 0B. API/JWT readiness — latest 2026-10-24 read-only check
+
+A targeted read-only attempt to inventory the concrete PostgreSQL table `relacl` and function `proacl` for both Lovable Production and Lovable Security Staging was **blocked by Lovable's free-plan MCP database action limit before either query was executed**. Thus the origin of the staging-vs-production grant drift is **NOT VERIFIED**. Prior independently observed differences remain: staging grants `anon` table-level `INSERT` on `opportunities` and `EXECUTE` on `public.has_role`, while production did not at the preceding observation.
+
+Lovable project metadata shows Security Staging project `887e7515-30c6-4fa3-bafc-fb8d8d610315` is **not published** (`is_published=false`), is in **`workspace_edit`** visibility, and has a Lovable-generated preview URL. An external read-only attempt to open that preview returned **inaccessible** in the available browsing client. Therefore this review **did not reach the staging website from outside** and did **not** validate HTTP/PostgREST/real JWT identities. The separate ICK Opportunities Lovable project also reports `is_published=false`; this **does not contradict** the separate production Vercel deployment, which is a different hosting workflow. **Do not publish staging or enable public exposure merely to run a test** without first validating endpoint bindings, test data, access controls and explicit scope approval.
+
+Until verified staging-only API connectivity and secure synthetic test users exist, the real HTTP/JWT/admin role matrix stays **NOT TESTED**, even though `anon` and `authenticated` **PostgreSQL SQL-role tests of the proposed policy both passed with clean rollback**.
+
+**Safe next action:** finish the read-only ACL provenance audit when the existing database action allowance permits; compare `PUBLIC` and direct grants with checked-in C5 migration intent and privilege inheritance. Do not replay migrations or try credentials/keys from Production.
+
 ## 1. Current evidence and precise blocker
 
 Production and Security Staging Lovable Cloud databases have different PostgreSQL server addresses and versions (**17.6** vs **17.11** at inspection) and distinct configured project refs (`xzxfodukvzzfwbwokhxt` vs `ckdfdjvlqvopzlqtwapf`). Staging is a candidate for controlled tests. Vercel environment metadata lists `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_SUPABASE_PROJECT_ID` for **both Production and Preview**; never assume a feature preview safely points at staging.
