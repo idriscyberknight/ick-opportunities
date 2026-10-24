@@ -227,6 +227,28 @@ The Staging function accepts a **caller-supplied user UUID** and checks that use
 
 **Action gate:** Reconcile staging grants/role-helper behavior with the intended production security baseline **before** interpreting a staging HTTP/JWT test as production-equivalent. Do not blindly copy either environment's GRANTs or revoke privileges without a separate impact review and explicit authorization.
 
+## 1F. Grant drift root-cause evidence from checked-in migrations — 2026-10-24
+
+**Status: READ-ONLY source analysis; no new staging SQL query or API/JWT test was executed.** A fresh Lovable Security Staging preflight `SELECT` was refused by the **free-plan database-action limit** before execution; no charge, upgrade, or bypass was attempted. The most recent successful staging candidate-policy checks and independently confirmed rollback remain valid. Do not imply that real JWT/admin testing has occurred.
+
+Two files already on GitHub `main` provide useful **documented intended grant controls**:
+
+1. `supabase/migrations/20260904011046_f6bf51cb-ff57-4594-96d3-ea6278bd1383.sql` explicitly states:
+   - `REVOKE ALL ON FUNCTION public.has_role(uuid, public.app_role) FROM PUBLIC, anon;`
+   - `GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated, service_role;`
+2. `supabase/migrations/20261008100000_c5_tighten_database_privileges.sql` explicitly removes `anon` INSERT/UPDATE/DELETE and other excessive table privileges from `public.opportunities`, retains anonymous **SELECT**, and tightens **future default function grants**; see `docs/security/c5-tighten-database-privileges/FINDINGS.md`.
+
+**Observed live comparison (from successful earlier read-only queries):**
+
+| Property | Documented intended privileges | Observed Production | Observed Security Staging |
+| --- | --- | --- | --- |
+| `anon` INSERT on `public.opportunities` | **Not granted** after C5 | **No** | **Yes** |
+| `anon` EXECUTE on `public.has_role(uuid, app_role)` | **Not granted** | **No** | **Yes** |
+
+**Interpretation:** Staging's privileges diverge from **both** the checked-in intended-migration baseline and production observations. This does **not prove** that Staging's migration files were never applied: later/other grant changes, role inheritance, default `PUBLIC` grants or different provisioning paths could produce the same symptom. **Do not automatically replay all C5 migrations**; they touch broader tables, functions, defaults and associated permissions, and doing so could unintentionally break a staging test or production service. A future read-only inspection should compare actual `relacl`, function `proacl`, `PUBLIC` grants and migration-history entries with the intended source-controlled baseline before preparing **targeted** staging-only privilege reconciliation.
+
+**Safety gate:** Full HTTP/JWT/admin results are still **NOT VERIFIED**. There are no staging admin accounts from previous aggregate inspection. Creating test users, changing grants, applying a durable policy or running a production migration still requires a separately scoped and reviewed action. P1 has **not** been deployed to Production.
+
 ## 2. Existing application behavior and limitations
 
 - The general public page read functions `fetchPublicOpportunities()` and `fetchOpportunityById()` in `src/lib/opportunities.ts` use Supabase queries whose effective public visibility depends on database RLS.
