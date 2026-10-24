@@ -141,8 +141,37 @@ A staging-only, read-only privilege check returned:
 - [x] Nine in-memory predicate truth-table cases passed, with no write.
 - [x] Staging SQL GRANT drift detected for `anon` INSERT.
 - [ ] Actual staging policy change tested against synthetic persistent/transactional fixtures with rollback controls.
-- [ ] Real anonymous, ordinary signed-in, admin and privileged-server RLS/REST tests.
+- [x] Transaction-scoped SQL-role RLS reads under `anon` and `authenticated` (no JWT, old policy only); the exposure weakness was observed on staging.
+- [ ] Real HTTP/JWT sessions for anonymous, signed-in, admin and service role; negative INSERT and replacement policy tests remain.
 - [ ] Full app regression tests, backups, restoration and Founder-approved production change.
+
+## 1C. Transaction-scoped PostgreSQL-role RLS smoke tests — VERIFIED 2026-10-24
+
+**Scope:** separate Lovable **Security Staging** database only (project `887e7515-30c6-4fa3-bafc-fb8d8d610315`). These tests used **`BEGIN; ...; SET LOCAL ROLE <role>; SELECT ...; ROLLBACK;`**, with fabricated opportunity rows created *inside the same rollback-only transaction*. `SET LOCAL ROLE` impersonated PostgreSQL roles for RLS evaluation; **it did NOT log in as a real Supabase user or provide a signed JWT**. Production SQL, GitHub `main` and deployments were untouched.
+
+**Preflight read-only findings:** the staging database returned **0 opportunity records, 0 authentication users and 0 admin-role assignments**, and its `opportunities` table had one ordinary BEFORE UPDATE timestamp trigger, not an INSERT trigger. The `anon` table-level `INSERT` grant remains a separate security concern; no anonymous INSERT attempt has been tested.
+
+Four isolated fixtures were inserted into each SQL test transaction (all test-only):
+1. `draft / pending_review`;
+2. `active / pending_review` with no publication timestamp;
+3. `active / verified` without publication timestamp;
+4. `active / verified` with non-future `published_at`, populated review metadata and valid future deadline.
+
+| Transaction role | Draft visible | Active unverified visible | Active verified but unpublished visible | Reviewed + published visible | Outcome |
+| --- | --- | --- | --- | --- | --- |
+| `anon` (SQL role, no JWT) | No | **YES** | **YES** | Yes | **LIVE STAGING RLS WEAKNESS CONFIRMED** |
+| `authenticated` (SQL role, `auth.uid()` null) | No | **YES** | **YES** | Yes | **LIVE STAGING RLS WEAKNESS CONFIRMED** |
+
+Each test query returned **3 visible fixture rows** from 4 inserted; `draft` was hidden. These results are evidence of **actual RLS behavior under the pre-remediation staging policy**, not only a boolean expression check. Both transactions explicitly ended with `ROLLBACK`; a separate **read-only readback immediately after the `anon` transaction confirmed 0 total opportunity rows and 0 remaining test records**. A second readback after the `authenticated` transaction was **blocked by Lovable free-plan database action quota before it executed**; the in-transaction `ROLLBACK` ran, but an independent second readback was not obtained. Therefore persistent state after the second test **still requires confirmation**. Do not mark a cleanup verification complete merely because the SQL specifies rollback.
+
+**What this DOES and DOES NOT establish:**
+
+- **VERIFIED in staging:** anonymous SQL role and ordinary `authenticated` SQL role see active unverified/unpublished fixtures through the old real RLS policy. This concretely demonstrates the same permission gap previously observed by policy inspection.
+- **NOT VERIFIED in production via fixtures:** no active/publicly visible production rows were observed at prior aggregate inspection; do **not** claim a production data leak occurred.
+- **NOT TESTED:** REST/HTTP with actual Supabase anon/publishable key, real signed-in users, a real admin account/JWT, `service_role` operations, negative INSERT under anonymous role, grant regressions, and the replacement policy after `ALTER POLICY`.
+- **NO PROD WRITE:** No production changes were made. **NO POLICY CHANGE:** Neither environment had its RLS policy altered. No staging data was committed intentionally.
+
+**Next safe gate:** At next available read-only database action, confirm staging has 0 remaining fixtures. Then independently test a real anonymous request and a deliberately created **staging-only** signed-in/admin account under secure credentials and explicit approval. Test the revised RLS on staging only after review of proper isolation, backup/rollback and permission impact. No automatic migration or policy deployment.
 
 ## 2. Existing application behavior and limitations
 
