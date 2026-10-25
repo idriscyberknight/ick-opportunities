@@ -87,7 +87,14 @@ jobs:
 
           # Reproduce a sanitized snapshot shaped like the current Production:
           # exactly 1 pending draft, 1 alias, 1 pending evidence, no classifications.
-          psql -X -v ON_ERROR_STOP=1 -f tests/a15/isolated_bootstrap.sql
+          # PostgreSQL roles are CLUSTER-WIDE, not database-local. The first
+          # scenario already created anon/authenticated/service_role. Recreate
+          # only DB-local schema/auth mocks in this second disposable database.
+          sed -e '/^CREATE ROLE anon /d' \
+              -e '/^CREATE ROLE authenticated /d' \
+              -e '/^CREATE ROLE service_role /d' \
+              tests/a15/isolated_bootstrap.sql > /tmp/a16_second_db_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/a16_second_db_bootstrap.sql
           psql -X -v ON_ERROR_STOP=1 -f docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_existing_draft_fixture.sql
 
