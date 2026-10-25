@@ -27,17 +27,26 @@ BEGIN
     OR has_table_privilege('authenticated','public.university_review_events','UPDATE')
     OR has_table_privilege('authenticated','public.university_review_events','DELETE')
  THEN RAISE EXCEPTION 'FAIL: audit event client table permits writes'; END IF;
- IF has_column_privilege('authenticated','public.university_evidence',
-   'review_status','UPDATE')
-   OR has_column_privilege('authenticated','public.universities',
-   'verification_status','UPDATE')
-   OR has_column_privilege('authenticated','public.universities',
-   'reviewed_by','UPDATE')
-   OR has_column_privilege('authenticated','public.universities',
-   'publication_status','UPDATE')
-   OR has_column_privilege('authenticated','public.university_classifications',
-   'review_status','UPDATE')
- THEN RAISE EXCEPTION 'FAIL: direct client review status UPDATE still granted'; END IF;
+ IF EXISTS (
+   SELECT 1 FROM (VALUES
+    ('universities','verification_status'),
+    ('universities','reviewed_by'),
+    ('universities','reviewed_at'),
+    ('universities','publication_status'),
+    ('universities','published_at'),
+    ('university_evidence','review_status'),
+    ('university_evidence','checked_by'),
+    ('university_evidence','checked_at'),
+    ('university_evidence','visibility'),
+    ('university_classifications','review_status')
+   ) AS sensitive(table_name,column_name)
+   WHERE has_column_privilege(
+     'authenticated',
+     ('public.' || table_name)::regclass,
+     column_name,
+     'UPDATE'
+   )
+ ) THEN RAISE EXCEPTION 'FAIL: at least one of 10 review-state columns writable by client'; END IF;
  IF NOT has_column_privilege('authenticated','public.universities',
     'official_name','UPDATE') THEN
   RAISE EXCEPTION 'FAIL: safe draft fields were not preserved'; END IF;
@@ -121,6 +130,14 @@ SELECT public.ick_a16_review_evidence(
 DO $assert_atomic_success$
 DECLARE n int;
 BEGIN
+ -- Reviewed evidence locks the original institution metadata against silent
+ -- changes. A future separately audited retraction workflow will unlock it.
+ BEGIN
+  UPDATE public.universities SET official_name='FAKE UPDATED IDENTITY'
+  WHERE id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  RAISE EXCEPTION 'FAIL: reviewed institution identity was silently changed';
+ EXCEPTION WHEN check_violation THEN NULL;
+ END;
  SELECT count(*) INTO n FROM public.university_review_events WHERE
    university_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
    AND reviewed_by='11111111-1111-4111-8111-111111111111';
