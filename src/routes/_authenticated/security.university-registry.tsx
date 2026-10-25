@@ -25,10 +25,7 @@ export const Route = createFileRoute("/_authenticated/security/university-regist
 });
 
 type RegistryTable =
-  | "universities"
-  | "university_aliases"
-  | "university_evidence"
-  | "university_classifications";
+  "universities" | "university_aliases" | "university_evidence" | "university_classifications";
 
 type ProbeRow = {
   table: RegistryTable;
@@ -68,9 +65,7 @@ async function runReadOnlyJwtProbe(): Promise<ProbeResult> {
   // The caller's ordinary/admin JWT is attached by the existing Supabase
   // client; this diagnostic does not handle or show the bearer token.
   for (const table of tableNames) {
-    const response = await registry
-      .from(table)
-      .select("id", { count: "exact", head: true });
+    const response = await registry.from(table).select("id", { count: "exact", head: true });
 
     if (response.error) {
       rows.push({
@@ -136,17 +131,15 @@ function UniversityRegistryJwtProbe() {
       >
         ← University admin
       </Link>
-      <h1 className="font-display text-2xl font-bold">
-        A1.5 — Real-session JWT API check
-      </h1>
+      <h1 className="font-display text-2xl font-bold">A1.5 — Real-session JWT API check</h1>
       <p className="text-sm leading-6 text-muted-foreground">
-        Preview-only security diagnostic. Uses your existing signed-in account
-        to make HEAD-only reads against the four Registry tables. No JWT, email,
-        account ID, university record or personal information is displayed.
+        Preview-only security diagnostic. Uses your existing signed-in account to make HEAD-only
+        reads against the four Registry tables. No JWT, email, account ID, university record or
+        personal information is displayed.
       </p>
       <p className="rounded-lg border border-border bg-muted p-4 text-sm">
-        This is a temporary acceptance-test route and must be removed before
-        merging the production application.
+        This is a temporary acceptance-test route and must be removed before merging the production
+        application.
       </p>
       <button
         type="button"
