@@ -1,4 +1,28 @@
 # ICK Opportunities — A1.5 Admin University Registry acceptance plan
+
+## Latest signed-session test addendum — 2026-10-25
+
+This addendum supersedes **only** outdated `Pending` labels in the early planning matrix below; those entries describe the initial test plan, not current test execution.
+
+| Actual test | Evidence | Outcome |
+|---|---|---|
+| Existing Admin opens responsive Registry UI, sees empty drafts, follows Review Queue navigation | Founder mobile screenshots | PASS — UI rendering/navigation |
+| Existing non-admin/normal-user browser denied Admin UI | Founder screenshot + intended ordinary-user sign-in | UI DENIAL observed; session identity independently confirmed by separate JWT test |
+| `auth.getUser()` real normal-user session and role lookup | Founder mobile screenshots | PASS — validated YES, NORMAL USER |
+| Four normal-user PostgREST read-only `HEAD` requests | Founder mobile screenshots | REVIEW — 4x HTTP 200/0 records, row-level isolation on nonempty datasets not proven |
+| `auth.getUser()` real Admin session and role lookup | Founder mobile screenshots | PASS — validated YES, ADMIN |
+| Four Admin PostgREST read-only `HEAD` requests | Founder mobile screenshots | PASS — 4x HTTP 200, endpoint reachability only |
+| Real-JWT non-admin POST/PATCH write denial | Not run | PENDING, not inferred from SQL-role simulation |
+| Cross-user/cross-role read isolation with known fixtures | No university records exist | PENDING, not inferred from empty-table response |
+| Transaction-only SQL-role Admin write/normal-user denial | Prior role simulation, transaction rolled back and independently read back | PASS for simulation only |
+| Temporary browser JWT test route | Removed on Draft PR #22 after screenshots | COMPLETE — not included in proposed production code |
+| Vite build, strict TypeScript & A1.5 scoped ESLint | Prior PR CI | PASS before removal; re-run required after cleanup |
+| Full repository ESLint | Known legacy baseline failures | NOT PASS; reported without turning whole CI red |
+
+**Release blockers updated:** Migration ledger/source reconciliation (13 live ledger entries, direct A1.4 SQL schema not represented as a newly dated migration), replacement/review of interim schema-verified typed bridge when correct Lovable-generated types are available, independent real-JWT write/isolation checks or explicitly documented test scope decisions, source verification/editorial approval workflow, and separate Founder merge/release approval. No production app merge, schema mutation, data import or publish was authorized by the screenshots.
+
+---
+
 Date: 2026-10-25 · Status: DRAFT / NOT RELEASE APPROVAL
 
 ## Scope and environments
