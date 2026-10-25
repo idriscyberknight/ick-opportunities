@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "src/lib/university-registry-*"
+      - "tests/a15/**"
+      - "docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql"
       - "src/routes/_authenticated/admin.universities.tsx"
       - "src/routes/_authenticated/admin.review.tsx"
       - "package.json"
@@ -23,7 +25,21 @@ jobs:
   validate:
     name: Strict TypeScript, lint, build
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: isolated-ci-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
     steps:
       - name: Checkout pull request
         uses: actions/checkout@v4
@@ -40,6 +56,22 @@ jobs:
         # TanStack router generates routeTree.gen.ts during Vite build.
         # Checking types before generating routes creates false route errors.
         run: bun run build
+
+      - name: Isolated PostgreSQL draft persistence and RLS test (NO production access)
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGDATABASE: "postgres"
+          PGPASSWORD: "isolated-ci-only"
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          psql -X -v ON_ERROR_STOP=1 -f tests/a15/isolated_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a15/isolated_registry_acceptance.sql
 
       - name: ESLint — A1.5 changed application sources (required)
         run: |
