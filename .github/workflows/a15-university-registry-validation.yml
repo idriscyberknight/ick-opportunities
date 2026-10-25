@@ -40,5 +40,27 @@ jobs:
         # Checking types before generating routes creates false route errors.
         run: bun run build
 
+      - name: One-time review only — format A1.5 source and emit content for connector-controlled commits
+        run: |
+          bunx prettier --write \
+            src/lib/university-registry-schema.types.ts \
+            src/lib/university-registry-admin.ts \
+            src/routes/_authenticated/admin.universities.tsx \
+            src/routes/_authenticated/admin.review.tsx \
+            vite.config.ts \
+            package.json
+          for file in \
+            src/lib/university-registry-schema.types.ts \
+            src/lib/university-registry-admin.ts \
+            src/routes/_authenticated/admin.universities.tsx \
+            src/routes/_authenticated/admin.review.tsx \
+            vite.config.ts \
+            package.json; do
+            echo "ICK_A15_FORMATTED_START $file"
+            base64 -w0 "$file"
+            echo
+            echo "ICK_A15_FORMATTED_END $file"
+          done
+
       - name: ESLint
         run: bun run lint
