@@ -1,9 +1,14 @@
 -- ICK OPPORTUNITIES — GLOBAL UNIVERSITY REGISTRY
--- PHASE 3B.3B / SECURITY-FIRST SCHEMA DRAFT (2026-10-23)
--- REVIEW ONLY. DO NOT RUN AGAINST PRODUCTION OR PASTE INTO LOVABLE SQL EDITOR.
--- DO NOT MOVE INTO supabase/migrations UNTIL an isolated staging DB and
--- the exact authoritative Supabase project/ref + deployment runner are verified.
--- Not tested on a PostgreSQL server. Requires a staging syntax/privilege test.
+-- PHASE 3B.3B / REVIEWED HISTORICAL SCHEMA DRAFT (2026-10-23)
+-- STATUS UPDATED 2026-10-25: transaction-tested and, with Founder approval,
+-- installed DIRECTLY in ICK Opportunities LOVABLE CLOUD PRODUCTION (not the
+-- separate personal Supabase account). Objects below ALREADY EXIST there.
+-- HISTORICAL RECORD ONLY: DO NOT RE-EXECUTE AGAINST PRODUCTION, blindly place
+-- into supabase/migrations, or treat this as a pending migration.
+-- The exact SQL as originally approved has Git blob SHA
+-- 7d2babd67284e4b2137a280c0cb62a720ce04f62 (before this comment update).
+-- See docs/database/ICK_A14_LIVE_SCHEMA_BASELINE_2026-10-25.md for adoption,
+-- regeneration, re-entrancy and source-of-truth reconciliation requirements.
 -- Design decision: initial deployment is CLOSED to public and DOES NOT ALLOW
 -- any university to be published. Publishing requires a later reviewed migration.
 -- No opportunity/auth/admin table is modified in this draft.
