@@ -10,11 +10,21 @@
  * and strictly typecheck before any release.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { UniversityRegistryDatabase } from "@/lib/university-registry-schema.types";
+import type { UniversityEvidenceReviewDatabase } from "@/lib/university-registry-schema.types";
 import { supabase } from "@/integrations/supabase/client";
 import { isCurrentUserAdmin } from "@/lib/opportunities";
 
-const registry = supabase as unknown as SupabaseClient<UniversityRegistryDatabase>;
+const registry = supabase as unknown as SupabaseClient<UniversityEvidenceReviewDatabase>;
+
+/**
+ * FAIL CLOSED. The A1.6.2 SQL review RPC and audit table are NOT installed in
+ * Production. Only enable this in a separately approved release after the
+ * backend, grants, auth tests, and migration history are verified together.
+ * Frontend flag is not a security boundary: database authorization remains
+ * authoritative.
+ */
+export const A16_EVIDENCE_REVIEW_RELEASE_ENABLED = false;
+export type EvidenceReviewDecision = "reviewed" | "rejected";
 
 export type RegistryUniversity = {
   id: string;
@@ -167,6 +177,9 @@ export async function updateUniversityDraft(
   },
 ): Promise<void> {
   await requireAdmin();
+  // Review metadata is protected server-side in A1.6.2; never reset it through
+  // an ordinary Admin PATCH. The database trigger will additionally prevent
+  // silently editing identity fields after any source has been reviewed.
   const country = patch.country_code.trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(country)) throw new Error("Use a two-letter ISO country code.");
   const { data, error } = await registry
@@ -177,12 +190,10 @@ export async function updateUniversityDraft(
       city: patch.city.trim() || null,
       official_website: patch.official_website.trim() ? checkedUrl(patch.official_website) : null,
       summary: patch.summary.trim() || null,
-      verification_status: "pending_review",
-      reviewed_at: null,
-      reviewed_by: null,
     })
     .eq("id", id)
     .eq("publication_status", "draft")
+    .eq("verification_status", "pending_review")
     .select("id");
   if (error) throw new Error(error.message);
   if (data?.length !== 1) throw new Error("Draft was not updated. Refresh and verify its state.");
@@ -258,4 +269,42 @@ export async function createUniversityClassification(
   });
   // Composite FK in PostgreSQL also requires evidence to belong to same university.
   if (error) throw new Error(error.message);
+}
+
+
+/**
+ * A1.6.2 FUTURE server-transactional source decision. The current deployment
+ * does not have this RPC. Do not bypass the release gate or write review_status
+ * directly from the client.
+ */
+export async function reviewUniversityEvidence(
+  evidenceId: string,
+  decision: EvidenceReviewDecision,
+  reason: string,
+): Promise<string> {
+  if (!A16_EVIDENCE_REVIEW_RELEASE_ENABLED) {
+    throw new Error("Editorial review is not enabled until backend security release.");
+  }
+
+  await requireAdmin();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(evidenceId)) {
+    throw new Error("Select a valid evidence record.");
+  }
+  if (decision !== "reviewed" && decision !== "rejected") {
+    throw new Error("Invalid review decision.");
+  }
+  const rationale = reason.trim();
+  if (rationale.length < 20 || rationale.length > 2000) {
+    throw new Error("Review reason must be 20–2000 characters.");
+  }
+
+  const { data, error } = await registry.rpc("ick_a16_review_evidence", {
+    p_evidence_id: evidenceId,
+    p_decision: decision,
+    p_reason: rationale,
+    p_expected_state: "pending_review",
+  });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("The review did not return an audit event ID.");
+  return data;
 }
