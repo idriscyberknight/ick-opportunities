@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import type { RegistryAlias, RegistryUniversity } from "@/lib/university-registry-admin";
 import { reconcileUniversityDirectory } from "@/lib/university-reconciliation";
+import type { UniversityRecord } from "@/lib/university-directory";
 
 type Props = {
   universities: readonly RegistryUniversity[];
   aliases: readonly RegistryAlias[];
+  onPrepareDraft: (starter: UniversityRecord) => void;
 };
 
 const labels = {
@@ -15,7 +17,7 @@ const labels = {
 } as const;
 
 /** Admin-only display: no database mutations and no public exposure of draft rows. */
-export function UniversityReconciliationPanel({ universities, aliases }: Props) {
+export function UniversityReconciliationPanel({ universities, aliases, onPrepareDraft }: Props) {
   const result = reconcileUniversityDirectory(universities, aliases);
 
   return (
@@ -32,7 +34,8 @@ export function UniversityReconciliationPanel({ universities, aliases }: Props) 
       <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
         The public directory still has eight static profiles. This comparison checks whether any may
         describe institutions already held as private drafts. A possible match is not verification,
-        accreditation, or permission to publish. Nothing is imported or changed.
+        accreditation, or permission to publish. Preparing only fills the draft form; it does not
+        create a record or change the public directory.
       </p>
       <div className="mt-4 flex flex-wrap gap-2 text-sm" role="status">
         <span className="rounded-lg bg-muted px-3 py-2">
@@ -57,6 +60,20 @@ export function UniversityReconciliationPanel({ universities, aliases }: Props) 
             {entry.reasons.length > 0 && (
               <p className="mt-1 text-xs text-muted-foreground">
                 Match signal: {entry.reasons.join("; ")}.
+              </p>
+            )}
+            {entry.status === "unmatched" && (
+              <button
+                type="button"
+                onClick={() => onPrepareDraft(entry.starter)}
+                className="mt-3 flex min-h-11 items-center rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-muted"
+              >
+                Prepare private draft (no write)
+              </button>
+            )}
+            {entry.starter.websiteVerification === "needs_review" && (
+              <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+                Official website is under review — preparation leaves its URL blank.
               </p>
             )}
             <Link
