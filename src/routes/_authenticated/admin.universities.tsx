@@ -680,9 +680,9 @@ function UniversityRegistryAdminPage() {
               Source review decision
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              The review engine is not installed in Production. This form is deliberately disabled
-              until the database audit trail, atomic review RPC, and permission restrictions pass
-              independent acceptance. Attaching a source does not verify it.
+              Editorial decisions now use the secured database review function with an audit trail.
+              Review each source carefully before deciding. Reviewing a source does not verify
+              university accreditation, admission eligibility, or scholarships.
             </p>
             {!A16_EVIDENCE_REVIEW_RELEASE_ENABLED && (
               <p
@@ -762,7 +762,7 @@ function UniversityRegistryAdminPage() {
                     !reviewEvidenceId
                   }
                 >
-                  {reviewEvidence.isPending ? "Recording review…" : "Record reviewed decision"}
+                  {reviewEvidence.isPending ? "Recording review…" : "Submit editorial decision"}
                 </button>
               </fieldset>
             </form>
