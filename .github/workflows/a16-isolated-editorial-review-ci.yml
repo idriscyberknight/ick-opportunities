@@ -1,0 +1,147 @@
+name: A1.6.2 Isolated Editorial Review Engine — PostgreSQL
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tests/a16/**"
+      - ".github/workflows/a16-isolated-editorial-review-ci.yml"
+      - "tests/a15/isolated_bootstrap.sql"
+      - "docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a16-editorial-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  isolated-review-security:
+    name: PostgreSQL 17 isolated role, RPC, and audit acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: isolated-ci-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Checkout source (no secrets)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install PostgreSQL client when needed
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+
+      - name: Run ONLY in disposable local Postgres container
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGDATABASE: "postgres"
+          PGPASSWORD: "isolated-ci-only"
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/a15/isolated_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_editorial_review_engine.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_rpc_catalog_hardening.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_editorial_review_acceptance.sql
+          # Acceptance transaction is rolled back; no simulated rows remain.
+          psql -X -v ON_ERROR_STOP=1 -Atqc "
+            SELECT CASE WHEN
+              (SELECT count(*) FROM public.universities) = 0
+              AND (SELECT count(*) FROM public.university_evidence) = 0
+              AND (SELECT count(*) FROM public.university_review_events) = 0
+            THEN 'A16_ISOLATED_ROLLBACK_PASS'
+            ELSE 'A16_ISOLATED_ROLLBACK_FAIL' END;" |
+            grep -qx A16_ISOLATED_ROLLBACK_PASS
+
+      - name: Existing 1/1/1/0 private registry compatibility + migration abort rehearsal
+        # This is a fresh second DATABASE inside the disposable GitHub Actions
+        # PostgreSQL 17 container. No Production or staging connections exist.
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGDATABASE: "postgres"
+          PGPASSWORD: "isolated-ci-only"
+        run: |
+          set -euo pipefail
+          createdb a16_upgrade_rehearsal
+          export PGDATABASE=a16_upgrade_rehearsal
+
+          # Reproduce a sanitized snapshot shaped like the current Production:
+          # exactly 1 pending draft, 1 alias, 1 pending evidence, no classifications.
+          # PostgreSQL roles are CLUSTER-WIDE, not database-local. The first
+          # scenario already created anon/authenticated/service_role. Recreate
+          # only DB-local schema/auth mocks in this second disposable database.
+          sed -e '/^CREATE ROLE anon /d' \
+              -e '/^CREATE ROLE authenticated /d' \
+              -e '/^CREATE ROLE service_role /d' \
+              tests/a15/isolated_bootstrap.sql > /tmp/a16_second_db_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/a16_second_db_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_existing_draft_fixture.sql
+
+          # Rehearse aborting *the proposed schema migration* in ONE transaction,
+          # preserving the existing schema, data and original broad grants.
+          # Strip only the script's top-level BEGIN/COMMIT (exact matching lines).
+          awk '$0 != "BEGIN;" && $0 != "COMMIT;"' \
+            tests/a16/isolated_editorial_review_engine.sql \
+            > /tmp/a16_schema_statements_only.sql
+          {
+            printf 'BEGIN;\n'
+            cat /tmp/a16_schema_statements_only.sql
+            printf 'ROLLBACK;\n'
+          } > /tmp/a16_migration_abort_rehearsal.sql
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/a16_migration_abort_rehearsal.sql
+
+          # Independent new connection proves DDL rollback and data preservation.
+          psql -X -v ON_ERROR_STOP=1 -Atqc "
+            SELECT CASE WHEN
+               to_regclass('public.university_review_events') IS NULL
+               AND to_regprocedure('public.ick_a16_review_evidence(uuid,text,text,text)') IS NULL
+               AND (SELECT count(*) FROM public.universities) = 1
+               AND (SELECT count(*) FROM public.university_aliases) = 1
+               AND (SELECT count(*) FROM public.university_evidence) = 1
+               AND has_table_privilege('authenticated','public.universities','UPDATE')
+            THEN 'A16_SCHEMA_TRANSACTION_ABORT_PASS'
+            ELSE 'A16_SCHEMA_TRANSACTION_ABORT_FAIL' END;" \
+            | grep -qx A16_SCHEMA_TRANSACTION_ABORT_PASS
+
+          # Reapply prototype once to the SAME existing-data fixture (not to
+          # an empty database), then validate safe PATCH, review, JWT-claim
+          # simulation, unchanged legacy RLS and per-test mutation rollback.
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_editorial_review_engine.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_rpc_catalog_hardening.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_existing_draft_upgrade_acceptance.sql
+          # Rehearse a post-commit incident response: no broad UPDATE grant
+          # restoration, no deleted audit history, and an explicit RPC shutdown.
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_post_commit_rpc_killswitch.sql
+          psql -X -v ON_ERROR_STOP=1 -Atqc "
+            SELECT CASE WHEN
+               (SELECT count(*) FROM public.universities) = 1
+               AND (SELECT count(*) FROM public.university_aliases) = 1
+               AND (SELECT count(*) FROM public.university_evidence) = 1
+               AND (SELECT count(*) FROM public.university_review_events) = 0
+               AND (SELECT count(*) FROM public.university_evidence
+                    WHERE review_status='pending_review') = 1
+            THEN 'A16_EXISTING_DATA_REHEARSAL_PASS'
+            ELSE 'A16_EXISTING_DATA_REHEARSAL_FAIL' END;" \
+            | grep -qx A16_EXISTING_DATA_REHEARSAL_PASS
