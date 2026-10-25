@@ -5,6 +5,7 @@ import { ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
 import { isCurrentUserAdmin } from "@/lib/opportunities";
 import { fieldClass, labelClass } from "@/components/AuthShell";
 import {
+  A16_EVIDENCE_REVIEW_RELEASE_ENABLED,
   CLASSIFICATIONS,
   EVIDENCE_CLAIMS,
   createUniversityAlias,
@@ -12,8 +13,10 @@ import {
   createUniversityDraft,
   createUniversityEvidence,
   listAdminUniversityRegistry,
+  reviewUniversityEvidence,
   updateUniversityDraft,
   type ClassificationKey,
+  type EvidenceReviewDecision,
   type EvidenceClaim,
   type RegistryUniversity,
 } from "@/lib/university-registry-admin";
@@ -107,6 +110,9 @@ function UniversityRegistryAdminPage() {
     "islamic_studies_provider",
   );
   const [classificationEvidenceId, setClassificationEvidenceId] = useState("");
+  const [reviewEvidenceId, setReviewEvidenceId] = useState("");
+  const [reviewDecision, setReviewDecision] = useState<EvidenceReviewDecision>("reviewed");
+  const [reviewReason, setReviewReason] = useState("");
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["a15-university-admin-registry"] });
   const createDraft = useMutation({
@@ -146,6 +152,26 @@ function UniversityRegistryAdminPage() {
       invalidate();
     },
   });
+  const reviewEvidence = useMutation({
+    mutationFn: () => {
+      if (!A16_EVIDENCE_REVIEW_RELEASE_ENABLED) {
+        throw new Error("Evidence review is unavailable until the backend migration is approved.");
+      }
+      const matchingSource = registry.data?.evidence?.find(
+        (item) =>
+          item.id === reviewEvidenceId &&
+          item.university_id === selectedId &&
+          item.review_status === "pending_review",
+      );
+      if (!matchingSource) throw new Error("Select a pending source for the selected institution.");
+      return reviewUniversityEvidence(reviewEvidenceId, reviewDecision, reviewReason);
+    },
+    onSuccess: () => {
+      setReviewEvidenceId("");
+      setReviewReason("");
+      invalidate();
+    },
+  });
   const addClassification = useMutation({
     mutationFn: () => {
       if (!selectedId || !classificationEvidenceId) throw new Error("Select an evidence record.");
@@ -177,6 +203,11 @@ function UniversityRegistryAdminPage() {
   const classifications = (registry.data?.classifications ?? []).filter(
     (c) => c.university_id === selectedId,
   );
+  const draftEditingLocked =
+    selected?.verification_status !== "pending_review" ||
+    selected?.publication_status !== "draft" ||
+    evidence.some((item) => item.review_status === "reviewed");
+  const pendingEvidence = evidence.filter((item) => item.review_status === "pending_review");
   // Evidence presence is not editorial approval, identity verification, or accreditation.
   const evidenceChecks = [
     {
@@ -212,6 +243,9 @@ function UniversityRegistryAdminPage() {
     setLanguage("");
     setSourceUrl("");
     setSourceTitle("");
+    setReviewEvidenceId("");
+    setReviewReason("");
+    setReviewDecision("reviewed");
     // The editor lives below the create form. Scroll to it after React renders
     // so selecting an existing draft never appears to do nothing on mobile.
     requestAnimationFrame(() => {
@@ -353,13 +387,21 @@ function UniversityRegistryAdminPage() {
               Edit draft · {selected.official_name}
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Editing resets identity verification for re-review; the database does not allow
-              publishing.
+              Draft editing never resets verification or reviewer metadata. Once an
+              identity source is reviewed, changes require a separately audited
+              re-review process. Publication remains blocked.
             </p>
+            {draftEditingLocked && (
+              <p role="status" className="mt-3 rounded-lg border border-border bg-muted p-3 text-sm">
+                Draft editing is locked due to review state. No direct approval-state edits
+                are permitted.
+              </p>
+            )}
             <form
               className="mt-5 space-y-4"
               onSubmit={(e) => onForm(e, () => updateDraft.mutate())}
             >
+              <fieldset disabled={draftEditingLocked} className="space-y-4">
               <Field
                 id="edit-name"
                 title="Institution name"
@@ -393,10 +435,11 @@ function UniversityRegistryAdminPage() {
                 value={edit.summary}
                 onChange={(v) => setEdit({ ...edit, summary: v })}
               />
-              <Feedback error={updateDraft.error} />
-              <button className={primary} disabled={updateDraft.isPending}>
-                Save draft changes
-              </button>
+                <Feedback error={updateDraft.error} />
+                <button className={primary} disabled={updateDraft.isPending}>
+                  Save draft changes
+                </button>
+              </fieldset>
             </form>
           </section>
 
@@ -618,6 +661,106 @@ function UniversityRegistryAdminPage() {
               Islamic institution and Islamic-studies-provider are distinct claims: verify the
               official classification independently. Never infer an institution’s character from its
               name alone.
+            </p>
+          </section>
+          <section
+            className="rounded-2xl border border-border bg-card p-5 lg:col-span-2"
+            aria-labelledby="a16-review-heading"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              A1.6.2 · Backend-gated editorial controls
+            </p>
+            <h2 id="a16-review-heading" className="mt-2 font-display text-xl font-bold">
+              Source review decision
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              The review engine is not installed in Production. This form is deliberately
+              disabled until the database audit trail, atomic review RPC, and permission
+              restrictions pass independent acceptance. Attaching a source does not verify it.
+            </p>
+            {!A16_EVIDENCE_REVIEW_RELEASE_ENABLED && (
+              <p role="status" className="mt-3 rounded-lg border border-border bg-muted p-3 text-sm">
+                Review submission unavailable — database release approval pending.
+                No source can be marked verified or published from this form.
+              </p>
+            )}
+            <form
+              className="mt-5 space-y-4"
+              onSubmit={(event) => onForm(event, () => reviewEvidence.mutate())}
+            >
+              <fieldset
+                disabled={!A16_EVIDENCE_REVIEW_RELEASE_ENABLED || reviewEvidence.isPending}
+                className="space-y-4"
+              >
+                <div>
+                  <label className={labelClass} htmlFor="a16-review-source">
+                    Pending source
+                  </label>
+                  <select
+                    id="a16-review-source"
+                    className={fieldClass}
+                    value={reviewEvidenceId}
+                    required
+                    onChange={(event) => setReviewEvidenceId(event.target.value)}
+                  >
+                    <option value="">Select a pending source</option>
+                    {pendingEvidence.map((source) => (
+                      <option key={source.id} value={source.id}>
+                        {source.claim_type} · {source.source_title || source.source_url}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="a16-review-decision">
+                    Editorial decision
+                  </label>
+                  <select
+                    id="a16-review-decision"
+                    className={fieldClass}
+                    value={reviewDecision}
+                    onChange={(event) =>
+                      setReviewDecision(event.target.value as EvidenceReviewDecision)
+                    }
+                  >
+                    <option value="reviewed">Reviewed source (human attestation only)</option>
+                    <option value="rejected">Reject insufficient source</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="a16-review-reason">
+                    Review rationale (20–2000 characters)
+                  </label>
+                  <textarea
+                    id="a16-review-reason"
+                    className={fieldClass}
+                    value={reviewReason}
+                    minLength={20}
+                    maxLength={2000}
+                    rows={4}
+                    required
+                    placeholder="Describe what the source establishes and how it was checked."
+                    onChange={(event) => setReviewReason(event.target.value)}
+                  />
+                </div>
+                <Feedback error={reviewEvidence.error} />
+                <button
+                  className={primary}
+                  disabled={
+                    reviewEvidence.isPending ||
+                    pendingEvidence.length === 0 ||
+                    reviewReason.trim().length < 20 ||
+                    !reviewEvidenceId
+                  }
+                >
+                  {reviewEvidence.isPending ? "Recording review…" : "Record reviewed decision"}
+                </button>
+              </fieldset>
+            </form>
+            <p className="mt-3 text-xs leading-5 text-muted-foreground">
+              A source-review decision is not university accreditation, a scholarship
+              verification, or publication. Only the future secure database function
+              can append the decision to the audit history.
             </p>
           </section>
         </div>
