@@ -1,0 +1,87 @@
+name: A1.6.2 Exact Production SQL — Isolated CI Rehearsal
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/database/ICK_A16_2_GUARDED_PRODUCTION_INSTALL_2026-10-25.sql"
+      - "tests/a16/isolated_existing_draft_fixture.sql"
+      - ".github/workflows/a16-production-sql-isolated-rehearsal.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-exact-reviewed-sql:
+    name: Execute exact guarded SQL on synthetic PostgreSQL 17 only
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-local-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install psql if missing
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+      - name: Rehearse EXACT SQL on isolated synthetic one-draft baseline
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGDATABASE: "postgres"
+          PGPASSWORD: "disposable-local-only"
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/a15/isolated_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_existing_draft_fixture.sql
+
+          # Synthetic ledger matches the 13-row count in Production. No actual
+          # original migrations or Production DB credentials are required.
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE SCHEMA supabase_migrations;
+          CREATE TABLE supabase_migrations.schema_migrations(version text PRIMARY KEY);
+          INSERT INTO supabase_migrations.schema_migrations(version)
+          SELECT to_char(timestamp '2026-01-01' + n * interval '1 day', 'YYYYMMDDHH24MISS')
+          FROM generate_series(1,13) AS n;
+          SQL
+
+          # The exact SQL file proposed for one-time Production application
+          # must succeed as one transaction against a nonempty old schema.
+          psql -X -v ON_ERROR_STOP=1 -f docs/database/ICK_A16_2_GUARDED_PRODUCTION_INSTALL_2026-10-25.sql
+
+          psql -X -v ON_ERROR_STOP=1 -Atqc "
+            SELECT CASE WHEN
+              (SELECT count(*) FROM public.universities)=1
+              AND (SELECT count(*) FROM public.university_aliases)=1
+              AND (SELECT count(*) FROM public.university_evidence)=1
+              AND (SELECT count(*) FROM public.university_review_events)=0
+              AND (SELECT count(*) FROM pg_constraint
+                WHERE conname='universities_no_publishing_yet' AND convalidated)=1
+              AND has_function_privilege('authenticated',
+                'public.ick_a16_review_evidence(uuid,text,text,text)','EXECUTE')
+              AND NOT has_column_privilege('authenticated','public.university_evidence',
+                'review_status','UPDATE')
+            THEN 'EXACT_SQL_POSTCOMMIT_PASS'
+            ELSE 'EXACT_SQL_POSTCOMMIT_FAIL' END;" |
+            grep -qx EXACT_SQL_POSTCOMMIT_PASS
+
+          # Verify the post-commit containment mechanism as a distinct
+          # transaction and without affecting stored evidence or draft rows.
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_post_commit_rpc_killswitch.sql
