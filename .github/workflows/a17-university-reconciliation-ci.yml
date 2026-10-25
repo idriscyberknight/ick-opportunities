@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "src/lib/university-reconciliation.ts"
+      - "src/lib/university-onboarding-sources.ts"
       - "src/lib/university-directory.ts"
       - "src/components/universities/UniversityReconciliationPanel.tsx"
       - "src/routes/_authenticated/admin.universities.tsx"
@@ -33,12 +34,13 @@ jobs:
       - name: Install locked packages
         run: bun install --frozen-lockfile
       - name: Test country/alias/domain duplicate detection — no database
-        run: bun test tests/a17/university-reconciliation.test.ts
+        run: bun test tests/a17
       - name: Verify production app build and generated routes
         run: bun run build
       - name: Scoped lint and format check
         run: |
           bunx eslint \
             src/lib/university-reconciliation.ts \
+            src/lib/university-onboarding-sources.ts \
             src/components/universities/UniversityReconciliationPanel.tsx \
             src/routes/_authenticated/admin.universities.tsx
