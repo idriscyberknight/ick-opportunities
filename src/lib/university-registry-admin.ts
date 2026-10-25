@@ -17,13 +17,16 @@ import { isCurrentUserAdmin } from "@/lib/opportunities";
 const registry = supabase as unknown as SupabaseClient<UniversityEvidenceReviewDatabase>;
 
 /**
- * FAIL CLOSED. The A1.6.2 SQL review RPC and audit table are NOT installed in
- * Production. Only enable this in a separately approved release after the
- * backend, grants, auth tests, and migration history are verified together.
- * Frontend flag is not a security boundary: database authorization remains
- * authoritative.
+ * A1.6.2 source-review submission is enabled only after the guarded,
+ * single-transaction Lovable Cloud Production cutover was installed and
+ * independently read back. Server-side auth.uid(), Admin role checks,
+ * database write grants and the audit transaction enforce authorization.
+ * A frontend flag is NEVER the authorization boundary.
+ *
+ * This is an internal evidence-REVIEW tool, NOT university accreditation or
+ * permission to publish a university or scholarship.
  */
-export const A16_EVIDENCE_REVIEW_RELEASE_ENABLED = false;
+export const A16_EVIDENCE_REVIEW_RELEASE_ENABLED = true;
 export type EvidenceReviewDecision = "reviewed" | "rejected";
 
 export type RegistryUniversity = {
