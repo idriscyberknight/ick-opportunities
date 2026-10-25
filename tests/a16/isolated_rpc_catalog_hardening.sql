@@ -15,7 +15,7 @@ BEGIN
  IF NOT EXISTS (
    SELECT 1 FROM pg_proc p WHERE p.oid=v_fn AND p.prosecdef
      AND EXISTS (SELECT 1 FROM unnest(p.proconfig) AS setting
-                 WHERE setting='search_path=')
+                 WHERE setting IN ('search_path=','search_path=""'))
  ) THEN
    RAISE EXCEPTION 'FAIL: review function is not SECURITY DEFINER with empty pinned search_path';
  END IF;
