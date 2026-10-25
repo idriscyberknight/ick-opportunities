@@ -171,12 +171,12 @@ function JwtRegistryProbe() {
       </Link>
       <h1 className="text-2xl font-bold">A1.5 — Real-JWT Normal User Security Check</h1>
       <p className="text-sm leading-6 text-muted-foreground">
-        Preview-only diagnostic. Use your existing Normal User account, not Admin.
-        No passwords, JWTs, or private records are displayed.
+        Preview-only diagnostic. Use your existing Normal User account, not Admin. No passwords,
+        JWTs, or private records are displayed.
       </p>
       <p className="rounded-xl border border-border p-4 text-sm">
-        Each POST violates an existing CHECK or foreign-key constraint.
-        PostgreSQL 42501 is required to prove write denial.
+        Each POST violates an existing CHECK or foreign-key constraint. PostgreSQL 42501 is required
+        to prove write denial.
       </p>
       <button
         type="button"
@@ -190,11 +190,13 @@ function JwtRegistryProbe() {
         {results.map((r) => (
           <div key={r.name} className="rounded-xl border border-border bg-card p-4">
             <div className="font-semibold">
-              <span className={
+              <span
+                className={
                   r.status === "PASS"
                     ? "text-green-700 dark:text-green-400"
                     : "text-amber-700 dark:text-amber-400"
-                }>
+                }
+              >
                 {r.status}
               </span>{" "}
               — {r.name}
@@ -203,9 +205,7 @@ function JwtRegistryProbe() {
           </div>
         ))}
       </section>
-      {done && (
-        <p className="text-sm font-semibold">Share a screenshot of the result cards.</p>
-      )}
+      {done && <p className="text-sm font-semibold">Share a screenshot of the result cards.</p>}
       <p className="text-xs text-muted-foreground">
         No real-record PATCH test or nonempty row isolation. Do not merge this page.
       </p>
