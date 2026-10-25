@@ -46,3 +46,23 @@ Added TypeScript verification gate `npm run typecheck` and changed the branch's 
 - Real signed JWT HTTP admin/ordinary-user test matrix and evidence/review audit trail remain pending.
 - A founder screenshot showing "Administrator access required" is UI denial for that session; it alone cannot attest identity of authenticated user or direct REST/RLS behavior.
 - Before any merge: confirm typecheck + lint results, exact runtime route, database privilege consistency, and migration adoption plan.
+
+
+## A1.5 independent reconciliation readback — 2026-10-25
+
+Read-only SQL was executed against the **correct Production** Lovable Cloud project `433a53c8-8872-49f2-b7b8-3e8dc7e96e35`.
+
+- Live `public` university tables: four; `university_rows=0`, `alias_rows=0`, `evidence_rows=0`, `classification_rows=0`.
+- Postgres **17.6**; university RLS policy count **12**.
+- Stable inventory hash of 39 ordered live columns, using `md5(string_agg(format('%s:%s:%s:%s', table_name, column_name, udt_name, is_nullable), ',' ORDER BY table_name, ordinal_position))` = `f28bdcbe5d4d796aea6a11b19dcb4964`.
+- Stable current policy hash, using `md5(string_agg(format('%s:%s:%s:%s', tablename, policyname, cmd, qual), ',' ORDER BY tablename, policyname))` = `4de4ac9298e5b4d5ad9f4a87253e33e6`. These fingerprints are for drift checks, not cryptographic proof or a full schema audit.
+- `supabase_migrations.schema_migrations` **exists** in this database. Its current ledger contains **13 entries**; the highest version observed is `20261005021810` (2026-10-05). **Zero** migration names contain `universit`; the name column contains opaque UUID-like values. Neither this ledger nor these hashes prove the exact process by which the direct 2026-10-25 DDL was executed or recorded elsewhere. They do support the existing discrepancy: the October 25 registry changes do not appear in the observed dated migration ledger.
+- No ledger writes or migration reconciliation operation have been performed. Do **not** insert a new `schema_migrations` record manually or run the historical CREATE TABLE script again.
+
+### Safe next step: adoption strategy only
+
+Get documented ownership of the actual Lovable Cloud migration runner and compare both the code repository and the database migration ledger. Implement a fail-closed **no-op** adoption check if that runner permits it. Require a separate reviewed change and explicit Founder authorization for any migration-ledger alteration; do not fabricate versions, statements or rollback entries.
+
+## A1.5 real signed-session API checks — still pending browser verification
+
+A temporary **preview-only** route `/security/university-registry` has been added on Draft PR #22 to perform four PostgREST `HEAD` requests with the browser's current existing Supabase session after a network-validated `auth.getUser()` call. It deliberately does **not** display JWTs, account identifiers or data rows, and performs **no** inserts, updates, deletes or role changes. Admin and non-admin sign-ins should be exercised independently, and the results remain **inconclusive for row isolation when all registry tables are empty**. The diagnostic route must be removed before any production merge.
