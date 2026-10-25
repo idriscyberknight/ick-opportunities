@@ -117,7 +117,8 @@ export function reconcileUniversityDirectory(
       status = "unmatched";
       unmatched += 1;
     }
-    if (status === "candidate") linkedIds.add(matches[0].id);
+    const firstMatch = matches[0];
+    if (status === "candidate" && firstMatch) linkedIds.add(firstMatch.id);
 
     return {
       starter,
