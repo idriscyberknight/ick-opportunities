@@ -8,6 +8,7 @@ on:
       - "tests/a15/**"
       - "docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql"
       - "src/routes/_authenticated/admin.universities.tsx"
+      - "src/routes/_authenticated/security.university-review-a16-jwt.tsx"
       - "src/routes/_authenticated/admin.review.tsx"
       - "package.json"
       - "vite.config.ts"
@@ -79,6 +80,7 @@ jobs:
             src/lib/university-registry-schema.types.ts \
             src/lib/university-registry-admin.ts \
             src/routes/_authenticated/admin.universities.tsx \
+            src/routes/_authenticated/security.university-review-a16-jwt.tsx \
             src/routes/_authenticated/admin.review.tsx \
             vite.config.ts
 
