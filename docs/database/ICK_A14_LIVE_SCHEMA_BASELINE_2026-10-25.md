@@ -63,6 +63,15 @@ Read-only SQL was executed against the **correct Production** Lovable Cloud proj
 
 Get documented ownership of the actual Lovable Cloud migration runner and compare both the code repository and the database migration ledger. Implement a fail-closed **no-op** adoption check if that runner permits it. Require a separate reviewed change and explicit Founder authorization for any migration-ledger alteration; do not fabricate versions, statements or rollback entries.
 
-## A1.5 real signed-session API checks — still pending browser verification
+## A1.5 signed-session API verification — observed and diagnostic removed (2026-10-25)
 
-A temporary **preview-only** route `/security/university-registry` has been added on Draft PR #22 to perform four PostgREST `HEAD` requests with the browser's current existing Supabase session after a network-validated `auth.getUser()` call. It deliberately does **not** display JWTs, account identifiers or data rows, and performs **no** inserts, updates, deletes or role changes. Admin and non-admin sign-ins should be exercised independently, and the results remain **inconclusive for row isolation when all registry tables are empty**. The diagnostic route must be removed before any production merge.
+Existing normal-user and admin sessions were individually validated in founder-supplied mobile screenshots using the **temporary Preview-only** `/security/university-registry` route:
+- `auth.getUser()` succeeded for both accounts (`Validated session: YES`).
+- Existing normal user returned `Role lookup: NORMAL USER`; the four PostgREST `HEAD` count-only requests returned `HTTP 200` with **0 rows**, marked `REVIEW` (not proof of actual record-level isolation on empty tables).
+- Existing Admin returned `Role lookup: ADMIN`; four PostgREST `HEAD` requests returned `PASS / HTTP 200` (API reachability; no record payloads).
+- Production read-only `pg_policies` independently verified RLS active on all four tables, 12 admin-guarded SELECT/INSERT/UPDATE policies and no authenticated DELETE grant.
+- No credentials, JWTs, account IDs or row data were displayed, and no HTTP test writes occurred.
+
+**Important limitations:** these results establish real-session JWT authentication, role lookup and read-only REST reachability. With no registry rows, they do **not** establish non-admin isolation of existing private records or real-JWT write-denial. Prior transaction-only role-claim SQL simulation supports intended RLS but is not real-JWT HTTP evidence.
+
+**Test-route cleanup:** temporary `src/routes/_authenticated/security.university-registry.tsx` has now been **deleted from Draft PR #22**, and its CI lint/path references removed. Immutable old preview deployments can retain the historical route, but no future merge of this PR contains it. Do not describe the current PR as still shipping the diagnostic. Production release is still blocked on remaining acceptance issues and requires a distinct Founder merge/release decision.
