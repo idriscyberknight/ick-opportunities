@@ -99,7 +99,7 @@ GRANT UPDATE (official_name,country_code,city,official_website,summary)
 CREATE FUNCTION public.ick_a16_block_edits_after_source_review()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER
 SET search_path = ''
-AS $
+AS $$
 BEGIN
  IF (NEW.official_name,NEW.country_code,NEW.city,
      NEW.official_website,NEW.summary)
@@ -117,7 +117,7 @@ BEGIN
  END IF;
  RETURN NEW;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION public.ick_a16_block_edits_after_source_review()
  FROM PUBLIC, anon, authenticated;
 CREATE TRIGGER a16_institution_no_edit_after_review
