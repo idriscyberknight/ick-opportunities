@@ -154,3 +154,30 @@ Sources:
 **HOLD all A1.6.2 SQL writes** until (a) project-specific backup list has been inspected; (b) recent full export / recovery strategy is confirmed; (c) historical migration mismatch is reconciled with the actual Lovable owner/runner; (d) SQL privileges, identity-lock trigger and all lifecycle transitions pass an isolated production-shaped rehearsal; (e) PR #28's safe Admin draft PATCH regression is validated; (f) Founder explicitly approves the reviewed exact Production SQL; and (g) post-migration real JWT tests on controlled nonempty fixtures have a zero-leakage cleanup and rollback strategy.
 
 No Production writes, SQL DDL, role changes, database exports or backup restores were executed as part of this read-only snapshot.
+
+
+## 9. Founder-observed Lovable backup timestamps and restoration risk (2026-10-25)
+
+**Evidence:** Founder supplied an Android screenshot from `More → Database → Manage → Backups`. Entries visibly listed (UTC):
+- **Oct 25, 2026 — 02:16:10**
+- Oct 24, 2026 — 02:16:31
+- Oct 23, 2026 — 02:14:51
+- Oct 22, 2026 — 03:28:34
+- Oct 21, 2026 — 02:18:23
+- Oct 20, 2026 — 02:19:23
+
+The checkmarks and available Restore buttons demonstrate that the Lovable UI lists these **daily restore points**. **No restore or recovery rehearsal was performed.** The UI alone does not prove that the user personally tested recovering these snapshots.
+
+**Independent read-only Lovable Cloud Production readback after screenshot:**
+- Earliest/current university draft created **2026-10-25 12:49:43.326127+00**; 1 draft.
+- Alias created **2026-10-25 12:50:02.798275+00**; 1 alias.
+- Attached evidence created **2026-10-25 12:51:45.950201+00**; 1 source.
+- Classifications 0, publication guard 1, A1.6.2 RPC absent.
+
+**CRITICAL RECOVERY GAP:** The latest listed backup **2026-10-25 02:16:10 UTC** predates all three current registry rows by more than ten hours. Restoring that snapshot would necessarily remove those three rows, and may revert schema that was modified after the backup. Never restore the October 25 snapshot as the "current" A1.6.2 release checkpoint. The exact creation time of the four registry tables relative to this snapshot is not independently established from these checks, so do not assert they are definitely absent in the snapshot.
+
+**Release decision:** `Backup inventory visible = PASS`; `A1.6.2 current-state recovery checkpoint = NOT READY`. Before any Production DDL/migration approval, secure a **new post-12:51:45 UTC** daily backup or an independently controlled, verified full export capturing the current database state. The user previously said they had exported data, but the date/scope/restore-readiness of that export has NOT been verified and cannot substitute without checking. Do not export secrets into a public GitHub PR or ask for a database file or screenshot containing credentials/user information.
+
+Lovable's current docs confirm daily UTC backups, restoring loses all subsequent DB edits and can revert schema, database export includes account password hashes, and database backups omit storage files: https://docs.lovable.dev/features/database-backups.
+
+**No database/data/settings/backup changes were performed.** This log contains only timestamps and aggregate counts, not private university data, credentials, tokens, or source URLs.
