@@ -1,6 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import { STARTER_UNIVERSITIES } from "../../src/lib/university-directory";
-import { reconcileUniversityDirectory } from "../../src/lib/university-reconciliation";
+import {
+  prepareStarterPrivateDraft,
+  reconcileUniversityDirectory,
+} from "../../src/lib/university-reconciliation";
 import type {
   RegistryAlias,
   RegistryUniversity,
@@ -104,5 +107,52 @@ describe("A1.7 read-only university reconciliation", () => {
     const result = reconcileUniversityDirectory([], []);
     expect(result.entries.every((row) => row.status === "unmatched")).toBe(true);
     expect(result.privateOnly).toEqual([]);
+  });
+});
+
+describe("A1.7.2 explicit safe private draft preparation", () => {
+  it("preserves existing canonical Madinah slug and never sets any reviewed or publishing state", () => {
+    const starter = STARTER_UNIVERSITIES.find(
+      (item) => item.slug === "islamic-university-of-madinah",
+    );
+    expect(starter).toBeDefined();
+    if (!starter) throw new Error("Missing canonical public Madinah entry");
+    const values = prepareStarterPrivateDraft(starter);
+    expect(values.slug).toBe(starter.slug);
+    expect(values.country_code).toBe("SA");
+    expect(values.official_name).toBe(starter.name);
+    expect(values.summary).toBe("");
+    expect(Object.keys(values).sort()).toEqual([
+      "city",
+      "country_code",
+      "official_name",
+      "official_website",
+      "slug",
+      "summary",
+    ]);
+    expect("verification_status" in values).toBe(false);
+    expect("publication_status" in values).toBe(false);
+    expect("review_status" in values).toBe(false);
+  });
+
+  it("does not prefill disputed Niger website or ambiguous multiple-city field", () => {
+    const starter = STARTER_UNIVERSITIES.find(
+      (item) => item.slug === "islamic-university-in-niger",
+    );
+    expect(starter).toBeDefined();
+    if (!starter) throw new Error("Missing Niger entry");
+    const values = prepareStarterPrivateDraft(starter);
+    expect(values.slug).toBe(starter.slug);
+    expect(values.country_code).toBe("NE");
+    expect(values.city).toBe("");
+    expect(values.official_website).toBe("");
+  });
+
+  it("cannot magically create private records by preparing all public entries", () => {
+    const records: RegistryUniversity[] = [];
+    const values = STARTER_UNIVERSITIES.map(prepareStarterPrivateDraft);
+    expect(values).toHaveLength(8);
+    expect(records).toHaveLength(0);
+    expect(new Set(values.map((v) => v.slug)).size).toBe(8);
   });
 });

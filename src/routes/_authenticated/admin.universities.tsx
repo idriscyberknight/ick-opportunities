@@ -5,6 +5,12 @@ import { ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
 import { isCurrentUserAdmin } from "@/lib/opportunities";
 import { fieldClass, labelClass } from "@/components/AuthShell";
 import { UniversityReconciliationPanel } from "@/components/universities/UniversityReconciliationPanel";
+import { STARTER_UNIVERSITIES } from "@/lib/university-directory";
+import {
+  prepareStarterPrivateDraft,
+  reconcileUniversityDirectory,
+} from "@/lib/university-reconciliation";
+import type { UniversityRecord } from "@/lib/university-directory";
 import {
   A16_EVIDENCE_REVIEW_RELEASE_ENABLED,
   CLASSIFICATIONS,
@@ -90,6 +96,7 @@ const editable = (u: RegistryUniversity): DraftData => ({
 function UniversityRegistryAdminPage() {
   const qc = useQueryClient();
   const draftEditorRef = useRef<HTMLElement>(null);
+  const createDraftRef = useRef<HTMLElement>(null);
   const admin = useQuery({ queryKey: ["is-admin"], queryFn: isCurrentUserAdmin });
   const allowed = admin.data === true;
   const registry = useQuery({
@@ -101,6 +108,8 @@ function UniversityRegistryAdminPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [slug, setSlug] = useState("");
   const [draft, setDraft] = useState<DraftData>(emptyDraft);
+  const [preparedStarterSlug, setPreparedStarterSlug] = useState<string | null>(null);
+  const [preparedAcknowledged, setPreparedAcknowledged] = useState(false);
   const [edit, setEdit] = useState<DraftData>(emptyDraft);
   const [alias, setAlias] = useState("");
   const [language, setLanguage] = useState("");
@@ -117,10 +126,37 @@ function UniversityRegistryAdminPage() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["a15-university-admin-registry"] });
   const createDraft = useMutation({
-    mutationFn: () => createUniversityDraft({ slug, ...draft }),
+    mutationFn: async () => {
+      if (preparedStarterSlug) {
+        const starter = STARTER_UNIVERSITIES.find((row) => row.slug === preparedStarterSlug);
+        if (!starter || slug !== starter.slug || draft.country_code !== starter.countryCode) {
+          throw new Error(
+            "Prepared university identity changed. Clear the preparation and start again.",
+          );
+        }
+        if (!preparedAcknowledged) {
+          throw new Error(
+            "Review the source and duplicate checks before creating this private draft.",
+          );
+        }
+        // Never trust the cached client registry for the final duplicate check.
+        const fresh = await listAdminUniversityRegistry();
+        const entry = reconcileUniversityDirectory(fresh.universities, fresh.aliases).entries.find(
+          (item) => item.starter.slug === starter.slug,
+        );
+        if (!entry || entry.status !== "unmatched") {
+          throw new Error(
+            "A possible duplicate or country conflict was found. Refresh and investigate.",
+          );
+        }
+      }
+      return createUniversityDraft({ slug, ...draft });
+    },
     onSuccess: () => {
       setSlug("");
       setDraft(emptyDraft);
+      setPreparedStarterSlug(null);
+      setPreparedAcknowledged(false);
       invalidate();
     },
   });
@@ -236,6 +272,27 @@ function UniversityRegistryAdminPage() {
     submit();
   };
 
+  const prepareStarter = (starter: UniversityRecord) => {
+    // An explicit Admin action only PREFILLS the existing private draft form.
+    // No university row, alias, evidence, review or public page is modified.
+    const prepared = prepareStarterPrivateDraft(starter);
+    setSlug(prepared.slug);
+    setDraft({
+      official_name: prepared.official_name,
+      country_code: prepared.country_code,
+      city: prepared.city,
+      official_website: prepared.official_website,
+      summary: prepared.summary,
+    });
+    setPreparedStarterSlug(starter.slug);
+    setPreparedAcknowledged(false);
+    createDraft.reset();
+    requestAnimationFrame(() => {
+      createDraftRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      createDraftRef.current?.focus({ preventScroll: true });
+    });
+  };
+
   const choose = (u: RegistryUniversity) => {
     setSelectedId(u.id);
     setEdit(editable(u));
@@ -314,11 +371,14 @@ function UniversityRegistryAdminPage() {
         <UniversityReconciliationPanel
           universities={registry.data.universities}
           aliases={registry.data.aliases}
+          onPrepareDraft={prepareStarter}
         />
       )}
 
       <section
-        className="rounded-2xl border border-border bg-card p-5"
+        ref={createDraftRef}
+        tabIndex={-1}
+        className="scroll-mt-28 rounded-2xl border border-border bg-card p-5"
         aria-labelledby="new-draft-heading"
       >
         <h2 id="new-draft-heading" className="font-display text-xl font-bold">
@@ -327,6 +387,47 @@ function UniversityRegistryAdminPage() {
         <p className="mt-1 text-xs text-muted-foreground">
           A new record is internal only and always starts pending review.
         </p>
+        {preparedStarterSlug && (
+          <div className="mt-3 space-y-3 rounded-xl border border-border bg-muted/40 p-4 text-sm">
+            <p className="font-semibold">
+              Prepared from the existing public directory — no record has been created.
+            </p>
+            <p className="text-muted-foreground">
+              Inspect the official institution source, check the canonical website, and confirm
+              there is no duplicate before manually creating a pending private draft. No
+              classification, alias or source approval is copied automatically.
+            </p>
+            {STARTER_UNIVERSITIES.find((entry) => entry.slug === preparedStarterSlug)
+              ?.websiteVerification === "needs_review" && (
+              <p className="text-amber-700 dark:text-amber-400">
+                This institution’s website has an unresolved verification concern; its website field
+                was intentionally left empty.
+              </p>
+            )}
+            <label className="flex cursor-pointer items-start gap-2">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={preparedAcknowledged}
+                onChange={(event) => setPreparedAcknowledged(event.target.checked)}
+              />
+              <span>I checked the sources and reviewed possible duplicates.</span>
+            </label>
+            <button
+              type="button"
+              className={button}
+              onClick={() => {
+                setPreparedStarterSlug(null);
+                setPreparedAcknowledged(false);
+                setSlug("");
+                setDraft(emptyDraft);
+                createDraft.reset();
+              }}
+            >
+              Clear prepared draft
+            </button>
+          </div>
+        )}
         <form
           className="mt-5 grid gap-4 sm:grid-cols-2"
           onSubmit={(e) => onForm(e, () => createDraft.mutate())}
@@ -336,6 +437,7 @@ function UniversityRegistryAdminPage() {
             title="Unique slug"
             value={slug}
             onChange={setSlug}
+            disabled={!!preparedStarterSlug}
             required
             placeholder="e.g. example-university"
           />
@@ -351,6 +453,7 @@ function UniversityRegistryAdminPage() {
             title="ISO country code (2 letters)"
             value={draft.country_code}
             maxLength={2}
+            disabled={!!preparedStarterSlug}
             onChange={(v) => setDraft({ ...draft, country_code: v })}
             required
             placeholder="NG"
@@ -376,7 +479,10 @@ function UniversityRegistryAdminPage() {
           />
           <div className="sm:col-span-2 space-y-3">
             <Feedback error={createDraft.error} />
-            <button className={primary} disabled={createDraft.isPending}>
+            <button
+              className={primary}
+              disabled={createDraft.isPending || (!!preparedStarterSlug && !preparedAcknowledged)}
+            >
               <Plus className="h-4 w-4" /> {createDraft.isPending ? "Creating…" : "Create draft"}
             </button>
           </div>
