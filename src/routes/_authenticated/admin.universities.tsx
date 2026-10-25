@@ -5,11 +5,17 @@ import { ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
 import { isCurrentUserAdmin } from "@/lib/opportunities";
 import { fieldClass, labelClass } from "@/components/AuthShell";
 import {
-  CLASSIFICATIONS, EVIDENCE_CLAIMS,
-  createUniversityAlias, createUniversityClassification,
-  createUniversityDraft, createUniversityEvidence,
-  listAdminUniversityRegistry, updateUniversityDraft,
-  type ClassificationKey, type EvidenceClaim, type RegistryUniversity,
+  CLASSIFICATIONS,
+  EVIDENCE_CLAIMS,
+  createUniversityAlias,
+  createUniversityClassification,
+  createUniversityDraft,
+  createUniversityEvidence,
+  listAdminUniversityRegistry,
+  updateUniversityDraft,
+  type ClassificationKey,
+  type EvidenceClaim,
+  type RegistryUniversity,
 } from "@/lib/university-registry-admin";
 
 /**
@@ -21,7 +27,10 @@ export const Route = createFileRoute("/_authenticated/admin/universities")({
   head: () => ({
     meta: [
       { title: "University Registry Admin — ICK Opportunities" },
-      { name: "description", content: "Restricted university draft and evidence review workspace." },
+      {
+        name: "description",
+        content: "Restricted university draft and evidence review workspace.",
+      },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -35,23 +44,43 @@ const primary =
 
 function Feedback({ error }: { error: Error | null }) {
   return error ? (
-    <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+    <p
+      role="alert"
+      className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+    >
       {error.message}
     </p>
   ) : null;
 }
 
 function Busy() {
-  return <div className="mx-auto flex max-w-5xl items-center gap-3 p-8 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /> Loading registry…</div>;
+  return (
+    <div className="mx-auto flex max-w-5xl items-center gap-3 p-8 text-muted-foreground">
+      <Loader2 className="h-5 w-5 animate-spin" /> Loading registry…
+    </div>
+  );
 }
 
 type DraftData = {
-  official_name: string; country_code: string; city: string; official_website: string; summary: string;
+  official_name: string;
+  country_code: string;
+  city: string;
+  official_website: string;
+  summary: string;
 };
-const emptyDraft: DraftData = { official_name: "", country_code: "", city: "", official_website: "", summary: "" };
+const emptyDraft: DraftData = {
+  official_name: "",
+  country_code: "",
+  city: "",
+  official_website: "",
+  summary: "",
+};
 const editable = (u: RegistryUniversity): DraftData => ({
-  official_name: u.official_name, country_code: u.country_code,
-  city: u.city ?? "", official_website: u.official_website ?? "", summary: u.summary ?? "",
+  official_name: u.official_name,
+  country_code: u.country_code,
+  city: u.city ?? "",
+  official_website: u.official_website ?? "",
+  summary: u.summary ?? "",
 });
 
 function UniversityRegistryAdminPage() {
@@ -59,7 +88,9 @@ function UniversityRegistryAdminPage() {
   const admin = useQuery({ queryKey: ["is-admin"], queryFn: isCurrentUserAdmin });
   const allowed = admin.data === true;
   const registry = useQuery({
-    queryKey: ["a15-university-admin-registry"], queryFn: listAdminUniversityRegistry, enabled: allowed,
+    queryKey: ["a15-university-admin-registry"],
+    queryFn: listAdminUniversityRegistry,
+    enabled: allowed,
   });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -71,13 +102,19 @@ function UniversityRegistryAdminPage() {
   const [claimType, setClaimType] = useState<EvidenceClaim>("identity");
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourceTitle, setSourceTitle] = useState("");
-  const [classificationKey, setClassificationKey] = useState<ClassificationKey>("islamic_studies_provider");
+  const [classificationKey, setClassificationKey] = useState<ClassificationKey>(
+    "islamic_studies_provider",
+  );
   const [classificationEvidenceId, setClassificationEvidenceId] = useState("");
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["a15-university-admin-registry"] });
   const createDraft = useMutation({
     mutationFn: () => createUniversityDraft({ slug, ...draft }),
-    onSuccess: () => { setSlug(""); setDraft(emptyDraft); invalidate(); },
+    onSuccess: () => {
+      setSlug("");
+      setDraft(emptyDraft);
+      invalidate();
+    },
   });
   const updateDraft = useMutation({
     mutationFn: () => {
@@ -91,32 +128,54 @@ function UniversityRegistryAdminPage() {
       if (!selectedId) throw new Error("Select a university.");
       return createUniversityAlias(selectedId, alias, language);
     },
-    onSuccess: () => { setAlias(""); setLanguage(""); invalidate(); },
+    onSuccess: () => {
+      setAlias("");
+      setLanguage("");
+      invalidate();
+    },
   });
   const addEvidence = useMutation({
     mutationFn: () => {
       if (!selectedId) throw new Error("Select a university.");
       return createUniversityEvidence(selectedId, sourceUrl, claimType, sourceTitle);
     },
-    onSuccess: () => { setSourceUrl(""); setSourceTitle(""); invalidate(); },
+    onSuccess: () => {
+      setSourceUrl("");
+      setSourceTitle("");
+      invalidate();
+    },
   });
   const addClassification = useMutation({
     mutationFn: () => {
       if (!selectedId || !classificationEvidenceId) throw new Error("Select an evidence record.");
-      return createUniversityClassification(selectedId, classificationKey, classificationEvidenceId);
+      return createUniversityClassification(
+        selectedId,
+        classificationKey,
+        classificationEvidenceId,
+      );
     },
-    onSuccess: () => { setClassificationEvidenceId(""); invalidate(); },
+    onSuccess: () => {
+      setClassificationEvidenceId("");
+      invalidate();
+    },
   });
 
   if (admin.isLoading) return <Busy />;
-  if (admin.isError) return <div className="mx-auto max-w-5xl p-8"><Feedback error={admin.error} /></div>;
+  if (admin.isError)
+    return (
+      <div className="mx-auto max-w-5xl p-8">
+        <Feedback error={admin.error} />
+      </div>
+    );
   if (!allowed) return <div className="mx-auto max-w-5xl p-8">Administrator access required.</div>;
 
   const universities = registry.data?.universities ?? [];
   const selected = universities.find((u) => u.id === selectedId) ?? null;
   const evidence = (registry.data?.evidence ?? []).filter((e) => e.university_id === selectedId);
   const aliases = (registry.data?.aliases ?? []).filter((a) => a.university_id === selectedId);
-  const classifications = (registry.data?.classifications ?? []).filter((c) => c.university_id === selectedId);
+  const classifications = (registry.data?.classifications ?? []).filter(
+    (c) => c.university_id === selectedId,
+  );
   const onForm = (e: FormEvent<HTMLFormElement>, submit: () => void) => {
     e.preventDefault();
     submit();
@@ -126,38 +185,52 @@ function UniversityRegistryAdminPage() {
     setSelectedId(u.id);
     setEdit(editable(u));
     setClassificationEvidenceId("");
-    setAlias(""); setLanguage(""); setSourceUrl(""); setSourceTitle("");
+    setAlias("");
+    setLanguage("");
+    setSourceUrl("");
+    setSourceTitle("");
   };
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
       <header className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link to="/admin/review" className={button}>← Opportunity review</Link>
+          <Link to="/admin/review" className={button}>
+            ← Opportunity review
+          </Link>
           <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground">
             <ShieldCheck className="h-4 w-4" /> Admin only · Unpublished
           </span>
         </div>
         <h1 className="font-display text-3xl font-extrabold tracking-tight">University Registry</h1>
         <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-          Build internal university drafts with source-backed evidence. Neither creating a university nor attaching a
-          source verifies accreditation, admissions or scholarships. Publication is intentionally blocked by the database.
+          Build internal university drafts with source-backed evidence. Neither creating a
+          university nor attaching a source verifies accreditation, admissions or scholarships.
+          Publication is intentionally blocked by the database.
         </p>
       </header>
 
-      <section className="rounded-2xl border border-border bg-card p-5" aria-labelledby="registry-list-heading">
-        <h2 id="registry-list-heading" className="font-display text-xl font-bold">Internal drafts</h2>
+      <section
+        className="rounded-2xl border border-border bg-card p-5"
+        aria-labelledby="registry-list-heading"
+      >
+        <h2 id="registry-list-heading" className="font-display text-xl font-bold">
+          Internal drafts
+        </h2>
         {registry.isLoading ? <Busy /> : null}
         <Feedback error={registry.error} />
         {registry.data && universities.length === 0 ? (
           <p className="mt-3 rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
-            No university draft records yet. The eight public editorial starter entries are not imported automatically.
+            No university draft records yet. The eight public editorial starter entries are not
+            imported automatically.
           </p>
         ) : null}
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {universities.map((u) => (
             <button
-              key={u.id} type="button" onClick={() => choose(u)}
+              key={u.id}
+              type="button"
+              onClick={() => choose(u)}
               aria-pressed={selectedId === u.id}
               className={`min-h-16 rounded-xl border p-4 text-left text-sm transition-colors hover:bg-muted ${selectedId === u.id ? "border-primary bg-muted" : "border-border"}`}
             >
@@ -170,16 +243,63 @@ function UniversityRegistryAdminPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-border bg-card p-5" aria-labelledby="new-draft-heading">
-        <h2 id="new-draft-heading" className="font-display text-xl font-bold">Create an unverified draft</h2>
-        <p className="mt-1 text-xs text-muted-foreground">A new record is internal only and always starts pending review.</p>
-        <form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={(e) => onForm(e, () => createDraft.mutate())}>
-          <Field id="draft-slug" title="Unique slug" value={slug} onChange={setSlug} required placeholder="e.g. example-university" />
-          <Field id="draft-name" title="Official institution name" value={draft.official_name} onChange={(v) => setDraft({ ...draft, official_name: v })} required />
-          <Field id="draft-country" title="ISO country code (2 letters)" value={draft.country_code} maxLength={2} onChange={(v) => setDraft({ ...draft, country_code: v })} required placeholder="NG" />
-          <Field id="draft-city" title="City (optional)" value={draft.city} onChange={(v) => setDraft({ ...draft, city: v })} />
-          <Field id="draft-url" title="Official HTTPS website (if verified)" value={draft.official_website} onChange={(v) => setDraft({ ...draft, official_website: v })} placeholder="https://…" />
-          <Field id="draft-summary" title="Internal short summary" value={draft.summary} onChange={(v) => setDraft({ ...draft, summary: v })} />
+      <section
+        className="rounded-2xl border border-border bg-card p-5"
+        aria-labelledby="new-draft-heading"
+      >
+        <h2 id="new-draft-heading" className="font-display text-xl font-bold">
+          Create an unverified draft
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          A new record is internal only and always starts pending review.
+        </p>
+        <form
+          className="mt-5 grid gap-4 sm:grid-cols-2"
+          onSubmit={(e) => onForm(e, () => createDraft.mutate())}
+        >
+          <Field
+            id="draft-slug"
+            title="Unique slug"
+            value={slug}
+            onChange={setSlug}
+            required
+            placeholder="e.g. example-university"
+          />
+          <Field
+            id="draft-name"
+            title="Official institution name"
+            value={draft.official_name}
+            onChange={(v) => setDraft({ ...draft, official_name: v })}
+            required
+          />
+          <Field
+            id="draft-country"
+            title="ISO country code (2 letters)"
+            value={draft.country_code}
+            maxLength={2}
+            onChange={(v) => setDraft({ ...draft, country_code: v })}
+            required
+            placeholder="NG"
+          />
+          <Field
+            id="draft-city"
+            title="City (optional)"
+            value={draft.city}
+            onChange={(v) => setDraft({ ...draft, city: v })}
+          />
+          <Field
+            id="draft-url"
+            title="Official HTTPS website (if verified)"
+            value={draft.official_website}
+            onChange={(v) => setDraft({ ...draft, official_website: v })}
+            placeholder="https://…"
+          />
+          <Field
+            id="draft-summary"
+            title="Internal short summary"
+            value={draft.summary}
+            onChange={(v) => setDraft({ ...draft, summary: v })}
+          />
           <div className="sm:col-span-2 space-y-3">
             <Feedback error={createDraft.error} />
             <button className={primary} disabled={createDraft.isPending}>
@@ -191,19 +311,58 @@ function UniversityRegistryAdminPage() {
 
       {selected && (
         <div className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-2xl border border-border bg-card p-5" aria-labelledby="edit-university-heading">
-            <h2 id="edit-university-heading" className="font-display text-xl font-bold">Edit draft · {selected.official_name}</h2>
+          <section
+            className="rounded-2xl border border-border bg-card p-5"
+            aria-labelledby="edit-university-heading"
+          >
+            <h2 id="edit-university-heading" className="font-display text-xl font-bold">
+              Edit draft · {selected.official_name}
+            </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Editing resets identity verification for re-review; the database does not allow publishing.
+              Editing resets identity verification for re-review; the database does not allow
+              publishing.
             </p>
-            <form className="mt-5 space-y-4" onSubmit={(e) => onForm(e, () => updateDraft.mutate())}>
-              <Field id="edit-name" title="Institution name" value={edit.official_name} onChange={(v) => setEdit({ ...edit, official_name: v })} required />
-              <Field id="edit-country" title="ISO country code" value={edit.country_code} maxLength={2} onChange={(v) => setEdit({ ...edit, country_code: v })} required />
-              <Field id="edit-city" title="City" value={edit.city} onChange={(v) => setEdit({ ...edit, city: v })} />
-              <Field id="edit-url" title="Official HTTPS website" value={edit.official_website} onChange={(v) => setEdit({ ...edit, official_website: v })} />
-              <Field id="edit-summary" title="Summary" value={edit.summary} onChange={(v) => setEdit({ ...edit, summary: v })} />
+            <form
+              className="mt-5 space-y-4"
+              onSubmit={(e) => onForm(e, () => updateDraft.mutate())}
+            >
+              <Field
+                id="edit-name"
+                title="Institution name"
+                value={edit.official_name}
+                onChange={(v) => setEdit({ ...edit, official_name: v })}
+                required
+              />
+              <Field
+                id="edit-country"
+                title="ISO country code"
+                value={edit.country_code}
+                maxLength={2}
+                onChange={(v) => setEdit({ ...edit, country_code: v })}
+                required
+              />
+              <Field
+                id="edit-city"
+                title="City"
+                value={edit.city}
+                onChange={(v) => setEdit({ ...edit, city: v })}
+              />
+              <Field
+                id="edit-url"
+                title="Official HTTPS website"
+                value={edit.official_website}
+                onChange={(v) => setEdit({ ...edit, official_website: v })}
+              />
+              <Field
+                id="edit-summary"
+                title="Summary"
+                value={edit.summary}
+                onChange={(v) => setEdit({ ...edit, summary: v })}
+              />
               <Feedback error={updateDraft.error} />
-              <button className={primary} disabled={updateDraft.isPending}>Save draft changes</button>
+              <button className={primary} disabled={updateDraft.isPending}>
+                Save draft changes
+              </button>
             </form>
           </section>
 
@@ -211,25 +370,50 @@ function UniversityRegistryAdminPage() {
             <div className="rounded-2xl border border-border bg-card p-5">
               <h2 className="font-display text-lg font-bold">Names and aliases</h2>
               <ul className="my-3 space-y-1 text-sm text-muted-foreground">
-                {aliases.map((a) => <li key={a.id}>{a.alias} {a.language_code && `(${a.language_code})`}</li>)}
+                {aliases.map((a) => (
+                  <li key={a.id}>
+                    {a.alias} {a.language_code && `(${a.language_code})`}
+                  </li>
+                ))}
                 {!aliases.length && <li>No aliases recorded.</li>}
               </ul>
               <form className="space-y-3" onSubmit={(e) => onForm(e, () => addAlias.mutate())}>
-                <Field id="a15-alias" title="Alternative official name / abbreviation" value={alias} onChange={setAlias} required />
-                <Field id="a15-lang" title="Language code (optional)" value={language} onChange={setLanguage} placeholder="ar / en / fr" />
+                <Field
+                  id="a15-alias"
+                  title="Alternative official name / abbreviation"
+                  value={alias}
+                  onChange={setAlias}
+                  required
+                />
+                <Field
+                  id="a15-lang"
+                  title="Language code (optional)"
+                  value={language}
+                  onChange={setLanguage}
+                  placeholder="ar / en / fr"
+                />
                 <Feedback error={addAlias.error} />
-                <button className={button} disabled={addAlias.isPending}>Add alias</button>
+                <button className={button} disabled={addAlias.isPending}>
+                  Add alias
+                </button>
               </form>
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-5">
               <h2 className="font-display text-lg font-bold">Evidence (unreviewed)</h2>
-              <p className="mt-1 text-xs text-muted-foreground">A submitted source is not automatically authoritative or verified.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                A submitted source is not automatically authoritative or verified.
+              </p>
               <ul className="my-3 space-y-2 text-sm text-muted-foreground">
                 {evidence.map((e) => (
                   <li key={e.id} className="break-all">
                     <b>{e.claim_type}</b> · {e.review_status} ·{" "}
-                    <a href={e.source_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-secondary underline">
+                    <a
+                      href={e.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-secondary underline"
+                    >
                       Source <ExternalLink className="h-3 w-3" />
                     </a>
                   </li>
@@ -237,61 +421,144 @@ function UniversityRegistryAdminPage() {
                 {!evidence.length && <li>No evidence recorded.</li>}
               </ul>
               <form className="space-y-3" onSubmit={(e) => onForm(e, () => addEvidence.mutate())}>
-                <label className={labelClass} htmlFor="a15-claim">Evidence claim</label>
-                <select id="a15-claim" className={fieldClass} value={claimType} onChange={(e) => setClaimType(e.target.value as EvidenceClaim)}>
-                  {EVIDENCE_CLAIMS.map((key) => <option key={key} value={key}>{key}</option>)}
+                <label className={labelClass} htmlFor="a15-claim">
+                  Evidence claim
+                </label>
+                <select
+                  id="a15-claim"
+                  className={fieldClass}
+                  value={claimType}
+                  onChange={(e) => setClaimType(e.target.value as EvidenceClaim)}
+                >
+                  {EVIDENCE_CLAIMS.map((key) => (
+                    <option key={key} value={key}>
+                      {key}
+                    </option>
+                  ))}
                 </select>
-                <Field id="a15-source-url" title="Source HTTPS URL" value={sourceUrl} onChange={setSourceUrl} required placeholder="https://…" />
-                <Field id="a15-source-title" title="Source title" value={sourceTitle} onChange={setSourceTitle} />
+                <Field
+                  id="a15-source-url"
+                  title="Source HTTPS URL"
+                  value={sourceUrl}
+                  onChange={setSourceUrl}
+                  required
+                  placeholder="https://…"
+                />
+                <Field
+                  id="a15-source-title"
+                  title="Source title"
+                  value={sourceTitle}
+                  onChange={setSourceTitle}
+                />
                 <Feedback error={addEvidence.error} />
-                <button className={button} disabled={addEvidence.isPending}>Attach unreviewed source</button>
+                <button className={button} disabled={addEvidence.isPending}>
+                  Attach unreviewed source
+                </button>
               </form>
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-5">
               <h2 className="font-display text-lg font-bold">Provisional classifications</h2>
               <ul className="my-3 space-y-1 text-sm text-muted-foreground">
-                {classifications.map((c) => <li key={c.id}>{c.classification_key} · {c.review_status}</li>)}
+                {classifications.map((c) => (
+                  <li key={c.id}>
+                    {c.classification_key} · {c.review_status}
+                  </li>
+                ))}
                 {!classifications.length && <li>No classification records.</li>}
               </ul>
-              <form className="space-y-3" onSubmit={(e) => onForm(e, () => addClassification.mutate())}>
-                <label className={labelClass} htmlFor="a15-category">Category</label>
-                <select id="a15-category" className={fieldClass} value={classificationKey} onChange={(e) => setClassificationKey(e.target.value as ClassificationKey)}>
-                  {CLASSIFICATIONS.map((key) => <option key={key} value={key}>{key}</option>)}
+              <form
+                className="space-y-3"
+                onSubmit={(e) => onForm(e, () => addClassification.mutate())}
+              >
+                <label className={labelClass} htmlFor="a15-category">
+                  Category
+                </label>
+                <select
+                  id="a15-category"
+                  className={fieldClass}
+                  value={classificationKey}
+                  onChange={(e) => setClassificationKey(e.target.value as ClassificationKey)}
+                >
+                  {CLASSIFICATIONS.map((key) => (
+                    <option key={key} value={key}>
+                      {key}
+                    </option>
+                  ))}
                 </select>
-                <label className={labelClass} htmlFor="a15-evidence">Evidence for this institution</label>
-                <select id="a15-evidence" required className={fieldClass} value={classificationEvidenceId} onChange={(e) => setClassificationEvidenceId(e.target.value)}>
+                <label className={labelClass} htmlFor="a15-evidence">
+                  Evidence for this institution
+                </label>
+                <select
+                  id="a15-evidence"
+                  required
+                  className={fieldClass}
+                  value={classificationEvidenceId}
+                  onChange={(e) => setClassificationEvidenceId(e.target.value)}
+                >
                   <option value="">Select a source first</option>
-                  {evidence.map((e) => <option key={e.id} value={e.id}>{e.claim_type} · {e.source_title || e.source_url}</option>)}
+                  {evidence.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.claim_type} · {e.source_title || e.source_url}
+                    </option>
+                  ))}
                 </select>
-                <p className="text-xs text-muted-foreground">The database requires evidence belonging to the same university. This classification remains pending review.</p>
+                <p className="text-xs text-muted-foreground">
+                  The database requires evidence belonging to the same university. This
+                  classification remains pending review.
+                </p>
                 <Feedback error={addClassification.error} />
-                <button className={button} disabled={addClassification.isPending || evidence.length === 0}>Add provisional classification</button>
+                <button
+                  className={button}
+                  disabled={addClassification.isPending || evidence.length === 0}
+                >
+                  Add provisional classification
+                </button>
               </form>
             </div>
           </section>
         </div>
       )}
       <footer className="text-xs leading-5 text-muted-foreground">
-        A1.5 editorial draft workspace only. There is intentionally no Publish, Delete or automatic scholarship listing action.
-        Existing public starter-directory pages are unchanged until a separate evidence-backed publication workflow is approved.
+        A1.5 editorial draft workspace only. There is intentionally no Publish, Delete or automatic
+        scholarship listing action. Existing public starter-directory pages are unchanged until a
+        separate evidence-backed publication workflow is approved.
       </footer>
     </main>
   );
 }
 
 function Field({
-  id, title, value, onChange, required, placeholder, maxLength,
+  id,
+  title,
+  value,
+  onChange,
+  required,
+  placeholder,
+  maxLength,
 }: {
-  id: string; title: string; value: string; onChange: (v: string) => void;
-  required?: boolean; placeholder?: string; maxLength?: number;
+  id: string;
+  title: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  placeholder?: string;
+  maxLength?: number;
 }) {
   return (
     <div>
-      <label className={labelClass} htmlFor={id}>{title}</label>
+      <label className={labelClass} htmlFor={id}>
+        {title}
+      </label>
       <input
-        id={id} className={fieldClass} type="text" required={required} value={value}
-        maxLength={maxLength ?? 1800} autoComplete="off" placeholder={placeholder}
+        id={id}
+        className={fieldClass}
+        type="text"
+        required={required}
+        value={value}
+        maxLength={maxLength ?? 1800}
+        autoComplete="off"
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
     </div>
