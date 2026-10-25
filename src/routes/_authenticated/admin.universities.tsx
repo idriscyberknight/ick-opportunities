@@ -387,25 +387,28 @@ function UniversityRegistryAdminPage() {
               Edit draft · {selected.official_name}
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Draft editing never resets verification or reviewer metadata. Once an
-              identity source is reviewed, changes require a separately audited
-              re-review process. Publication remains blocked.
+              Draft editing never resets verification or reviewer metadata. Once an identity source
+              is reviewed, changes require a separately audited re-review process. Publication
+              remains blocked.
             </p>
             {draftEditingLocked && (
-              <p role="status" className="mt-3 rounded-lg border border-border bg-muted p-3 text-sm">
-                Draft editing is locked due to review state. No direct approval-state edits
-                are permitted.
+              <p
+                role="status"
+                className="mt-3 rounded-lg border border-border bg-muted p-3 text-sm"
+              >
+                Draft editing is locked due to review state. No direct approval-state edits are
+                permitted.
               </p>
             )}
             <form
               className="mt-5 space-y-4"
               onSubmit={(e) => onForm(e, () => updateDraft.mutate())}
             >
-              <fieldset disabled={draftEditingLocked} className="space-y-4">
               <Field
                 id="edit-name"
                 title="Institution name"
                 value={edit.official_name}
+                disabled={draftEditingLocked}
                 onChange={(v) => setEdit({ ...edit, official_name: v })}
                 required
               />
@@ -414,6 +417,7 @@ function UniversityRegistryAdminPage() {
                 title="ISO country code"
                 value={edit.country_code}
                 maxLength={2}
+                disabled={draftEditingLocked}
                 onChange={(v) => setEdit({ ...edit, country_code: v })}
                 required
               />
@@ -421,25 +425,27 @@ function UniversityRegistryAdminPage() {
                 id="edit-city"
                 title="City"
                 value={edit.city}
+                disabled={draftEditingLocked}
                 onChange={(v) => setEdit({ ...edit, city: v })}
               />
               <Field
                 id="edit-url"
                 title="Official HTTPS website"
                 value={edit.official_website}
+                disabled={draftEditingLocked}
                 onChange={(v) => setEdit({ ...edit, official_website: v })}
               />
               <Field
                 id="edit-summary"
                 title="Summary"
                 value={edit.summary}
+                disabled={draftEditingLocked}
                 onChange={(v) => setEdit({ ...edit, summary: v })}
               />
-                <Feedback error={updateDraft.error} />
-                <button className={primary} disabled={updateDraft.isPending}>
-                  Save draft changes
-                </button>
-              </fieldset>
+              <Feedback error={updateDraft.error} />
+              <button className={primary} disabled={updateDraft.isPending || draftEditingLocked}>
+                Save draft changes
+              </button>
             </form>
           </section>
 
@@ -674,14 +680,17 @@ function UniversityRegistryAdminPage() {
               Source review decision
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              The review engine is not installed in Production. This form is deliberately
-              disabled until the database audit trail, atomic review RPC, and permission
-              restrictions pass independent acceptance. Attaching a source does not verify it.
+              The review engine is not installed in Production. This form is deliberately disabled
+              until the database audit trail, atomic review RPC, and permission restrictions pass
+              independent acceptance. Attaching a source does not verify it.
             </p>
             {!A16_EVIDENCE_REVIEW_RELEASE_ENABLED && (
-              <p role="status" className="mt-3 rounded-lg border border-border bg-muted p-3 text-sm">
-                Review submission unavailable — database release approval pending.
-                No source can be marked verified or published from this form.
+              <p
+                role="status"
+                className="mt-3 rounded-lg border border-border bg-muted p-3 text-sm"
+              >
+                Review submission unavailable — database release approval pending. No source can be
+                marked verified or published from this form.
               </p>
             )}
             <form
@@ -758,9 +767,9 @@ function UniversityRegistryAdminPage() {
               </fieldset>
             </form>
             <p className="mt-3 text-xs leading-5 text-muted-foreground">
-              A source-review decision is not university accreditation, a scholarship
-              verification, or publication. Only the future secure database function
-              can append the decision to the audit history.
+              A source-review decision is not university accreditation, a scholarship verification,
+              or publication. Only the future secure database function can append the decision to
+              the audit history.
             </p>
           </section>
         </div>
@@ -782,6 +791,7 @@ function Field({
   required,
   placeholder,
   maxLength,
+  disabled,
 }: {
   id: string;
   title: string;
@@ -790,6 +800,7 @@ function Field({
   required?: boolean;
   placeholder?: string;
   maxLength?: number;
+  disabled?: boolean;
 }) {
   return (
     <div>
@@ -803,6 +814,7 @@ function Field({
         required={required}
         value={value}
         maxLength={maxLength ?? 1800}
+        disabled={disabled}
         autoComplete="off"
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
