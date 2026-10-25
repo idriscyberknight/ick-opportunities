@@ -562,9 +562,9 @@ function UniversityRegistryAdminPage() {
               Source checklist · {selected.official_name}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              This is a read-only research aid, not a verification certificate. Attaching
-              a source does not establish institutional recognition, accreditation, or a
-              real scholarship. Publication remains disabled at database level.
+              This is a read-only research aid, not a verification certificate. Attaching a source
+              does not establish institutional recognition, accreditation, or a real scholarship.
+              Publication remains disabled at database level.
             </p>
             <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {evidenceChecks.map((check) => {
@@ -575,17 +575,15 @@ function UniversityRegistryAdminPage() {
                       {attached ? "SOURCE ATTACHED — UNVERIFIED" : "SOURCE NOT YET ATTACHED"}
                     </span>
                     <h3 className="mt-2 text-sm font-semibold">{check.label}</h3>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                      {check.detail}
-                    </p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{check.detail}</p>
                   </li>
                 );
               })}
             </ul>
             <p className="mt-4 text-sm text-muted-foreground">
-              Sources marked reviewed: {reviewedSourceCount} of {evidence.length}.
-              Classifications awaiting review: {pendingClassificationCount}. These
-              metadata counts do not authorize publication or prove source quality.
+              Sources marked reviewed: {reviewedSourceCount} of {evidence.length}. Classifications
+              awaiting review: {pendingClassificationCount}. These metadata counts do not authorize
+              publication or prove source quality.
             </p>
             <div className="mt-5 flex flex-wrap gap-4 text-sm">
               <a
@@ -617,9 +615,9 @@ function UniversityRegistryAdminPage() {
               )}
             </div>
             <p className="mt-3 text-xs leading-5 text-muted-foreground">
-              Islamic institution and Islamic-studies-provider are distinct claims:
-              verify the official classification independently. Never infer an
-              institution’s character from its name alone.
+              Islamic institution and Islamic-studies-provider are distinct claims: verify the
+              official classification independently. Never infer an institution’s character from its
+              name alone.
             </p>
           </section>
         </div>
