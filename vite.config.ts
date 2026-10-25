@@ -5,8 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { Plugin } from "vite";
 
-const reviewedHash =
-  "ccc35767aca6a759e17af0cae72238decbfdf283ac1da2a7f28a4906cfd52104";
+const reviewedHash = "ccc35767aca6a759e17af0cae72238decbfdf283ac1da2a7f28a4906cfd52104";
 
 function assertReviewedStorage(source: string) {
   const normalized = source.replace(/\r\n/g, "\n").trim();
@@ -26,14 +25,14 @@ function ickAuthStorage(): Plugin {
     enforce: "pre",
     configResolved(config) {
       root = config.root;
-      generatedPath = resolve(root, "src/integrations/supabase/previewAuthStorage.ts")
-        .replace(/\\/g, "/");
+      generatedPath = resolve(root, "src/integrations/supabase/previewAuthStorage.ts").replace(
+        /\\/g,
+        "/",
+      );
     },
     buildStart() {
       assertReviewedStorage(readFileSync(generatedPath, "utf8"));
-      const client = readFileSync(
-        resolve(root, "src/integrations/supabase/client.ts"), "utf8",
-      );
+      const client = readFileSync(resolve(root, "src/integrations/supabase/client.ts"), "utf8");
       if (
         !/from\s+['"]\.\/previewAuthStorage['"]/.test(client) ||
         !/storage:\s*brokeredPreviewStorage\(\)/.test(client)
@@ -44,7 +43,7 @@ function ickAuthStorage(): Plugin {
       }
     },
     transform(source, id) {
-      const filename = id.split("?")[0].replace(/\\/g, "/");
+      const filename = (id.split("?")[0] ?? "").replace(/\\/g, "/");
       if (filename !== generatedPath) return null;
       assertReviewedStorage(source);
       return {
@@ -63,5 +62,3 @@ export default defineConfig({
     plugins: [ickAuthStorage()],
   },
 });
-
-        
