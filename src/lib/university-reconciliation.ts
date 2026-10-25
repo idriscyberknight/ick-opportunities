@@ -7,10 +7,7 @@
  * this matching function. All private rows stay in Admin-only UI.
  */
 import { normalizeUniversityTerm, STARTER_UNIVERSITIES } from "@/lib/university-directory";
-import type {
-  RegistryAlias,
-  RegistryUniversity,
-} from "@/lib/university-registry-admin";
+import type { RegistryAlias, RegistryUniversity } from "@/lib/university-registry-admin";
 
 export type ReconciliationStatus = "unmatched" | "candidate" | "ambiguous" | "country_conflict";
 
@@ -87,8 +84,7 @@ export function reconcileUniversityDirectory(
 
       const privateNames = namesForUniversity(row, privateAliases);
       const nameMatch = [...aliases].some((name) => privateNames.has(name));
-      const domainMatch =
-        !!starterHost && normalizedHostname(row.official_website) === starterHost;
+      const domainMatch = !!starterHost && normalizedHostname(row.official_website) === starterHost;
       const slugMatch = row.slug === starter.slug;
 
       if (slugMatch || nameMatch || domainMatch) {
