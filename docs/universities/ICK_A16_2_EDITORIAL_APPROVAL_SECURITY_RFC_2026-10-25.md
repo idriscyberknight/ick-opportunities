@@ -181,3 +181,59 @@ The checkmarks and available Restore buttons demonstrate that the Lovable UI lis
 Lovable's current docs confirm daily UTC backups, restoring loses all subsequent DB edits and can revert schema, database export includes account password hashes, and database backups omit storage files: https://docs.lovable.dev/features/database-backups.
 
 **No database/data/settings/backup changes were performed.** This log contains only timestamps and aggregate counts, not private university data, credentials, tokens, or source URLs.
+
+
+## 10. Founder-reported post-data export and refreshed release gate (2026-10-25)
+
+**Founder report:** “Na gama komai yayi daidai” following the guided **new Lovable Cloud database export and download** step. Treat the export workflow as **FOUNDER-REPORTED COMPLETED**. We have **not** accessed the private archive, inspected its structure, extracted passwords or personal data, verified its exact completion timestamp, or performed a `pg_restore` dry run. Do **not** ask the Founder to upload the compressed database to ChatGPT or GitHub.
+
+**Official Lovable docs checked 2026-10-25** at https://docs.lovable.dev/features/database-backups confirm:
+- Export is a compressed PostgreSQL archive covering database **schema + records**, potentially including users and hashed passwords.
+- Storage files, Edge Function code, secrets and OAuth settings are **not** included.
+- Export is saved to the Lovable project's storage for download; a **separate private off-platform copy** is important because deleting the project database removes the archive stored there.
+- An export is a recovery input, **not evidence of a tested restore**.
+
+### Fresh independent Production preflight — SELECT only
+
+| Control | Verified result |
+| --- | --- |
+| Registry counts `universities/aliases/evidence/classifications` | `1/1/1/0` |
+| Public university publications | `0` |
+| Reviewed evidence | `0` |
+| Registry RLS enabled tables | `4` |
+| Registry RLS policies | `12` |
+| Publication fail-closed check | `1` |
+| Production `public.university_review_events` | **absent** |
+| Production `ick_a16_review_evidence` RPC | **absent** |
+| Existing ledger rows / highest version | `13` / `20261005021810` |
+| C5 ledger version `20261008100000` | `0` |
+| Registry column count | `39` |
+| Registry columns hash | `f28bdcbe5d4d796aea6a11b19dcb4964` |
+| Registry RLS policy hash | `4de4ac9298e5b4d5ad9f4a87253e33e6` |
+| Sensitive review-state column update grants for `authenticated` | **10 of 10 true** |
+| Sensitive review-state column update grants for `anon` | **0 of 10 true** |
+
+The two checksums **match the historical A1.4 registered schema and policy snapshots**, supporting a stable structural baseline. They do not attest file contents, triggers, functions, backups, application sessions, grant safety or integrity of any particular university claim. The `authenticated` SQL role's broad UPDATE privileges are still subject to the established Admin RLS policies for actual rows. This is an existing **Admin editorial-process bypass** risk, not a proven Normal User breach.
+
+**Production remains at main/Vercel commit `bd811d8c2000d19aa72f2cd91fba8cf3e4c4560a`, READY.** PR #26 (this RFC), PR #27 (isolated PostgreSQL security proof) and PR #28 (frontend integration, hard-coded review submission disabled) remain open Draft PRs and are **not released**. No Production SQL, migrations, grants, tokens, user data or deployments were modified by this preflight.
+
+### Migration go/no-go — separate Founder approval still required
+
+**COMPLETED / observed**
+1. Founder reports full export completed after their new registry rows existed. Archive validity and restore-readiness remain unverified.
+2. Live 39-column registry schema/policy hashes match prior baseline; RLS and publication guard still active.
+3. PR #27 isolated PostgreSQL 17 role/atomic-review tests passed, but these are **SQL simulated roles**, not live real-JWT production tests.
+4. PR #28 TypeScript/build/scoped lint and Vercel preview passed; Founder opened the disabled review form, which remains correctly fail-closed.
+
+**RELEASE BLOCKERS**
+1. Check exact recovered archive header/contents and **practice restoring to a controlled isolated database** before relying on it for critical recovery. Never share full archive externally as an artifact of this review.
+2. Identify a supported runner/adoption procedure for the correct Lovable Cloud backend and reconcile the existing **13-row migration ledger** with the historical C5 and untracked installed A1.4 schema. Do not forge ledger versions or replay old `CREATE TABLE` SQL.
+3. Perform a production-shaped, full-transaction migration rehearsal on isolated PostgreSQL using **sanitized data**, including checks for existing one-draft-one-alias-one-evidence state, `SECURITY DEFINER` permissions, public schema EXECUTE grants and rollback mechanics.
+4. Independently review the exact secure function owner and allowed draft-column whitelist. Deploy compatible frontend logic in a change window; `updateUniversityDraft` from the current `main` writes protected metadata columns that the proposed restriction removes.
+5. Before releasing, specify concrete non-destructive pre/post SQL validation, a procedure to back out the new functionality, and a separate repair approach for partial rollouts. Turning off the front-end form alone **does not roll back** database-grant changes.
+6. After a separate explicit Founder approval for the **exact Production change set**, inspect audit history, check Admin draft regression and real-JWT denied writes/reads for Normal Users with safely controlled nonempty private rows.
+7. Retain `universities_no_publishing_yet`; no direct or automated verified-institution publishing, scholarship claims or bulk imports in A1.6.2.
+
+**Status now:** `EXPORT REPORTED = COMPLETE`; `RECOVERY PROCEDURE TESTED = NO`; `SCHEMA DRIFT = NONE DETECTED BY TWO HASHES`; `MIGRATION AUTHORIZATION = NOT YET GIVEN`; `PRODUCTION EDITORIAL REVIEW ENGINE = NOT INSTALLED`.
+
+**No further export is requested now.** Continue with migration-runner reconciliation, strict isolated validation, rollback rehearsal and a separately reviewed SQL change proposal.
