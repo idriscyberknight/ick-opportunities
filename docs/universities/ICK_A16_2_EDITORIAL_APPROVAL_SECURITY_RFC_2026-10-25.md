@@ -105,3 +105,52 @@ These tests must run in controlled isolated environment first. Founder-approved 
 - Previously approved global university evidence hierarchy: `docs/universities/ICK_A16_GLOBAL_UNIVERSITY_VERIFICATION_WORKFLOW_2026-10-25.md`
 
 **Truth boundary:** This RFC identifies a real Production *privilege-design gap for authorized Admin review fields* and proposes a remediation. It is **not** proof of a Normal User authorization bypass, and no database schema, permissions, code, roles, publication or production deployment were modified in A1.6.2 by this RFC.
+
+
+## 8. Follow-up release readiness snapshot (2026-10-25, read-only)
+
+**Founder visual acceptance:** Founder opened the A1.6.2 Admin frontend preview from Draft PR #28 and confirmed they could see it. This is **visual confirmation**, not proof that an editorial decision was submitted; the UI deliberately keeps review submission disabled until backend release.
+
+**Independent current Lovable Cloud Production SQL readback** (aggregates only; no personal records, domains or credentials retrieved):
+
+| Check | Current value |
+| --- | --- |
+| Registered university drafts | 1 |
+| Institution verification pending | 1 |
+| Published registry records | 0 |
+| Attached aliases | 1 |
+| Attached evidence | 1 (`pending_review`) |
+| Evidence reviewed/rejected | 0 / 0 |
+| Classifications | 0 |
+| University registry RLS-enabled tables | 4 |
+| University registry Admin policies | 12 |
+| Fail-closed publishing constraint | 1 |
+| `ick_a16_review_evidence` Production RPC | 0 |
+| `university_review_events` Production audit table | absent |
+| `supabase_migrations.schema_migrations` rows | 13 |
+| Latest legacy migration version | `20261005021810` |
+| `20261008100000` C5 migration ledger entry | 0 |
+
+**Important change since prior tests:** an actual private university draft, a name alias and an unreviewed evidence row are now present. Do not delete, rename, approve or publish these records as a side effect of acceptance testing or migration reconciliation. Presence of source records does not establish real-world legitimacy.
+
+**Connected Lovable project source SHA:** `bd811d8c2000d19aa72f2cd91fba8cf3e4c4560a`, matching the deployed Production A1.6.1 baseline. GitHub PR #26 (this RFC), PR #27 (isolated SQL prototype), and PR #28 (fail-closed frontend integration) remain distinct draft PRs. No one has approved a Production database change through them.
+
+### Documented Lovable migration and backup constraints
+
+- Lovable's official database documentation confirms that changes made by Lovable in project chat generate migration files; modern files are under `drizzle/migrations/` and older projects may have `supabase/migrations/`. This project's checked legacy source has 14 `supabase/migrations/` files; a direct SQL editor change is **not** proven tracked by that history.
+- Lovable's Git sync documentation explicitly states that syncing a Git commit **does not execute new database migration files**. Thus an isolated test SQL file under `tests/a16/` is NEVER a Production migration just because its pull request is merged. Do not move the prototype directly into the existing migrations folder and assume replay safety.
+- Lovable documents **daily backups**, generally with approximately 14-day retention, managed in `More → Database → Manage → Backups`. This is a **platform statement, not project-specific verification** of the most recent usable backup. Backups taken before October 25's new registry schema may not protect the current state.
+- For an exact pre-migration recovery point, Lovable also documents the `More → Database → Manage → Settings → Export project data` workflow. A full database export includes authentication records and **password hashes**; treat the export as highly confidential, never commit it or share it in a chat. Lovable saves the export to project storage pending download. Storage files are not included in the database backup.
+- Restoring an old backup can destroy all later user data **and** revert schema, so actual recovery requires a separately approved rehearsal/rollback plan. **Do not click Restore to this backup** during readiness checks.
+
+Sources:
+- https://docs.lovable.dev/features/database
+- https://docs.lovable.dev/integrations/git-sync-overview
+- https://docs.lovable.dev/features/database-backups
+- https://supabase.com/kb/troubleshooting/cant-access-supabase-project-lovable-cloud
+
+### Strict next production gate
+
+**HOLD all A1.6.2 SQL writes** until (a) project-specific backup list has been inspected; (b) recent full export / recovery strategy is confirmed; (c) historical migration mismatch is reconciled with the actual Lovable owner/runner; (d) SQL privileges, identity-lock trigger and all lifecycle transitions pass an isolated production-shaped rehearsal; (e) PR #28's safe Admin draft PATCH regression is validated; (f) Founder explicitly approves the reviewed exact Production SQL; and (g) post-migration real JWT tests on controlled nonempty fixtures have a zero-leakage cleanup and rollback strategy.
+
+No Production writes, SQL DDL, role changes, database exports or backup restores were executed as part of this read-only snapshot.
