@@ -177,6 +177,28 @@ function UniversityRegistryAdminPage() {
   const classifications = (registry.data?.classifications ?? []).filter(
     (c) => c.university_id === selectedId,
   );
+  // Evidence presence is not editorial approval, identity verification, or accreditation.
+  const evidenceChecks = [
+    {
+      id: "identity",
+      label: "Institution identity",
+      detail: "Record a source that identifies the actual institution.",
+    },
+    {
+      id: "website",
+      label: "Official website",
+      detail: "Cross-check the official domain against an independent authority.",
+    },
+    {
+      id: "accreditation",
+      label: "National recognition / accreditation",
+      detail: "Look up the relevant national regulator; ROR alone is not sufficient.",
+    },
+  ];
+  const reviewedSourceCount = evidence.filter((item) => item.review_status === "reviewed").length;
+  const pendingClassificationCount = classifications.filter(
+    (item) => item.review_status !== "reviewed",
+  ).length;
   const onForm = (e: FormEvent<HTMLFormElement>, submit: () => void) => {
     e.preventDefault();
     submit();
@@ -528,6 +550,75 @@ function UniversityRegistryAdminPage() {
                 </button>
               </form>
             </div>
+          </section>
+          <section
+            className="rounded-2xl border border-border bg-card p-5 lg:col-span-2"
+            aria-labelledby="a16-readiness-heading"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              A1.6 · Editorial research preparation
+            </p>
+            <h2 id="a16-readiness-heading" className="mt-2 font-display text-xl font-bold">
+              Source checklist · {selected.official_name}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              This is a read-only research aid, not a verification certificate. Attaching a source
+              does not establish institutional recognition, accreditation, or a real scholarship.
+              Publication remains disabled at database level.
+            </p>
+            <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {evidenceChecks.map((check) => {
+                const attached = evidence.some((item) => item.claim_type === check.id);
+                return (
+                  <li key={check.id} className="rounded-xl border border-border p-4">
+                    <span className="text-xs font-bold text-muted-foreground">
+                      {attached ? "SOURCE ATTACHED — UNVERIFIED" : "SOURCE NOT YET ATTACHED"}
+                    </span>
+                    <h3 className="mt-2 text-sm font-semibold">{check.label}</h3>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{check.detail}</p>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Sources marked reviewed: {reviewedSourceCount} of {evidence.length}. Classifications
+              awaiting review: {pendingClassificationCount}. These metadata counts do not authorize
+              publication or prove source quality.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-4 text-sm">
+              <a
+                href="https://whed.net/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-primary underline"
+              >
+                WHED — recognized institutions <ExternalLink className="inline h-3 w-3" />
+              </a>
+              <a
+                href="https://ror.org/search"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-primary underline"
+              >
+                ROR — identity lookup <ExternalLink className="inline h-3 w-3" />
+              </a>
+              {selected.country_code === "NG" && (
+                <a
+                  href="https://enuc.nuc.edu.ng/nus"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-primary underline"
+                >
+                  Nigeria NUC — official universities
+                  <ExternalLink className="ml-1 inline h-3 w-3" />
+                </a>
+              )}
+            </div>
+            <p className="mt-3 text-xs leading-5 text-muted-foreground">
+              Islamic institution and Islamic-studies-provider are distinct claims: verify the
+              official classification independently. Never infer an institution’s character from its
+              name alone.
+            </p>
           </section>
         </div>
       )}
