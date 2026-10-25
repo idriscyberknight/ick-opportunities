@@ -57,7 +57,7 @@
 | Historical ledger adoption | Provider-runner evidence + safe no-replay baseline | **Unknown** |
 | Export integrity & isolated restore | Local controlled restore and secret-safe log only | **Not verified** |
 | Synthetic nonempty-data A1.6.2 migration | PostgreSQL CI success incl prior data and full DDL abort | **Verified on isolated prototype** |
-| Post-commit RPC incident pause | exact `REVOKE EXECUTE`, no audit loss; SQL-role test only | **Isolated test added; inspect latest CI** |
+| Post-commit RPC incident pause | exact `REVOKE EXECUTE`, no audit loss; SQL-role test only | **PASS in isolated PostgreSQL CI run 40201265466** |
 | Review-RPC `SECURITY DEFINER` owner/EXECUTE | owner restrictions and function ACL manually verified | **Pending** |
 | Compatible frontend as Production | PR #28 merged and actual Admin draft regression test | **Not deployed** |
 | Real signed JWT admin/non-admin | actual PostgREST on guarded nonempty test records, denial & audit checks | **Not tested for A1.6.2** |
@@ -65,3 +65,21 @@
 | Public university publishing | explicitly out of scope; database CHECK remains | **Blocked intentionally** |
 
 The test CI job is **not** the original export, a recovery rehearsal of secrets, a complete post-commit down-migration or real-world university verification.
+
+
+## F. Second isolated security audit — passed (2026-10-25)
+
+GitHub PR #27 head `637558280ce9718e78c091229e25bf5f6aa99edb`,
+GitHub Actions run **40201265466** finished **SUCCESS**.
+
+Additional disposable PostgreSQL 17 checks now assert:
+- The privileged review RPC is `SECURITY DEFINER` with a pinned **empty** search path; its function ACL grants neither implicit `PUBLIC` nor explicit `anon` execution, while `authenticated` can call the **role-checked** RPC.
+- The review-events table has RLS enabled; `anon` has no table privileges and `authenticated` cannot directly insert, update or delete audit records.
+- Four registry insert/edit guard triggers are enabled, and their helper functions are ordinary **SECURITY INVOKER**.
+- The sensitive fields remain unwriteable by direct Admin SQL-role UPDATE, but the safe five-field draft update still succeeds.
+- Post-commit incident **RPC containment rehearsal** revokes `authenticated` function EXECUTE, verifies a simulated Admin cannot call it, confirms ordinary draft editing still works and no audit records are destroyed, then independently rolls back test-only changes.
+- The nonempty synthetic preexisting 1/1/1/0 registry is preserved during migration and test transaction rollbacks, and the publication guard remains active.
+
+**Limits:** This does **not** establish the actual `SECURITY DEFINER` function owner or schema privileges for the managed Lovable Cloud Production migration, because that function is not installed there. The isolated CI migration prototype creates functions as the CI DB owner; Production ownership/grants may differ. This does not establish the restore correctness of the Founder's private export, true concurrent review behavior under live traffic, or real signed-JWT authorization for A1.6.2. A `REVOKE EXECUTE` incident pause is **containment**, not reversal of a committed DDL migration.
+
+**Production unchanged:** PRs #26, #27 and #28 remain Draft/unmerged; latest observed Vercel Production commit remains `bd811d8c2000d19aa72f2cd91fba8cf3e4c4560a`, READY. No Production SQL/DDL/grant migration performed.
