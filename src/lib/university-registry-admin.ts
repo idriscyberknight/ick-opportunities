@@ -4,15 +4,17 @@
  * This is intentionally a draft-only, authenticated administrative workflow.
  * PostgreSQL GRANT + RLS policies are the authoritative access control.
  * Neither this module nor the UI grants access, verifies evidence, or publishes.
- * The existing generated Database types do not yet include these live tables:
- * use a narrowly scoped untyped SupabaseClient for this adapter ONLY.
- * Regenerate typed database bindings and reconcile migration history before merge.
+ * Schema-verified types for the four installed tables are isolated in
+ * university-registry-schema.types.ts while Lovable's automatically generated
+ * integration types await authoritative regeneration. Reconcile source history
+ * and strictly typecheck before any release.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { UniversityRegistryDatabase } from "@/lib/university-registry-schema.types";
 import { supabase } from "@/integrations/supabase/client";
 import { isCurrentUserAdmin } from "@/lib/opportunities";
 
-const registry = supabase as unknown as SupabaseClient;
+const registry = supabase as unknown as SupabaseClient<UniversityRegistryDatabase>;
 
 export type RegistryUniversity = {
   id: string;
