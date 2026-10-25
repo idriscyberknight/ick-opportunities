@@ -202,8 +202,8 @@ function UniversityReviewA16JwtProbe() {
       </Link>
       <h1 className="text-2xl font-bold">A1.6.2 — Real-JWT Security Verification</h1>
       <p className="text-sm leading-6 text-muted-foreground">
-        Temporary Preview-only security test for Admin and Normal User sessions. No source
-        data, passwords, tokens, or user IDs appear on this page.
+        Temporary Preview-only security test for Admin and Normal User sessions. No source data,
+        passwords, tokens, or user IDs appear on this page.
       </p>
       <p className="rounded-xl border border-border p-4 text-sm">
         This diagnostic checks real browser authorization, private row visibility, and protected
