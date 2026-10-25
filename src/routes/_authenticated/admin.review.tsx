@@ -74,6 +74,7 @@ function ReviewPage() {
         <div className="flex gap-2">
           <Link to="/admin/sources" className={btn}>Sources</Link>
           <Link to="/admin/opportunities" className={btn}>All opportunities</Link>
+          <Link to="/admin/universities" className={btn}>University drafts</Link>
         </div>
       </div>
 
