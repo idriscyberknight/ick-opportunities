@@ -204,3 +204,25 @@ export type UniversityRegistryDatabase = Omit<Database, "public"> & {
     Tables: Database["public"]["Tables"] & UniversityRegistryTables;
   };
 };
+
+
+/**
+ * A1.6.2 PROPOSED RPC interface — not yet deployed to Lovable Cloud Production.
+ * This is an additive TypeScript declaration only, NOT proof of backend existence.
+ * The associated UI and service are fail-closed behind an explicit release gate.
+ */
+export type UniversityEvidenceReviewDatabase = Omit<UniversityRegistryDatabase, "public"> & {
+  public: Omit<UniversityRegistryDatabase["public"], "Functions"> & {
+    Functions: UniversityRegistryDatabase["public"]["Functions"] & {
+      ick_a16_review_evidence: {
+        Args: {
+          p_evidence_id: string;
+          p_decision: "reviewed" | "rejected";
+          p_reason: string;
+          p_expected_state?: "pending_review";
+        };
+        Returns: string;
+      };
+    };
+  };
+};
