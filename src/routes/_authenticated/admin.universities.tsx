@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
 import { isCurrentUserAdmin } from "@/lib/opportunities";
 import { fieldClass, labelClass } from "@/components/AuthShell";
+import { UniversityReconciliationPanel } from "@/components/universities/UniversityReconciliationPanel";
 import {
   A16_EVIDENCE_REVIEW_RELEASE_ENABLED,
   CLASSIFICATIONS,
@@ -308,6 +309,13 @@ function UniversityRegistryAdminPage() {
           ))}
         </div>
       </section>
+
+      {registry.data && (
+        <UniversityReconciliationPanel
+          universities={registry.data.universities}
+          aliases={registry.data.aliases}
+        />
+      )}
 
       <section
         className="rounded-2xl border border-border bg-card p-5"
