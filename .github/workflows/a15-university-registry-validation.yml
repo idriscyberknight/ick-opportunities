@@ -1,0 +1,45 @@
+name: A1.5 University Registry — typecheck and build
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/lib/university-registry-*"
+      - "src/routes/_authenticated/admin.universities.tsx"
+      - "src/routes/_authenticated/admin.review.tsx"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/a15-university-registry-validation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a15-university-registry-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Strict TypeScript, lint, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+
+      - name: Set up Bun (locked dependencies)
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Strict TypeScript check
+        run: bun run typecheck
+
+      - name: ESLint
+        run: bun run lint
+
+      - name: Vite build (no publishing)
+        run: bun run build
