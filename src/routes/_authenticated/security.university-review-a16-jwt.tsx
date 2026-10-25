@@ -56,7 +56,11 @@ function UniversityReviewA16JwtProbe() {
         .maybeSingle();
 
       if (role.error) {
-        report("Determine current account role", "REVIEW", "Role lookup failed; no RPC was called.");
+        report(
+          "Determine current account role",
+          "REVIEW",
+          "Role lookup failed; no RPC was called.",
+        );
         return;
       }
 
@@ -65,7 +69,10 @@ function UniversityReviewA16JwtProbe() {
 
       // HEAD/count does not return or expose any underlying private records.
       const tables = [
-        ["universities", () => registry.from("universities").select("id", { count: "exact", head: true })],
+        [
+          "universities",
+          () => registry.from("universities").select("id", { count: "exact", head: true }),
+        ],
         [
           "university_aliases",
           () => registry.from("university_aliases").select("id", { count: "exact", head: true }),
@@ -76,7 +83,10 @@ function UniversityReviewA16JwtProbe() {
         ],
         [
           "university_classifications",
-          () => registry.from("university_classifications").select("id", { count: "exact", head: true }),
+          () =>
+            registry
+              .from("university_classifications")
+              .select("id", { count: "exact", head: true }),
         ],
       ] as const;
 
@@ -87,13 +97,23 @@ function UniversityReviewA16JwtProbe() {
         } else if (!isAdmin && result.count !== 0) {
           report(`Private SELECT ${table}`, "FAIL", "Normal User can see private rows.");
           return;
-        } else if (isAdmin && ["universities", "university_evidence"].includes(table) && result.count < 1) {
-          report(`Private SELECT ${table}`, "REVIEW", "Expected existing Admin draft is not visible.");
+        } else if (
+          isAdmin &&
+          ["universities", "university_evidence"].includes(table) &&
+          result.count < 1
+        ) {
+          report(
+            `Private SELECT ${table}`,
+            "REVIEW",
+            "Expected existing Admin draft is not visible.",
+          );
         } else {
           report(
             `Private SELECT ${table}`,
             "PASS",
-            isAdmin ? "Admin may query registry; no row content shown." : "Zero private rows visible.",
+            isAdmin
+              ? "Admin may query registry; no row content shown."
+              : "Zero private rows visible.",
           );
         }
       }
@@ -113,9 +133,17 @@ function UniversityReviewA16JwtProbe() {
         return;
       }
       if (isAdmin && code === "22023") {
-        report("Admin real-JWT RPC", "PASS", "Admin passed authorization; invalid request safely rejected (22023).");
+        report(
+          "Admin real-JWT RPC",
+          "PASS",
+          "Admin passed authorization; invalid request safely rejected (22023).",
+        );
       } else if (!isAdmin && code === "42501") {
-        report("Normal User real-JWT RPC", "PASS", "Database denied review to Normal User (42501).");
+        report(
+          "Normal User real-JWT RPC",
+          "PASS",
+          "Database denied review to Normal User (42501).",
+        );
       } else {
         report("Role-checked review RPC", "REVIEW", `Unexpected error code: ${code}.`);
       }
@@ -146,9 +174,17 @@ function UniversityReviewA16JwtProbe() {
         if (result.error?.code === "42501") {
           report(`Direct UPDATE ${field}`, "PASS", "Column permission denied (42501).");
         } else if (result.error) {
-          report(`Direct UPDATE ${field}`, "REVIEW", `Error code: ${result.error.code ?? "unknown"}.`);
+          report(
+            `Direct UPDATE ${field}`,
+            "REVIEW",
+            `Error code: ${result.error.code ?? "unknown"}.`,
+          );
         } else {
-          report(`Direct UPDATE ${field}`, "FAIL", "Privilege bypass: API accepted direct status PATCH (no rows targeted).");
+          report(
+            `Direct UPDATE ${field}`,
+            "FAIL",
+            "Privilege bypass: API accepted direct status PATCH (no rows targeted).",
+          );
         }
       }
     } catch {
@@ -166,12 +202,12 @@ function UniversityReviewA16JwtProbe() {
       </Link>
       <h1 className="text-2xl font-bold">A1.6.2 — Real-JWT Security Verification</h1>
       <p className="text-sm leading-6 text-muted-foreground">
-        Temporary Preview-only security test for Admin and Normal User sessions. No
-        source data, passwords, tokens, or user IDs appear on this page.
+        Temporary Preview-only security test for Admin and Normal User sessions. No source
+        data, passwords, tokens, or user IDs appear on this page.
       </p>
       <p className="rounded-xl border border-border p-4 text-sm">
-        This diagnostic checks real browser authorization, private row visibility,
-        and protected status fields. It cannot approve an institution or publish anything.
+        This diagnostic checks real browser authorization, private row visibility, and protected
+        status fields. It cannot approve an institution or publish anything.
       </p>
       <button
         type="button"
@@ -202,8 +238,8 @@ function UniversityReviewA16JwtProbe() {
       </section>
       {done && <p className="text-sm font-semibold">Share screenshot(s) of result cards only.</p>}
       <p className="text-xs text-muted-foreground">
-        No real source-review decision was submitted. This temporary diagnostic must not be
-        merged into Production.
+        No real source-review decision was submitted. This temporary diagnostic must not be merged
+        into Production.
       </p>
     </main>
   );
