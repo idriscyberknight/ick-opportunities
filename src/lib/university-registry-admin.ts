@@ -81,7 +81,11 @@ function requiredText(value: string, label: string, max = 250): string {
 function checkedUrl(value: string): string {
   const candidate = requiredText(value, "Official source URL", 1800);
   let parsed: URL;
-  try { parsed = new URL(candidate); } catch { throw new Error("Enter a complete HTTPS URL."); }
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new Error("Enter a complete HTTPS URL.");
+  }
   if (parsed.protocol !== "https:" || !parsed.hostname || parsed.username || parsed.password) {
     throw new Error("Only HTTPS URLs without embedded credentials are accepted.");
   }
@@ -99,10 +103,20 @@ function assertSlug(slug: string): string {
 export async function listAdminUniversityRegistry(): Promise<RegistrySnapshot> {
   await requireAdmin();
   const [u, a, e, c] = await Promise.all([
-    registry.from("universities").select(universityColumns).order("created_at", { ascending: false }).limit(150),
+    registry
+      .from("universities")
+      .select(universityColumns)
+      .order("created_at", { ascending: false })
+      .limit(150),
     registry.from("university_aliases").select("id,university_id,alias,language_code").limit(500),
-    registry.from("university_evidence").select("id,university_id,claim_type,source_url,source_title,review_status").limit(500),
-    registry.from("university_classifications").select("id,university_id,classification_key,evidence_id,review_status").limit(500),
+    registry
+      .from("university_evidence")
+      .select("id,university_id,claim_type,source_url,source_title,review_status")
+      .limit(500),
+    registry
+      .from("university_classifications")
+      .select("id,university_id,classification_key,evidence_id,review_status")
+      .limit(500),
   ]);
   const err = u.error || a.error || e.error || c.error;
   if (err) throw new Error(err.message);
@@ -115,8 +129,12 @@ export async function listAdminUniversityRegistry(): Promise<RegistrySnapshot> {
 }
 
 export async function createUniversityDraft(input: {
-  slug: string; official_name: string; country_code: string;
-  city?: string; official_website?: string; summary?: string;
+  slug: string;
+  official_name: string;
+  country_code: string;
+  city?: string;
+  official_website?: string;
+  summary?: string;
 }): Promise<void> {
   const userId = await requireAdmin();
   const country = input.country_code.trim().toUpperCase();
@@ -131,48 +149,77 @@ export async function createUniversityDraft(input: {
     created_by: userId,
     verification_status: "pending_review",
     publication_status: "draft",
-    reviewed_at: null, reviewed_by: null, published_at: null,
+    reviewed_at: null,
+    reviewed_by: null,
+    published_at: null,
   });
   if (error) throw new Error(error.message);
 }
 
 export async function updateUniversityDraft(
   id: string,
-  patch: { official_name: string; country_code: string; city: string; official_website: string; summary: string }
+  patch: {
+    official_name: string;
+    country_code: string;
+    city: string;
+    official_website: string;
+    summary: string;
+  },
 ): Promise<void> {
   await requireAdmin();
   const country = patch.country_code.trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(country)) throw new Error("Use a two-letter ISO country code.");
-  const { data, error } = await registry.from("universities").update({
-    official_name: requiredText(patch.official_name, "Institution name"),
-    country_code: country,
-    city: patch.city.trim() || null,
-    official_website: patch.official_website.trim() ? checkedUrl(patch.official_website) : null,
-    summary: patch.summary.trim() || null,
-    verification_status: "pending_review",
-    reviewed_at: null, reviewed_by: null,
-  }).eq("id", id).eq("publication_status", "draft").select("id");
+  const { data, error } = await registry
+    .from("universities")
+    .update({
+      official_name: requiredText(patch.official_name, "Institution name"),
+      country_code: country,
+      city: patch.city.trim() || null,
+      official_website: patch.official_website.trim() ? checkedUrl(patch.official_website) : null,
+      summary: patch.summary.trim() || null,
+      verification_status: "pending_review",
+      reviewed_at: null,
+      reviewed_by: null,
+    })
+    .eq("id", id)
+    .eq("publication_status", "draft")
+    .select("id");
   if (error) throw new Error(error.message);
   if (data?.length !== 1) throw new Error("Draft was not updated. Refresh and verify its state.");
 }
 
-export async function createUniversityAlias(universityId: string, alias: string, languageCode: string): Promise<void> {
+export async function createUniversityAlias(
+  universityId: string,
+  alias: string,
+  languageCode: string,
+): Promise<void> {
   await requireAdmin();
   const lang = languageCode.trim() || null;
-  if (lang && (lang.length < 2 || lang.length > 35)) throw new Error("Language code must be 2–35 characters.");
+  if (lang && (lang.length < 2 || lang.length > 35))
+    throw new Error("Language code must be 2–35 characters.");
   const { error } = await registry.from("university_aliases").insert({
-    university_id: universityId, alias: requiredText(alias, "Alias"), language_code: lang,
+    university_id: universityId,
+    alias: requiredText(alias, "Alias"),
+    language_code: lang,
   });
   if (error) throw new Error(error.message);
 }
 
 export const EVIDENCE_CLAIMS = [
-  "identity", "website", "classification", "programmes", "accreditation", "other",
+  "identity",
+  "website",
+  "classification",
+  "programmes",
+  "accreditation",
+  "other",
 ] as const;
-export type EvidenceClaim = typeof EVIDENCE_CLAIMS[number];
+export type EvidenceClaim = (typeof EVIDENCE_CLAIMS)[number];
 
 export async function createUniversityEvidence(
-  universityId: string, sourceUrl: string, claimType: EvidenceClaim, sourceTitle: string
+  universityId: string,
+  sourceUrl: string,
+  claimType: EvidenceClaim,
+  sourceTitle: string,
 ): Promise<void> {
   await requireAdmin();
   if (!EVIDENCE_CLAIMS.includes(claimType)) throw new Error("Invalid evidence claim type.");
@@ -183,18 +230,23 @@ export async function createUniversityEvidence(
     source_title: sourceTitle.trim() || null,
     review_status: "pending_review",
     visibility: "internal",
-    checked_at: null, checked_by: null,
+    checked_at: null,
+    checked_by: null,
   });
   if (error) throw new Error(error.message);
 }
 
 export const CLASSIFICATIONS = [
-  "islamic_institution", "islamic_studies_provider", "general_institution",
+  "islamic_institution",
+  "islamic_studies_provider",
+  "general_institution",
 ] as const;
-export type ClassificationKey = typeof CLASSIFICATIONS[number];
+export type ClassificationKey = (typeof CLASSIFICATIONS)[number];
 
 export async function createUniversityClassification(
-  universityId: string, classificationKey: ClassificationKey, evidenceId: string
+  universityId: string,
+  classificationKey: ClassificationKey,
+  evidenceId: string,
 ): Promise<void> {
   await requireAdmin();
   if (!CLASSIFICATIONS.includes(classificationKey)) throw new Error("Invalid classification.");
