@@ -205,7 +205,6 @@ export type UniversityRegistryDatabase = Omit<Database, "public"> & {
   };
 };
 
-
 /**
  * A1.6.2 PROPOSED RPC interface — not yet deployed to Lovable Cloud Production.
  * This is an additive TypeScript declaration only, NOT proof of backend existence.
