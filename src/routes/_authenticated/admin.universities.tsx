@@ -188,7 +188,8 @@ function UniversityRegistryAdminPage() {
       const sameUrl = fresh.evidence.some(
         (item) =>
           item.university_id === selectedId &&
-          item.source_url.replace(new RegExp("/+$"), "") === sourceUrl.trim().replace(new RegExp("/+$"), ""),
+          item.source_url.replace(new RegExp("/+$"), "") ===
+            sourceUrl.trim().replace(new RegExp("/+$"), ""),
       );
       if (sameUrl) {
         throw new Error("This source is already attached to the selected private university.");
@@ -633,10 +634,14 @@ function UniversityRegistryAdminPage() {
                   {proposedSources.map((item) => {
                     const alreadyAttached = evidence.some(
                       (row) =>
-                        row.source_url.replace(new RegExp("/+$"), "") === item.url.replace(new RegExp("/+$"), ""),
+                        row.source_url.replace(new RegExp("/+$"), "") ===
+                        item.url.replace(new RegExp("/+$"), ""),
                     );
                     return (
-                      <article key={item.url} className="space-y-2 rounded-lg border border-border bg-card p-3">
+                      <article
+                        key={item.url}
+                        className="space-y-2 rounded-lg border border-border bg-card p-3"
+                      >
                         <p className="text-sm font-semibold">{item.title}</p>
                         <p className="text-xs text-muted-foreground">{item.reviewerCaution}</p>
                         <div className="flex flex-wrap items-center gap-3">
@@ -667,8 +672,8 @@ function UniversityRegistryAdminPage() {
                   })}
                   {publicStarter.websiteVerification === "needs_review" && (
                     <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-                      Institution website ownership is unresolved. Do not upload documents or
-                      make payments through an unverified application domain.
+                      Institution website ownership is unresolved. Do not upload documents or make
+                      payments through an unverified application domain.
                     </p>
                   )}
                 </section>
