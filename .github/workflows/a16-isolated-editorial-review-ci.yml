@@ -129,6 +129,9 @@ jobs:
           # simulation, unchanged legacy RLS and per-test mutation rollback.
           psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_editorial_review_engine.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_existing_draft_upgrade_acceptance.sql
+          # Rehearse a post-commit incident response: no broad UPDATE grant
+          # restoration, no deleted audit history, and an explicit RPC shutdown.
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_post_commit_rpc_killswitch.sql
           psql -X -v ON_ERROR_STOP=1 -Atqc "
             SELECT CASE WHEN
                (SELECT count(*) FROM public.universities) = 1
