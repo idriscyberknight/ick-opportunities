@@ -1,0 +1,72 @@
+name: A1.6.2 Isolated Editorial Review Engine — PostgreSQL
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tests/a16/**"
+      - ".github/workflows/a16-isolated-editorial-review-ci.yml"
+      - "tests/a15/isolated_bootstrap.sql"
+      - "docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a16-editorial-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  isolated-review-security:
+    name: PostgreSQL 17 isolated role, RPC, and audit acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: isolated-ci-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Checkout source (no secrets)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install PostgreSQL client when needed
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+
+      - name: Run ONLY in disposable local Postgres container
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGDATABASE: "postgres"
+          PGPASSWORD: "isolated-ci-only"
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/a15/isolated_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_editorial_review_engine.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_editorial_review_acceptance.sql
+          # Acceptance transaction is rolled back; no simulated rows remain.
+          psql -X -v ON_ERROR_STOP=1 -Atqc "
+            SELECT CASE WHEN
+              (SELECT count(*) FROM public.universities) = 0
+              AND (SELECT count(*) FROM public.university_evidence) = 0
+              AND (SELECT count(*) FROM public.university_review_events) = 0
+            THEN 'A16_ISOLATED_ROLLBACK_PASS'
+            ELSE 'A16_ISOLATED_ROLLBACK_FAIL' END;" |
+            grep -qx A16_ISOLATED_ROLLBACK_PASS
