@@ -92,6 +92,39 @@ GRANT UPDATE (official_name,country_code,city,official_website,summary)
 -- reviewed metadata. This prototype requires a corresponding frontend change
 -- before production rollout (safe API patch must omit reviewed_*). Not shipped.
 
+-- Prevent previously reviewed evidence from silently remaining authoritative
+-- after Admin changes the underlying institution identity fields. A subsequent
+-- controlled evidence-retraction/review workflow is required to unlock changes.
+-- A1.5 pending-only drafts still permit normal edits.
+CREATE FUNCTION public.ick_a16_block_edits_after_source_review()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER
+SET search_path = ''
+AS $
+BEGIN
+ IF (NEW.official_name,NEW.country_code,NEW.city,
+     NEW.official_website,NEW.summary)
+   IS DISTINCT FROM
+    (OLD.official_name,OLD.country_code,OLD.city,
+     OLD.official_website,OLD.summary)
+   AND EXISTS (
+     SELECT 1 FROM public.university_evidence e
+     WHERE e.university_id=OLD.id AND e.review_status='reviewed'
+   )
+ THEN
+   RAISE EXCEPTION
+     'edited institutional identity requires a new review/retraction decision'
+     USING ERRCODE='23514';
+ END IF;
+ RETURN NEW;
+END;
+$;
+REVOKE ALL ON FUNCTION public.ick_a16_block_edits_after_source_review()
+ FROM PUBLIC, anon, authenticated;
+CREATE TRIGGER a16_institution_no_edit_after_review
+ BEFORE UPDATE OF official_name,country_code,city,official_website,summary
+ ON public.universities
+ FOR EACH ROW EXECUTE FUNCTION public.ick_a16_block_edits_after_source_review();
+
 -- One trusted, atomic source-specific editorial decision entrypoint.
 -- The current Admin role is the only implemented role; no invented reviewer role.
 -- A 'reviewed' event denotes a HUMAN editorial attestation, NOT accreditation
