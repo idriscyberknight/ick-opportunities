@@ -80,6 +80,7 @@ jobs:
             src/lib/university-registry-schema.types.ts \
             src/lib/university-registry-admin.ts \
             src/routes/_authenticated/admin.universities.tsx \
+            src/routes/_authenticated/security.university-registry-jwt.tsx \
             src/routes/_authenticated/admin.review.tsx \
             vite.config.ts
 
