@@ -5,6 +5,7 @@ import { ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
 import { isCurrentUserAdmin } from "@/lib/opportunities";
 import { fieldClass, labelClass } from "@/components/AuthShell";
 import { UniversityReconciliationPanel } from "@/components/universities/UniversityReconciliationPanel";
+import { starterSourceCandidates } from "@/lib/university-onboarding-sources";
 import { STARTER_UNIVERSITIES } from "@/lib/university-directory";
 import {
   prepareStarterPrivateDraft,
@@ -179,8 +180,19 @@ function UniversityRegistryAdminPage() {
     },
   });
   const addEvidence = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!selectedId) throw new Error("Select a university.");
+      // Re-fetch instead of relying on stale local evidence. A repeated URL
+      // for the same private draft must not be silently attached twice.
+      const fresh = await listAdminUniversityRegistry();
+      const sameUrl = fresh.evidence.some(
+        (item) =>
+          item.university_id === selectedId &&
+          item.source_url.replace(/\\/$/, "") === sourceUrl.trim().replace(/\\/$/, ""),
+      );
+      if (sameUrl) {
+        throw new Error("This source is already attached to the selected private university.");
+      }
       return createUniversityEvidence(selectedId, sourceUrl, claimType, sourceTitle);
     },
     onSuccess: () => {
@@ -245,6 +257,10 @@ function UniversityRegistryAdminPage() {
     selected?.publication_status !== "draft" ||
     evidence.some((item) => item.review_status === "reviewed");
   const pendingEvidence = evidence.filter((item) => item.review_status === "pending_review");
+  const publicStarter = STARTER_UNIVERSITIES.find(
+    (starter) => starter.slug === selected?.slug && starter.countryCode === selected.country_code,
+  );
+  const proposedSources = publicStarter ? starterSourceCandidates(publicStarter.slug) : [];
   // Evidence presence is not editorial approval, identity verification, or accreditation.
   const evidenceChecks = [
     {
@@ -601,6 +617,62 @@ function UniversityRegistryAdminPage() {
               <p className="mt-1 text-xs text-muted-foreground">
                 A submitted source is not automatically authoritative or verified.
               </p>
+              {publicStarter && (
+                <section
+                  className="mt-4 space-y-3 rounded-xl border border-border bg-muted/40 p-4"
+                  aria-labelledby="a17-evidence-candidates-heading"
+                >
+                  <h3 id="a17-evidence-candidates-heading" className="text-sm font-bold">
+                    A1.7 — Official-source research candidates
+                  </h3>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Read the official source, check its actual institution claim and current URL,
+                    then optionally prepare the source form. No source is attached or reviewed
+                    automatically. Institutional recognition does not establish scholarships.
+                  </p>
+                  {proposedSources.map((item) => {
+                    const alreadyAttached = evidence.some(
+                      (row) =>
+                        row.source_url.replace(/\\/$/, "") === item.url.replace(/\\/$/, ""),
+                    );
+                    return (
+                      <article key={item.url} className="space-y-2 rounded-lg border border-border bg-card p-3">
+                        <p className="text-sm font-semibold">{item.title}</p>
+                        <p className="text-xs text-muted-foreground">{item.reviewerCaution}</p>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-primary underline"
+                          >
+                            Open source <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                          <button
+                            type="button"
+                            className={button}
+                            disabled={alreadyAttached}
+                            onClick={() => {
+                              setClaimType(item.claim);
+                              setSourceUrl(item.url);
+                              setSourceTitle(item.title);
+                              addEvidence.reset();
+                            }}
+                          >
+                            {alreadyAttached ? "Already attached" : "Prepare source (no write)"}
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                  {publicStarter.websiteVerification === "needs_review" && (
+                    <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                      Institution website ownership is unresolved. Do not upload documents or
+                      make payments through an unverified application domain.
+                    </p>
+                  )}
+                </section>
+              )}
               <ul className="my-3 space-y-2 text-sm text-muted-foreground">
                 {evidence.map((e) => (
                   <li key={e.id} className="break-all">
