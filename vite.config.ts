@@ -44,7 +44,7 @@ function ickAuthStorage(): Plugin {
       }
     },
     transform(source, id) {
-      const filename = id.split("?")[0].replace(/\\/g, "/");
+      const filename = (id.split("?")[0] ?? "").replace(/\\/g, "/");
       if (filename !== generatedPath) return null;
       assertReviewedStorage(source);
       return {
