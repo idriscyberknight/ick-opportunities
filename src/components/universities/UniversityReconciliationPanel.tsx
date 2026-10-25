@@ -1,8 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import type {
-  RegistryAlias,
-  RegistryUniversity,
-} from "@/lib/university-registry-admin";
+import type { RegistryAlias, RegistryUniversity } from "@/lib/university-registry-admin";
 import { reconcileUniversityDirectory } from "@/lib/university-reconciliation";
 
 type Props = {
@@ -33,17 +30,15 @@ export function UniversityReconciliationPanel({ universities, aliases }: Props) 
         Reconcile public directory and private registry
       </h2>
       <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
-        The public directory still has eight static profiles. This comparison checks whether
-        any may describe institutions already held as private drafts. A possible match is not
-        verification, accreditation, or permission to publish. Nothing is imported or changed.
+        The public directory still has eight static profiles. This comparison checks whether any may
+        describe institutions already held as private drafts. A possible match is not verification,
+        accreditation, or permission to publish. Nothing is imported or changed.
       </p>
       <div className="mt-4 flex flex-wrap gap-2 text-sm" role="status">
         <span className="rounded-lg bg-muted px-3 py-2">
           {result.unmatched} not in private registry
         </span>
-        <span className="rounded-lg bg-muted px-3 py-2">
-          {result.candidates} candidate matches
-        </span>
+        <span className="rounded-lg bg-muted px-3 py-2">{result.candidates} candidate matches</span>
         <span className="rounded-lg bg-muted px-3 py-2">
           {result.ambiguous + result.countryConflicts} conflicts
         </span>
@@ -78,8 +73,8 @@ export function UniversityReconciliationPanel({ universities, aliases }: Props) 
         <div className="mt-5 rounded-xl border border-border bg-muted/40 p-4">
           <h3 className="text-sm font-bold">Private drafts not matched to a public profile</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            These private names are shown only in this Admin workspace. Do not reuse an
-            existing public identity without investigating source and country conflicts.
+            These private names are shown only in this Admin workspace. Do not reuse an existing
+            public identity without investigating source and country conflicts.
           </p>
           <ul className="mt-3 space-y-2 text-sm">
             {result.privateOnly.map((row) => (
@@ -91,9 +86,8 @@ export function UniversityReconciliationPanel({ universities, aliases }: Props) 
         </div>
       )}
       <p className="mt-4 text-xs leading-5 text-muted-foreground">
-        Public directory entries are not yet database-backed. The private registry
-        publishing CHECK remains in force; no public-read RLS or synchronization
-        is enabled by this panel.
+        Public directory entries are not yet database-backed. The private registry publishing CHECK
+        remains in force; no public-read RLS or synchronization is enabled by this panel.
       </p>
     </section>
   );
