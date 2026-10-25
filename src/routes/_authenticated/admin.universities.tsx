@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
@@ -85,6 +85,7 @@ const editable = (u: RegistryUniversity): DraftData => ({
 
 function UniversityRegistryAdminPage() {
   const qc = useQueryClient();
+  const draftEditorRef = useRef<HTMLElement>(null);
   const admin = useQuery({ queryKey: ["is-admin"], queryFn: isCurrentUserAdmin });
   const allowed = admin.data === true;
   const registry = useQuery({
@@ -189,6 +190,12 @@ function UniversityRegistryAdminPage() {
     setLanguage("");
     setSourceUrl("");
     setSourceTitle("");
+    // The editor lives below the create form. Scroll to it after React renders
+    // so selecting an existing draft never appears to do nothing on mobile.
+    requestAnimationFrame(() => {
+      draftEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      draftEditorRef.current?.focus({ preventScroll: true });
+    });
   };
 
   return (
@@ -237,6 +244,9 @@ function UniversityRegistryAdminPage() {
               <span className="block font-bold">{u.official_name}</span>
               <span className="mt-1 block text-xs text-muted-foreground">
                 {u.country_code} · {u.verification_status} · {u.publication_status}
+              </span>
+              <span className="mt-2 block text-xs font-semibold text-primary">
+                {selectedId === u.id ? "Selected — editing below" : "Tap to open draft editor"}
               </span>
             </button>
           ))}
@@ -312,7 +322,9 @@ function UniversityRegistryAdminPage() {
       {selected && (
         <div className="grid gap-6 lg:grid-cols-2">
           <section
-            className="rounded-2xl border border-border bg-card p-5"
+            ref={draftEditorRef}
+            tabIndex={-1}
+            className="scroll-mt-28 rounded-2xl border border-border bg-card p-5"
             aria-labelledby="edit-university-heading"
           >
             <h2 id="edit-university-heading" className="font-display text-xl font-bold">
