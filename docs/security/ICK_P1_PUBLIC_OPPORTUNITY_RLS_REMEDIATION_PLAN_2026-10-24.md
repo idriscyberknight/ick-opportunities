@@ -1,7 +1,7 @@
 # ICK Opportunities — P1 Opportunity Publication RLS Remediation
 
 **Date:** 2026-10-24  
-**Status:** DESIGN / SECURITY REVIEW ONLY. NOT DEPLOYED OR APPLIED.  
+**Status:** Production deployment NOT VERIFIED/APPLIED BY THIS PR; **Staging now shows a persistent stricter RLS policy as of 2026-10-25** (see §1K).  
 **Production code reference:** main @ 72b596fea8c807b4c0b84d5738b46825c4071e0c  
 **Production backend:** Lovable Cloud database (retain under Founder-approved Option A).  
 **Scope:** public SELECT policy for public.opportunities only. No University Registry migration.
@@ -377,6 +377,40 @@ This establishes an **actual difference in future-object grant defaults**, consi
 **VERIFIED:** two SQL-role candidate public-SELECT tests passed under transaction/rollback; 14/14 public-table grants and default-ACL drift materially differ from Production; migration-history tracking differs. **NOT VERIFIED:** real signed-in/admin JWT REST authorization, anon ability to mutate over HTTP, actual stage API isolation, rollout/backup, and a production-ready migration. **NO PRODUCTION FIX APPLIED.**
 
 **Next review-only activity:** design a *targeted* staging permission parity plan with precise before/after ACL snapshots, preserved admin and service workflows, special treatment of `PUBLIC` EXECUTE and `supabase_admin` defaults, verification/rollback, and explicit authorization **before any staging GRANT/REVOKE**. Never replay C5 or its deliberately permissive rollback wholesale, and do not merge executable schema changes into `main` at this stage.
+
+## 1K. 2026-10-25 NEW LIVE STATE: Staging policy and key grants have changed since the earlier audit — READ ONLY VERIFIED
+
+**IMPORTANT: THIS NEWER OBSERVATION SUPERSEDES THE HISTORICAL *STAGING* SNAPSHOTS IN §1G/§1J FOR THE SPECIFIC OBJECTS BELOW.** It does **not** retroactively make those 2026-10-24 observations false; the database's present condition differs from the recorded earlier condition. This addendum was produced through **read-only** Lovable Cloud SQL and source/history inspection. No grant, policy, user, schema or production changes were performed in this audit.
+
+**Target identity:** Lovable project `887e7515-30c6-4fa3-bafc-fb8d8d610315` (distinct Security Staging). Queried table `public.opportunities` and function `public.has_role(uuid, public.app_role)` using PostgreSQL system catalogs.
+
+| Staging fact | Earlier recorded state (2026-10-24) | NEW successful read-only result (2026-10-25) |
+| --- | --- | --- |
+| Public opportunity SELECT policy | `active` + deadline only | **Strict proposed predicate is currently installed**: `active`, `verified`, `published_at` present/nonfuture, `reviewed_at` and `reviewed_by` present, valid or absent deadline |
+| Effective `anon` INSERT, UPDATE and DELETE on opportunities | `anon` INSERT **true**; broader grants were later observed | **All false**; SELECT remains true |
+| `anon` EXECUTE on `has_role` | **true** | **false** |
+| `authenticated` EXECUTE on `has_role` | true | **true** |
+| Direct `opportunities.relacl` | broad client grants | `anon=r`, `authenticated=arwd`; no explicit `PUBLIC` table grant in inspected ACL |
+| Direct `has_role.proacl` | broad `PUBLIC`/anon grant | Explicit `postgres`, `authenticated`, `service_role` EXECUTE; no explicit `PUBLIC` or `anon` |
+| `auth.users` staging count | 0 | **2** (count only; no identities or credentials collected) |
+| `public.opportunities` staging count | 0 | **0** |
+| `supabase_migrations.schema_migrations` in staging | absent | **still absent** |
+
+The two successful read-only SQL queries independently support the current **policy/grant posture**. The strict policy is **persistently present in Staging**, unlike the earlier tests that always reverted a temporary policy. **The current Stage SQL-role pass and earlier rollback tests must NOT be represented as having caused this persistent policy change.** This audit did not execute `ALTER POLICY`, `REVOKE`, `GRANT`, create users, edit role assignments, or modify a database.
+
+**Change origin NOT VERIFIED:** Lovable's latest source edit/commit snapshot in this Staging project remains `13653bfa5d63a4d05aadafe2ff355a44ea0911cd` with last reported code edit 2026-10-23, which does not by itself audit subsequent database/cloud changes. It is **unknown who/what performed the persistent policy/grant and identity changes, exactly when, and through which approved path**. Migration history remains absent from the standard staging tracker. Do not assume an agent, Founder, CI workflow or prior ChatGPT session was responsible without audit evidence.
+
+**Production CURRENT state NOT VERIFIED on this follow-up:** An independent Production SELECT to recheck its actual policy, `anon` grants, and row counts was **rejected BEFORE EXECUTION by the free-plan Lovable MCP database action limit**. Previous Production observations remain historical evidence only; GitHub `main` not changing is **not proof that Production Cloud Database did not change**.
+
+**What changed in release posture:** The specific Staging `anon` INSERT and `has_role` EXECUTE drift previously flagged for those two objects now appears **resolved at the latest observation**. This does **not** establish parity across all 14 tables, future/default grants, privileged RPCs or application integrations. Crucially, a persisted Stage RLS policy with zero opportunity rows and two test/user accounts is **not a real authenticated/public/admin JWT, API or UI regression test**.
+
+**Required gates still NOT PASSED:**
+1. Trace the staging persistent DDL/GRANT change source (Lovable backend change log, SQL deployment/migration audit if available). Verify any staging users are approved test identities; do not enumerate personal identifiers for this report.
+2. Recheck **all 14 tables** and defaults/privileged RPC permissions in staging with read-only queries. Obtain a new Production read-only policy snapshot when its quota allows; never assume snapshot parity from GitHub commits.
+3. Confirm **runtime staging API URL + publishable project key** target isolated Staging, then perform consented **real JWT and negative/positive REST tests** for anon, ordinary authenticated and admin. Keep credentials confidential. Do not publish Staging to the public simply to test.
+4. Verify publication/review and atomic audit behavior, backups and rollback, and get *separate explicit Founder approval* for a precise Production migration. No executable code or migration is committed in this PR.
+
+**Release state: Staging policy currently hardened by an un-attributed persistent change; Production policy and real JWT/API safety still UNVERIFIED. NO PRODUCTION MIGRATION FROM THIS SESSION.**
 
 ## 2. Existing application behavior and limitations
 
