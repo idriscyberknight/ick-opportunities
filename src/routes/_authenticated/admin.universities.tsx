@@ -130,10 +130,14 @@ function UniversityRegistryAdminPage() {
       if (preparedStarterSlug) {
         const starter = STARTER_UNIVERSITIES.find((row) => row.slug === preparedStarterSlug);
         if (!starter || slug !== starter.slug || draft.country_code !== starter.countryCode) {
-          throw new Error("Prepared university identity changed. Clear the preparation and start again.");
+          throw new Error(
+            "Prepared university identity changed. Clear the preparation and start again.",
+          );
         }
         if (!preparedAcknowledged) {
-          throw new Error("Review the source and duplicate checks before creating this private draft.");
+          throw new Error(
+            "Review the source and duplicate checks before creating this private draft.",
+          );
         }
         // Never trust the cached client registry for the final duplicate check.
         const fresh = await listAdminUniversityRegistry();
@@ -141,7 +145,9 @@ function UniversityRegistryAdminPage() {
           (item) => item.starter.slug === starter.slug,
         );
         if (!entry || entry.status !== "unmatched") {
-          throw new Error("A possible duplicate or country conflict was found. Refresh and investigate.");
+          throw new Error(
+            "A possible duplicate or country conflict was found. Refresh and investigate.",
+          );
         }
       }
       return createUniversityDraft({ slug, ...draft });
@@ -388,14 +394,14 @@ function UniversityRegistryAdminPage() {
             </p>
             <p className="text-muted-foreground">
               Inspect the official institution source, check the canonical website, and confirm
-              there is no duplicate before manually creating a pending private draft.
-              No classification, alias or source approval is copied automatically.
+              there is no duplicate before manually creating a pending private draft. No
+              classification, alias or source approval is copied automatically.
             </p>
             {STARTER_UNIVERSITIES.find((entry) => entry.slug === preparedStarterSlug)
               ?.websiteVerification === "needs_review" && (
               <p className="text-amber-700 dark:text-amber-400">
-                This institution’s website has an unresolved verification concern; its website
-                field was intentionally left empty.
+                This institution’s website has an unresolved verification concern; its website field
+                was intentionally left empty.
               </p>
             )}
             <label className="flex cursor-pointer items-start gap-2">
@@ -475,10 +481,7 @@ function UniversityRegistryAdminPage() {
             <Feedback error={createDraft.error} />
             <button
               className={primary}
-              disabled={
-                createDraft.isPending ||
-                (!!preparedStarterSlug && !preparedAcknowledged)
-              }
+              disabled={createDraft.isPending || (!!preparedStarterSlug && !preparedAcknowledged)}
             >
               <Plus className="h-4 w-4" /> {createDraft.isPending ? "Creating…" : "Create draft"}
             </button>
