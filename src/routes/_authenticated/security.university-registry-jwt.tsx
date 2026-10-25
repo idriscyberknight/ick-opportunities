@@ -69,28 +69,32 @@ function JwtRegistryProbe() {
       }
 
       if (role.data) {
-        record("Account role", "FAIL", "This is an Admin account. Use the existing Normal User account.");
+        record("Account role", "FAIL", "Use an existing Normal User, not Admin.");
         return;
       }
 
-      record("Real session and role", "PASS", "auth.getUser() verified; account is not assigned Admin in user_roles.");
+      record("Real session and role", "PASS", "Validated session; no Admin role assignment.");
 
       const queries = [
         ["universities", () => registry.from("universities").select("id").limit(1)],
         ["university_aliases", () => registry.from("university_aliases").select("id").limit(1)],
         ["university_evidence", () => registry.from("university_evidence").select("id").limit(1)],
-        ["university_classifications", () => registry.from("university_classifications").select("id").limit(1)],
+        [
+          "university_classifications",
+          () => registry.from("university_classifications").select("id").limit(1),
+        ],
       ] as const;
 
       for (const [table, query] of queries) {
         const response = await query();
+        const label = `Normal-user SELECT ${table}`;
         if (response.error) {
-          record(`Normal-user SELECT ${table}`, "REVIEW", `API error code: ${response.error.code ?? "unknown"}`);
+          record(label, "REVIEW", `API error code: ${response.error.code ?? "unknown"}`);
         } else if ((response.data?.length ?? 0) > 0) {
-          record(`Normal-user SELECT ${table}`, "FAIL", "A private registry row was returned (contents intentionally hidden).");
+          record(label, "FAIL", "A private registry row was returned.");
           return;
         } else {
-          record(`Normal-user SELECT ${table}`, "PASS", "HTTP query succeeded and returned zero visible rows. Empty-table row isolation remains unproven.");
+          record(label, "PASS", "Zero visible rows; empty-table isolation is unproven.");
         }
       }
 
@@ -99,44 +103,61 @@ function JwtRegistryProbe() {
       // 2-4. child rows reference a nonexistent university ID, violating FK.
       // Consequently, a misconfigured RLS rule MUST NOT result in persisted data.
       const attempts = [
-        ["universities", () => registry.from("universities").insert({
-          slug: qaSlug,
-          official_name: "ICK TRANSACTIONLESS JWT SECURITY PROBE - NOT A REAL UNIVERSITY",
-          country_code: "NG",
-          publication_status: "published",
-          published_at: new Date().toISOString(),
-        })],
-        ["university_aliases", () => registry.from("university_aliases").insert({
-          university_id: missingUniversityId,
-          alias: "ICK QA MUST-NOT-PERSIST ALIAS",
-        })],
-        ["university_evidence", () => registry.from("university_evidence").insert({
-          university_id: missingUniversityId,
-          claim_type: "identity",
-          source_url: "https://example.invalid/ick-a15-jwt-probe",
-        })],
-        ["university_classifications", () => registry.from("university_classifications").insert({
-          university_id: missingUniversityId,
-          classification_key: "general_institution",
-          evidence_id: "00000000-0000-4000-8000-000000000098",
-        })],
+        [
+          "universities",
+          () =>
+            registry.from("universities").insert({
+              slug: qaSlug,
+              official_name: "ICK JWT QA TEST - NOT A REAL UNIVERSITY",
+              country_code: "NG",
+              publication_status: "published",
+              published_at: new Date().toISOString(),
+            }),
+        ],
+        [
+          "university_aliases",
+          () =>
+            registry.from("university_aliases").insert({
+              university_id: missingUniversityId,
+              alias: "ICK QA MUST-NOT-PERSIST ALIAS",
+            }),
+        ],
+        [
+          "university_evidence",
+          () =>
+            registry.from("university_evidence").insert({
+              university_id: missingUniversityId,
+              claim_type: "identity",
+              source_url: "https://example.invalid/ick-a15-jwt-probe",
+            }),
+        ],
+        [
+          "university_classifications",
+          () =>
+            registry.from("university_classifications").insert({
+              university_id: missingUniversityId,
+              classification_key: "general_institution",
+              evidence_id: "00000000-0000-4000-8000-000000000098",
+            }),
+        ],
       ] as const;
 
       for (const [table, attempt] of attempts) {
         const result = await attempt();
+        const label = `Normal-user INSERT ${table}`;
         if (!result.error) {
-          record(`Normal-user INSERT ${table}`, "FAIL", "Unexpected INSERT success. Stop testing and notify the project owner immediately.");
+          record(label, "FAIL", "Unexpected INSERT success; stop testing.");
           return;
         }
         const code = result.error.code ?? "unknown";
         if (code === "42501") {
-          record(`Normal-user INSERT ${table}`, "PASS", "Live authenticated API denied INSERT (PostgreSQL 42501).");
+          record(label, "PASS", "Live JWT API denied INSERT (42501).");
         } else {
-          record(`Normal-user INSERT ${table}`, "REVIEW", `Write failed with code ${code}, not RLS denial 42501. SQL constraint might be responsible.`);
+          record(label, "REVIEW", `Denied with ${code}, not RLS code 42501.`);
         }
       }
     } catch {
-      record("Unexpected runtime error", "REVIEW", "Probe interrupted. No secrets logged or displayed.");
+      record("Unexpected runtime error", "REVIEW", "Probe interrupted.");
     } finally {
       setRunning(false);
       setDone(true);
@@ -150,15 +171,12 @@ function JwtRegistryProbe() {
       </Link>
       <h1 className="text-2xl font-bold">A1.5 — Real-JWT Normal User Security Check</h1>
       <p className="text-sm leading-6 text-muted-foreground">
-        Preview-only, temporary diagnostic. Sign in with the existing Normal User
-        (not Admin) account. This checks the current browser session against the
-        actual PostgREST API. Nothing here prints passwords, JWTs or private records.
+        Preview-only diagnostic. Use your existing Normal User account, not Admin.
+        No passwords, JWTs, or private records are displayed.
       </p>
       <p className="rounded-xl border border-border p-4 text-sm">
-        Database safety: every POST uses values rejected by existing CHECK or
-        foreign-key constraints even if RLS fails. Do not run if those schema
-        safeguards were recently removed. Only a PostgreSQL 42501 result counts
-        as proven write denial.
+        Each POST violates an existing CHECK or foreign-key constraint.
+        PostgreSQL 42501 is required to prove write denial.
       </p>
       <button
         type="button"
@@ -172,7 +190,11 @@ function JwtRegistryProbe() {
         {results.map((r) => (
           <div key={r.name} className="rounded-xl border border-border bg-card p-4">
             <div className="font-semibold">
-              <span className={r.status === "PASS" ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}>
+              <span className={
+                  r.status === "PASS"
+                    ? "text-green-700 dark:text-green-400"
+                    : "text-amber-700 dark:text-amber-400"
+                }>
                 {r.status}
               </span>{" "}
               — {r.name}
@@ -181,10 +203,11 @@ function JwtRegistryProbe() {
           </div>
         ))}
       </section>
-      {done && <p className="text-sm font-semibold">Checks finished. Share a screenshot of the result cards only.</p>}
+      {done && (
+        <p className="text-sm font-semibold">Share a screenshot of the result cards.</p>
+      )}
       <p className="text-xs text-muted-foreground">
-        Excluded from acceptance: PATCH isolation against a known nonempty draft,
-        public data verification and long-term audit controls. DO NOT MERGE THIS QA PAGE.
+        No real-record PATCH test or nonempty row isolation. Do not merge this page.
       </p>
     </main>
   );
