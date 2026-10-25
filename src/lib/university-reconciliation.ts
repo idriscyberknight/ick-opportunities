@@ -141,7 +141,6 @@ export function reconcileUniversityDirectory(
   };
 }
 
-
 /**
  * A1.7.2 deliberately returns only client-side FORM values. It does not call
  * any database API and never changes verification_status, review metadata,
@@ -157,8 +156,7 @@ export function prepareStarterPrivateDraft(starter: UniversityRecord) {
     official_name: starter.name,
     country_code: starter.countryCode,
     city: starter.location?.includes("/") ? "" : (starter.location ?? ""),
-    official_website:
-      starter.websiteVerification === "needs_review" ? "" : starter.officialWebsite,
+    official_website: starter.websiteVerification === "needs_review" ? "" : starter.officialWebsite,
     summary: "",
   };
 }
