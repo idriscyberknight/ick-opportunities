@@ -70,3 +70,66 @@ jobs:
             THEN 'A16_ISOLATED_ROLLBACK_PASS'
             ELSE 'A16_ISOLATED_ROLLBACK_FAIL' END;" |
             grep -qx A16_ISOLATED_ROLLBACK_PASS
+
+      - name: Existing 1/1/1/0 private registry compatibility + migration abort rehearsal
+        # This is a fresh second DATABASE inside the disposable GitHub Actions
+        # PostgreSQL 17 container. No Production or staging connections exist.
+        env:
+          PGHOST: "127.0.0.1"
+          PGPORT: "5432"
+          PGUSER: "postgres"
+          PGDATABASE: "postgres"
+          PGPASSWORD: "isolated-ci-only"
+        run: |
+          set -euo pipefail
+          createdb a16_upgrade_rehearsal
+          export PGDATABASE=a16_upgrade_rehearsal
+
+          # Reproduce a sanitized snapshot shaped like the current Production:
+          # exactly 1 pending draft, 1 alias, 1 pending evidence, no classifications.
+          psql -X -v ON_ERROR_STOP=1 -f tests/a15/isolated_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f docs/database/ICK_UNIVERSITY_REGISTRY_SCHEMA_DRAFT.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_existing_draft_fixture.sql
+
+          # Rehearse aborting *the proposed schema migration* in ONE transaction,
+          # preserving the existing schema, data and original broad grants.
+          # Strip only the script's top-level BEGIN/COMMIT (exact matching lines).
+          awk '$0 != "BEGIN;" && $0 != "COMMIT;"' \
+            tests/a16/isolated_editorial_review_engine.sql \
+            > /tmp/a16_schema_statements_only.sql
+          {
+            printf 'BEGIN;\n'
+            cat /tmp/a16_schema_statements_only.sql
+            printf 'ROLLBACK;\n'
+          } > /tmp/a16_migration_abort_rehearsal.sql
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/a16_migration_abort_rehearsal.sql
+
+          # Independent new connection proves DDL rollback and data preservation.
+          psql -X -v ON_ERROR_STOP=1 -Atqc "
+            SELECT CASE WHEN
+               to_regclass('public.university_review_events') IS NULL
+               AND to_regprocedure('public.ick_a16_review_evidence(uuid,text,text,text)') IS NULL
+               AND (SELECT count(*) FROM public.universities) = 1
+               AND (SELECT count(*) FROM public.university_aliases) = 1
+               AND (SELECT count(*) FROM public.university_evidence) = 1
+               AND has_table_privilege('authenticated','public.universities','UPDATE')
+            THEN 'A16_SCHEMA_TRANSACTION_ABORT_PASS'
+            ELSE 'A16_SCHEMA_TRANSACTION_ABORT_FAIL' END;" \
+            | grep -qx A16_SCHEMA_TRANSACTION_ABORT_PASS
+
+          # Reapply prototype once to the SAME existing-data fixture (not to
+          # an empty database), then validate safe PATCH, review, JWT-claim
+          # simulation, unchanged legacy RLS and per-test mutation rollback.
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_editorial_review_engine.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/a16/isolated_existing_draft_upgrade_acceptance.sql
+          psql -X -v ON_ERROR_STOP=1 -Atqc "
+            SELECT CASE WHEN
+               (SELECT count(*) FROM public.universities) = 1
+               AND (SELECT count(*) FROM public.university_aliases) = 1
+               AND (SELECT count(*) FROM public.university_evidence) = 1
+               AND (SELECT count(*) FROM public.university_review_events) = 0
+               AND (SELECT count(*) FROM public.university_evidence
+                    WHERE review_status='pending_review') = 1
+            THEN 'A16_EXISTING_DATA_REHEARSAL_PASS'
+            ELSE 'A16_EXISTING_DATA_REHEARSAL_FAIL' END;" \
+            | grep -qx A16_EXISTING_DATA_REHEARSAL_PASS
