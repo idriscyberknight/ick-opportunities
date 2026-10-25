@@ -64,3 +64,42 @@ Repo `supabase/config.toml` contains `project_id = "xzxfodukvzzfwbwokhxt"`. A co
 ## Decision summary
 
 **Migration history is NOT yet reconciled.** The accurate milestone is *migration discrepancy identified and documented with reproducible read-only evidence*. That is a prerequisite to planning adoption, **not** a certificate to run SQL or merge.
+
+
+## 5. Runner behavior and full C5 security postcondition check (2026-10-25)
+
+### A. Official Lovable behavior: narrowed from general unknown to a documented boundary
+
+Authoritative public docs, checked 2026-10-25:
+- [Lovable — Database: how Lovable changes your database structure](https://docs.lovable.dev/features/database): Lovable project-chat schema changes are applied by Lovable, accompanied by generated types and recorded migration files. Current projects use `drizzle/migrations/`; older projects may retain `supabase/migrations/`.
+- [Lovable — Git sync: backend files in commits](https://docs.lovable.dev/integrations/git-sync-overview): **merging/syncing code does NOT run migration files**. To change database structure, use a separately reviewed Lovable project-chat request or the SQL editor. A Git branch does not create an isolated database.
+- [Supabase — Lovable Cloud owned database limitations](https://supabase.com/kb/troubleshooting/cant-access-supabase-project-lovable-cloud): the Lovable-managed backend is distinct from the user's own Supabase dashboard projects.
+
+Actual Lovable project file listing (read-only): 172 files; **14** `supabase/migrations/` SQL files; **no** `drizzle/` tree or `drizzle.config.ts` currently. Therefore this is a **legacy Supabase-migration source layout**; importing a new Drizzle workflow by assumption would be wrong. The existence of `supabase_migrations.schema_migrations` supports a Supabase-style historical ledger, but **its maintenance behavior for direct SQL editor operations is not independently established**.
+
+GitHub PR #22 changed-filename inspection (read-only): **12 changed files**, consisting of UI, typed adapter, docs, workflow and `package.json`/`vite.config.ts`. **Zero modifications under `supabase/migrations/`** and none under `drizzle/migrations/`. The historical SQL draft in `docs/database/` was changed only to add a **DO NOT RE-RUN** warning in its header; no executable schema change is proposed in PR #22. Git merge cannot itself be relied on to register A1.4 or C5 in the live ledger.
+
+### B. C5 full SQL assertion matrix — all 12 categories PASS
+
+A separate **SELECT-only** audit on the exact live Lovable Cloud Production backend checked the original C5 migration file's SQL assertion logic. ALL returned `true`:
+1. `anon` can SELECT `opportunities`.
+2. `anon` has no extra `opportunities` privileges.
+3. `anon` has no privileges on other exposed public relations (tables/views examined).
+4. `authenticated` has no TRUNCATE/REFERENCES/TRIGGER/MAINTAIN privileges on public relations.
+5. `anon` cannot SELECT/INSERT/UPDATE `discovery_settings.cron_token`.
+6. `authenticated` cannot SELECT/INSERT/UPDATE that protected column.
+7. `authenticated` cannot INSERT/UPDATE/DELETE `user_roles`.
+8. `authenticated` cannot UPDATE/DELETE `opportunity_audit_logs`.
+9. `authenticated` cannot INSERT/DELETE `discovery_settings`.
+10. Required whitelisted `discovery_settings` column privileges remain.
+11. No default ACL entries in `public` grant `anon`/`authenticated` privileges via `postgres`.
+12. All **31** expressly required privileges for existing features/service role remain.
+
+**Evidence-based conclusion:** CURRENT **C5 EFFECTIVE PERMISSIONS = PASS**, and **C5 MIGRATION LEDGER VERSION = MISSING**. Do not confuse them. The live database presently satisfies the checked C5 end-state assertions, **even though we cannot establish how, when, or by whom the ACLs were set**. Do NOT execute the C5 SQL just to obtain a ledger row; that could cause drift and side effects. Do not insert ledger rows manually.
+
+### C. Release ownership and exit criteria
+
+- **A1.5 PR #22 is a code-only merge with respect to migrations:** its code reads/writes previously installed Registry schema; it does not propose a new runnable migration. The unresolved ledger gap therefore represents historical auditability and future migration drift risk, **not evidence that the existing registry schema is absent**.
+- **Required for any future schema migration:** verify the authoritative Lovable runner/permissions and compare ALL live schema objects, define a properly reviewed migration adoption plan in isolated staging, then obtain explicit approval for any Production schema/ledger mutation.
+- **Required separately before code-only Production merge:** finish Admin form write/read behavior and non-admin write-denial/isolation acceptance with approved controlled fixtures or a documented risk decision; review the typed bridge versus actual schema, consider global lint baseline, remove any preview-only debug UI (already done), and get explicit Founder merge/deploy approval.
+- Do not use an unrelated `supabase/config.toml` ID as permission to run `db push`, `migration repair`, or change the actual Production.
