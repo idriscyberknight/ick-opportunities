@@ -1,0 +1,44 @@
+name: A1.7 University Reconciliation — Regression CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/lib/university-reconciliation.ts"
+      - "src/lib/university-directory.ts"
+      - "src/components/universities/UniversityReconciliationPanel.tsx"
+      - "src/routes/_authenticated/admin.universities.tsx"
+      - "tests/a17/**"
+      - ".github/workflows/a17-university-reconciliation-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a17-reconcile-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Deduplication, TypeScript/build and changed-source lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - name: Install locked packages
+        run: bun install --frozen-lockfile
+      - name: Test country/alias/domain duplicate detection — no database
+        run: bun test tests/a17/university-reconciliation.test.ts
+      - name: Verify production app build and generated routes
+        run: bun run build
+      - name: Scoped lint and format check
+        run: |
+          bunx eslint \
+            src/lib/university-reconciliation.ts \
+            src/components/universities/UniversityReconciliationPanel.tsx \
+            src/routes/_authenticated/admin.universities.tsx
