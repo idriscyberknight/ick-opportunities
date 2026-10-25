@@ -35,11 +35,10 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Strict TypeScript check
-        run: bun run typecheck
+      - name: Vite build and strict TypeScript check (no publishing)
+        # TanStack router generates routeTree.gen.ts during Vite build.
+        # Checking types before generating routes creates false route errors.
+        run: bun run build
 
       - name: ESLint
         run: bun run lint
-
-      - name: Vite build (no publishing)
-        run: bun run build
