@@ -8,6 +8,19 @@
 
 > **Do not run any of these test activities on Production, Vercel Preview, or the unrelated standalone ICK Technologies Supabase account.** A branch/preview is not proof of an isolated database. No one should paste scripts into the Lovable production SQL editor. Any live production migration still requires *separate explicit Founder approval* and formal backup/rollback review.
 
+## 0D. CRITICAL newer staging-state check — 2026-10-25 (supersedes historical 2026-10-24 staging-state assertions)
+
+**Latest successful READ-ONLY Lovable Cloud database queries show that Staging has changed externally since our transactionally rolled-back tests:**
+
+- The proposed **strict public SELECT policy** (active + verified + published non-future + review metadata + valid/nonexistent deadline) is **NOW PERSISTENT in Staging**. We did **not** apply it in this audit.
+- `anon` currently has **SELECT but not INSERT/UPDATE/DELETE** on `public.opportunities`, and **cannot EXECUTE** `public.has_role(uuid, public.app_role)`. Direct table/function ACL metadata confirms no `PUBLIC` grant for these inspected objects. The earlier staging INSERT/EXECUTE grant drift **is no longer current for these two objects**.
+- Staging `auth.users` now contains **2 rows** (count only; identities not retrieved). `public.opportunities` still contains **0 rows**. Standard staging `supabase_migrations.schema_migrations` relation remains absent.
+- The person, time and deployment path behind the persistent Staging RLS/GRANT/user changes **are UNKNOWN**. The Lovable project's code edit history contains no newer code edits, but that is NOT a database audit trail.
+- A new *Production* read-only policy check was **not executed** because its separate database action request reached the free-plan quota. **Production CURRENT policy is UNVERIFIED**.
+- Earlier rolled-back candidate SQL-role PASS results remain valid as **historical tests**, but do **NOT** replace live HTTP/JWT/admin tests against the policy now persisted in Staging.
+
+**Next runbook gate:** Read-only staging production ACL parity across all relevant tables + backend change provenance, runtime API binding, safe *real* JWT and admin tests, negative INSERT and public browsing regressions, and independent production state check. **Do not make another staging policy/grant change or production migration on the strength of the SQL-role tests.** Consult companion plan §1K for the complete evidence.
+
 ## 0. Latest verified execution result — 2026-10-24
 
 **STAGING-ONLY ACTUAL CANDIDATE POLICY TEST, TRANSACTIONAL AND REVERTED.**
