@@ -6,7 +6,11 @@
  * Never create records, rewrite slugs, approve evidence or publish based on
  * this matching function. All private rows stay in Admin-only UI.
  */
-import { normalizeUniversityTerm, STARTER_UNIVERSITIES } from "@/lib/university-directory";
+import {
+  normalizeUniversityTerm,
+  STARTER_UNIVERSITIES,
+  type UniversityRecord,
+} from "@/lib/university-directory";
 import type { RegistryAlias, RegistryUniversity } from "@/lib/university-registry-admin";
 
 export type ReconciliationStatus = "unmatched" | "candidate" | "ambiguous" | "country_conflict";
@@ -134,5 +138,27 @@ export function reconcileUniversityDirectory(
     ambiguous,
     countryConflicts,
     unmatched,
+  };
+}
+
+
+/**
+ * A1.7.2 deliberately returns only client-side FORM values. It does not call
+ * any database API and never changes verification_status, review metadata,
+ * aliases, classification, publication or public directory URLs.
+ *
+ * The static directory is an unverified research starting point, so summaries
+ * are left blank. For a website flagged for re-verification (e.g. Niger), the
+ * canonical domain must be manually confirmed rather than inherited.
+ */
+export function prepareStarterPrivateDraft(starter: UniversityRecord) {
+  return {
+    slug: starter.slug,
+    official_name: starter.name,
+    country_code: starter.countryCode,
+    city: starter.location?.includes("/") ? "" : (starter.location ?? ""),
+    official_website:
+      starter.websiteVerification === "needs_review" ? "" : starter.officialWebsite,
+    summary: "",
   };
 }
