@@ -188,7 +188,7 @@ function UniversityRegistryAdminPage() {
       const sameUrl = fresh.evidence.some(
         (item) =>
           item.university_id === selectedId &&
-          item.source_url.replace(/\\/$/, "") === sourceUrl.trim().replace(/\\/$/, ""),
+          item.source_url.replace(new RegExp("/+$"), "") === sourceUrl.trim().replace(new RegExp("/+$"), ""),
       );
       if (sameUrl) {
         throw new Error("This source is already attached to the selected private university.");
@@ -633,7 +633,7 @@ function UniversityRegistryAdminPage() {
                   {proposedSources.map((item) => {
                     const alreadyAttached = evidence.some(
                       (row) =>
-                        row.source_url.replace(/\\/$/, "") === item.url.replace(/\\/$/, ""),
+                        row.source_url.replace(new RegExp("/+$"), "") === item.url.replace(new RegExp("/+$"), ""),
                     );
                     return (
                       <article key={item.url} className="space-y-2 rounded-lg border border-border bg-card p-3">
