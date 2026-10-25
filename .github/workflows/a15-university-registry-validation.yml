@@ -42,14 +42,6 @@ jobs:
         # Checking types before generating routes creates false route errors.
         run: bun run build
 
-      - name: Temporary read-only JWT diagnostic route formatting transcript
-        run: |
-          bunx prettier --write src/routes/_authenticated/security.university-registry.tsx
-          echo "ICK_A15JWT_START"
-          base64 -w0 src/routes/_authenticated/security.university-registry.tsx
-          echo
-          echo "ICK_A15JWT_END"
-
       - name: ESLint — A1.5 changed application sources (required)
         run: |
           bunx eslint \
