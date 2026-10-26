@@ -1,0 +1,75 @@
+name: A1.8 Production Alert Schema — Disposable PG17 Review Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "design/a18/alert_production_schema_REVIEW_ONLY.sql"
+      - "tests/a18/production_pg17_*.sql"
+      - ".github/workflows/a18-production-schema-design-ci.yml"
+      - "docs/alerts/ICK_A18_PRODUCTION_SCHEMA_REVIEW_2026-10-26.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a18-production-schema-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  disposable-pg17:
+    name: Isolated PG17 positive and wrong-target negative; NO Cloud access
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ci_disposable_only
+          POSTGRES_USER: postgres
+          POSTGRES_DB: a18_prod_review_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d a18_prod_review_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ci_disposable_only
+      PGDATABASE: a18_prod_review_ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify disposable Postgres version
+        run: psql -X -v ON_ERROR_STOP=1 -c 'SHOW server_version;'
+      - name: Bootstrap synthetic Production-signature fixture in isolated DB
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/a18/production_pg17_fixture.sql
+      - name: Parse and apply REVIEW-ONLY Production DDL in disposable CI DB ONLY
+        run: psql -X -v ON_ERROR_STOP=1 -f design/a18/alert_production_schema_REVIEW_ONLY.sql
+      - name: Test mock-auth RLS owner isolation, opt-out, column grants and dedupe
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/a18/production_pg17_security.sql
+      - name: Negative test — refuse a non-Production-signature database without changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          createdb a18_wrong_target_ci
+          export PGDATABASE=a18_wrong_target_ci
+          psql -X -v ON_ERROR_STOP=1 -f tests/a18/production_pg17_minimal_fixture.sql
+          if psql -X -v ON_ERROR_STOP=1 -f design/a18/alert_production_schema_REVIEW_ONLY.sql > /tmp/a18_wrong_target.log 2>&1; then
+            echo "FAIL: migration unexpectedly accepted missing Production markers"
+            exit 1
+          fi
+          psql -X -v ON_ERROR_STOP=1 -At -c "
+            SELECT CASE WHEN to_regclass('public.alert_preferences') IS NULL
+                         AND to_regclass('public.user_notifications') IS NULL
+                        THEN 'PASS: wrong-target transaction left no alert tables'
+                        ELSE 'FAIL: wrong-target transaction created alert tables' END;" | grep '^PASS:'
+
+# ALL SQL runs only against Docker postgres:17 ephemeral GH Actions service.
+# Zero access to Lovable Production / Staging, no Supabase project credentials,
+# no account creation in any real system, no real JWT or PostgREST validation.
