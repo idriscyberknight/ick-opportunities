@@ -81,3 +81,18 @@ This does **not** establish whether C5 was executed manually, partially applied,
 Read-only counts: **14 opportunities, 10 profiles, 0 saved opportunities**. These are dynamic and were not exported. Neither backup nor storage state was queried.
 
 **Current outcome:** Production DB unchanged; the review-only A1.8 SQL is **not cleared for execution** because verified backup/restore evidence, C5 ledger reconciliation, and real authenticated A/B tests are missing.
+
+
+## 8. Founder screenshot: visible Lovable Backups (2026-10-26)
+A Founder-provided screenshot of Lovable **Backups**, in response to the Production-backup verification request, visibly lists **at least five snapshots** with these **UTC** times:
+- **2026-10-26 04:17:07 UTC** (newest visible)
+- 2026-10-25 04:18:34 UTC
+- 2026-10-24 04:18:25 UTC
+- 2026-10-23 23:41:57 UTC
+- 2026-10-23 21:32:39 UTC
+
+Each row shows a `Restore to this backup` action. **No Restore was clicked by this assistant or requested from the Founder.**
+
+**Evidence scope:** The screenshot establishes backup entries were displayed in the Lovable UI. It does **not** itself display a project ID; association with the Production project is supported by the prior user navigation instructions/context but has not been independently verified from a visible project identifier. The screenshot does **not** prove a successful restore, the archive contents' integrity, a backup of non-database Storage objects, or zero data loss. The latest visible snapshot preceded subsequent changes on 2026-10-26; recovery to it could lose all intervening writes.
+
+**Updated gate:** Presence of UI snapshot entries: **OBSERVED**. Exact target identity for these entries: **CONTEXTUAL, not independently proven**. Actual safe restore/rehearsal: **NOT VERIFIED**. Production SQL remains **NOT AUTHORIZED**. Do not press any `Restore` control or upload sensitive database archives to GitHub/ChatGPT.
