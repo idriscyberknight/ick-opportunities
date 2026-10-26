@@ -39,3 +39,31 @@ When quota permits, perform a separate read-only catalog/privilege query to conf
 - **Production SQL and deployment:** NOT performed.
 - **Alerts:** still OFF; no live delivery.
 - **PR #40:** remains Draft, unmerged.
+
+
+## Independent post-commit readback — VERIFIED later on 2026-10-26
+
+A subsequent **SELECT-only** Lovable Cloud query against the **exact Security Staging project ID** succeeded after the quota block. Observed:
+
+| Evidence | Result |
+| --- | --- |
+| `public.alert_preferences` | EXISTS; RLS enabled |
+| `public.user_notifications` | EXISTS; RLS enabled |
+| Alert RLS policies | **6** |
+| Indexes across both alert tables (includes primary/unique) | **5** |
+| User triggers (excludes system FK triggers) | **2** |
+| `alert_preferences.enabled` default | **false** |
+| Existing preference rows | **0** |
+| Existing notification rows | **0** |
+| Anonymous SELECT on either alert table | **DENIED** |
+| Authenticated client INSERT or DELETE on notifications | **DENIED** |
+| Authenticated client SELECT of notification `event_key` | **DENIED** |
+| Authenticated client SELECT/UPDATE of notification `read_at` | **ALLOWED** |
+
+This independently confirms that the intended **staging-only** SQL created the tables and applied the tested grants/RLS scaffolding without seeding rows. It **does not** establish that actual signed-user PostgREST access passes end-to-end tests or that a delivery worker is running.
+
+## Staging UI code candidate — NOT deployed
+
+Within the same unmerged PR #40, a **staging-backend-host-gated** typed adapter and an unlinked `/_authenticated/alerts-staging` route were added in `src/lib/alert-staging-client.ts` and `src/routes/_authenticated/alerts-staging.tsx`. The adapter retrieves signed-in user identity, reads/writes owner preferences on explicit Save, reads narrowly selected notification columns, fetches currently public opportunity titles, and supports read/dismiss actions. It does **not** create or send any notification and refuses DB requests unless the Vite-configured Supabase URL matches the exact Security Staging host.
+
+**Important:** this code currently lives only in the GitHub **Draft PR branch**, not in the separate older Lovable Security Staging project code. A successful preview build is **not a real Staging browser test**. Do not claim the UI is live or connected in the Lovable staging editor until project code is safely synchronized and tested.
