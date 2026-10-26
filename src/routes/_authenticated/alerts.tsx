@@ -42,10 +42,12 @@ function AlertsPilotPage() {
   if (!pilotEnabled) {
     return (
       <div className="mx-auto max-w-3xl px-5 py-14" role="status">
-        <h1 className="font-display text-2xl font-bold">Opportunity alerts are not yet available</h1>
+        <h1 className="font-display text-2xl font-bold">
+          Opportunity alerts are not yet available
+        </h1>
         <p className="mt-4 text-muted-foreground">
-          This limited pilot is disabled until the Production database and security checks
-          are approved. No preferences or notifications were changed.
+          This limited pilot is disabled until the Production database and security checks are
+          approved. No preferences or notifications were changed.
         </p>
       </div>
     );
@@ -145,13 +147,11 @@ function AlertsPilotForAccount({ userId }: { userId: string }) {
         <span className="rounded-full border border-warning/50 bg-warning/10 px-3 py-1 text-xs font-bold text-foreground">
           Production pilot — limited release, opt-in only
         </span>
-        <h1 className="mt-4 font-display text-3xl font-bold">
-          Opportunity alerts — early access
-        </h1>
+        <h1 className="mt-4 font-display text-3xl font-bold">Opportunity alerts — early access</h1>
         <p className="mt-3 max-w-3xl text-muted-foreground">
-          You can save your own in-app preferences if this limited pilot is enabled. Enabling
-          this setting saves consent only; no scheduled notifications, emails, messages or push
-          delivery are enabled.
+          You can save your own in-app preferences if this limited pilot is enabled. Enabling this
+          setting saves consent only; no scheduled notifications, emails, messages or push delivery
+          are enabled.
         </p>
       </header>
 
