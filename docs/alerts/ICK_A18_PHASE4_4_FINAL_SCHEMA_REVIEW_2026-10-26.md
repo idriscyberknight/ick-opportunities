@@ -10,7 +10,7 @@ The initial schema is a useful isolated prototype with default-OFF consent, per-
 
 **Evidence:**
 - Lovable Security Staging: PostgreSQL 17.11; 18 public base tables; expected enum, auth helpers, key related tables and published-only opportunity SELECT policy were observed; both alert tables absent.
-- Lovable Production: PostgreSQL 17.6; 19 public base tables at last confirmed count; same essential dependencies and public opportunity visibility policy; both alert tables absent. Production full table-name inventory remains unverified because follow-up read-only query was rate-limited.
+- Lovable Production: PostgreSQL 17.6; 19 public base tables; same essential dependencies and public opportunity visibility policy; both alert tables absent. **Later Phase 4.5 update:** full public-table name inventory was obtained; the only Production-only base table is `public.university_review_events`.
 - Separate Lovable `.env` Supabase URL and project ID for Staging versus Production; this reduces but does not eliminate risk of a misplaced migration.
 - Security Staging's existing **application code** is behind Production GitHub main; in particular the new Phase 3 alert UI components and schema prototype are absent from that staging project's file tree.
 
@@ -28,7 +28,7 @@ The initial schema is a useful isolated prototype with default-OFF consent, per-
 | **MEDIUM** | The public opportunity SELECT policy uses database `CURRENT_DATE`, while candidate logic accepts a caller's validated local date. | Different timezone/date boundaries can give inconsistent visibility or reminders. | Define source-of-truth policy for deadlines and consistent timezone handling; never override publication/review/verification requirements based on client data. |
 | **MEDIUM** | `user_notifications` rows remain when an opportunity is unpublished (FK cascades on deletion only). | Stale link content or raw metadata can survive a publication rollback. | Require fresh public-visible projection for display and tested redaction/revocation behavior across all data surfaces. |
 | **MEDIUM** | Frontend camelCase to SQL snake_case mapping and generated DB types are not implemented. | A prototype form can mislead about stored preference state. | Create a typed adapter only after approved schema and real account-scoped save/read-back tests. Keep preview read-only. |
-| **LOW / Pending** | Production has one more public base table than Security Staging. | Unreconciled schema drift is an incomplete environment baseline; whether alert-specific is unknown. | Compare real table names and affected dependencies using read-only metadata. Do not assert the identity of the extra table without evidence. |
+| **LOW / Resolved** | Production has one more public base table than Security Staging: `public.university_review_events`. | It is not a direct A1.8 schema prerequisite; full environment parity remains unproven. | Relevant alert dependency metadata/policy fingerprints have been independently matched in Phase 4.5; review migration ledger divergence separately. |
 
 ### Additional mandatory validation
 
@@ -59,7 +59,7 @@ WHERE table_schema = 'public'
 ORDER BY table_name;
 ```
 
-If this query is unavailable, **record UNKNOWN and stop the affected approval gate**. Never infer schema presence from a branch, generated TypeScript declarations, or a previous screenshot.
+**Status update:** this exact read-only query later succeeded; see `ICK_A18_PHASE4_5_BLOCKER_RESOLUTION_2026-10-26.md`. Never infer schema presence from a branch, generated TypeScript declarations, or a screenshot.
 
 ## Evidence quality
 
