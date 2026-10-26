@@ -163,7 +163,7 @@ function AlertsStagingForAccount({ userId }: { userId: string }) {
       <div className="mt-7 grid gap-6 lg:grid-cols-2">
         <div>
           <AlertPreferencesPanel
-            value={draft ?? undefined}
+            {...(draft ? { value: draft } : {})}
             readOnly={!draft || saving || prefsQuery.isError}
             onChange={(next) => {
               setDraft(next);
