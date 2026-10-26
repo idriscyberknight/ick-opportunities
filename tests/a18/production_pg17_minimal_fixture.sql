@@ -50,6 +50,9 @@ INSERT INTO public.opportunities(id,status,verified_status,reviewed_at,reviewed_
  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','active','verified',now(),'11111111-1111-4111-8111-111111111111',now()-interval '5 day',CURRENT_DATE-1),
  ('dddddddd-dddd-4ddd-8ddd-dddddddddddd','active','verified',now(),'11111111-1111-4111-8111-111111111111',now()+interval '1 day',CURRENT_DATE+7);
 
+-- Mock Production saved_opportunities RLS (verified enabled on 2026-10-26).
+ALTER TABLE public.saved_opportunities ENABLE ROW LEVEL SECURITY;
+
 -- Deliberately recreate the Lovable broad *default* new-table grants.
 -- The Production candidate must revoke these grants explicitly.
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
