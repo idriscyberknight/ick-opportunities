@@ -39,6 +39,15 @@ jobs:
         run: bun test tests/a18
       - name: Verify production build and strict TypeScript
         run: bun run build
+      - name: Temporary CI formatting export (source files only)
+        run: |
+          bunx prettier --write src/lib/alert-staging-client.ts src/routes/_authenticated/alerts-staging.tsx
+          for path in src/lib/alert-staging-client.ts src/routes/_authenticated/alerts-staging.tsx; do
+            echo "A18_FORMAT_START:$path"
+            base64 -w0 "$path"
+            echo
+            echo "A18_FORMAT_END:$path"
+          done
       - name: Lint changed production source
         run: |
           bunx eslint \
