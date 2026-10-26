@@ -86,7 +86,7 @@ function scoreOne(o: Opportunity, p: ProfileData): Recommendation {
   }
 
   // Education
-  const eduKeys = p.education_level ? EDUCATION_KEYWORDS[p.education_level] ?? [] : [];
+  const eduKeys = p.education_level ? (EDUCATION_KEYWORDS[p.education_level] ?? []) : [];
   if (eduKeys.some((k) => text.includes(k))) {
     score += W.education;
     reasons.push(`Suits your ${labelFor(EDUCATION_LEVELS, p.education_level).toLowerCase()} level`);
