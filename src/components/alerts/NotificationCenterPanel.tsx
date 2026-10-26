@@ -1,6 +1,16 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Bell, BellOff, CalendarClock, CheckCheck, ExternalLink, Inbox, Loader2, ShieldAlert, X } from "lucide-react";
+import {
+  Bell,
+  BellOff,
+  CalendarClock,
+  CheckCheck,
+  ExternalLink,
+  Inbox,
+  Loader2,
+  ShieldAlert,
+  X,
+} from "lucide-react";
 
 export type InboxNotification = {
   id: string;
@@ -68,14 +78,21 @@ export function NotificationCenterPanel({
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
   return (
-    <section aria-labelledby="a18-notification-center-title" className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+    <section
+      aria-labelledby="a18-notification-center-title"
+      className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id="a18-notification-center-title" className="font-display text-xl font-bold text-foreground">
+          <h2
+            id="a18-notification-center-title"
+            className="font-display text-xl font-bold text-foreground"
+          >
             Notification Center
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            Reminders and newly published opportunities relevant to you. Alerts do not guarantee eligibility.
+            Reminders and newly published opportunities relevant to you. Alerts do not guarantee
+            eligibility.
           </p>
         </div>
         <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-muted-foreground">
@@ -89,7 +106,10 @@ export function NotificationCenterPanel({
           className="mt-6 rounded-xl border border-dashed border-border bg-muted/30 px-6 py-10 text-center"
         >
           {state.status === "loading" ? (
-            <Loader2 aria-hidden="true" className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+            <Loader2
+              aria-hidden="true"
+              className="mx-auto h-8 w-8 animate-spin text-muted-foreground"
+            />
           ) : state.status === "disabled" ? (
             <BellOff aria-hidden="true" className="mx-auto h-8 w-8 text-muted-foreground" />
           ) : state.status === "error" ? (
@@ -114,7 +134,9 @@ export function NotificationCenterPanel({
                 onClick={() => setFilter(key)}
                 aria-pressed={filter === key}
                 className={`min-h-11 rounded-xl px-4 text-sm font-semibold ${focus} ${
-                  filter === key ? "bg-primary text-primary-foreground" : "border border-border text-foreground hover:bg-muted"
+                  filter === key
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border text-foreground hover:bg-muted"
                 }`}
               >
                 {key === "all" ? "All" : `Unread (${unread.length})`}
@@ -122,13 +144,17 @@ export function NotificationCenterPanel({
             ))}
           </div>
           {shown.length === 0 ? (
-            <div role="status" className="mt-6 rounded-xl border border-dashed border-border px-6 py-10 text-center">
+            <div
+              role="status"
+              className="mt-6 rounded-xl border border-dashed border-border px-6 py-10 text-center"
+            >
               <Bell aria-hidden="true" className="mx-auto h-7 w-7 text-muted-foreground" />
               <p className="mt-3 font-semibold text-foreground">
                 {filter === "unread" ? "You're all caught up" : "No notifications yet"}
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                New updates will appear here only after alerts are enabled and the service is launched.
+                New updates will appear here only after alerts are enabled and the service is
+                launched.
               </p>
             </div>
           ) : (
@@ -165,7 +191,8 @@ export function NotificationCenterPanel({
                             params={{ id: item.visibleOpportunity.id }}
                             className={`inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:underline ${focus}`}
                           >
-                            {item.visibleOpportunity.title} <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+                            {item.visibleOpportunity.title}{" "}
+                            <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
                           </Link>
                         </div>
                       ) : (
