@@ -117,8 +117,8 @@ export function rankOpportunities(
   opportunities: Opportunity[],
   profile: ProfileData,
   minScore = 20,
+  today = new Date().toISOString().slice(0, 10),
 ): Recommendation[] {
-  const today = new Date().toISOString().slice(0, 10);
   return opportunities
     .filter((o) => o.status === "active" && (!o.deadline || o.deadline >= today))
     .map((o) => scoreOne(o, profile))
