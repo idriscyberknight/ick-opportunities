@@ -1,0 +1,54 @@
+name: A1.8 Phase 2 — Disposable PostgreSQL RLS Prototype Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "design/a18/**"
+      - "tests/a18/db_isolated_*.sql"
+      - ".github/workflows/a18-isolated-db-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a18-pg-rls-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  isolated-postgres-rls:
+    name: RLS, restrictive GRANTs and cross-user privacy (isolated PG16)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ci_disposable_only
+          POSTGRES_USER: postgres
+          POSTGRES_DB: a18_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d a18_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ci_disposable_only
+      PGDATABASE: a18_ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check isolated PostgreSQL client
+        run: psql --version
+      - name: Create disposable mocked role and identity fixture
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/a18/db_isolated_fixture.sql
+      - name: Exercise SQL prototype (NOT a Production migration)
+        run: psql -X -v ON_ERROR_STOP=1 -f design/a18/alert_schema_prototype.sql
+      - name: Assert cross-user access denial, consent defaults and duplicate prevention
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/a18/db_isolated_security.sql
