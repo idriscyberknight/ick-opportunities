@@ -57,3 +57,27 @@ Passing CI proves **only synthetic PostgreSQL SQL semantics**. It does NOT test 
 **NOT authorized now:** Production schema writes, user/account/test data writes, GitHub PR merge, feature-flag enablement, deployment, automated alert delivery, changing backups or migration ledger.
 
 The review-only SQL is **not ready to execute** until these checks and specific Founder approval are recorded.
+
+## 7. Recovery and migration history investigation — read-only follow-up, 2026-10-26
+### Lovable Cloud backup capability: documented, NOT verified for this project
+Official Lovable docs: https://docs.lovable.dev/features/database-backups
+- Managed Cloud takes one **database** snapshot each day, typically retaining up to roughly **14 daily copies**. It includes schema and data but **not Storage files**.
+- Account holder can inspect backup timestamps from the *existing Production project* in **More → Database → Manage → Backups**.
+- **DO NOT click Restore** during readiness checks. Restoring loses all data created/changed after that snapshot; it may also revert schema and cause code mismatches.
+- Lovable can export a compressed PostgreSQL archive from **More → Database → Manage → Settings → Export project data**. Exports include user accounts and password hashes; treat as highly sensitive, store privately, do not upload to GitHub or this conversation. Export availability and safe independent test-restore are **not yet verified**.
+- The connected Lovable tools available for this audit do **NOT expose a Backups list, snapshot timestamp, archive download, or a safe isolated restore function**. We have **not** inspected or restored a snapshot. The presence of a documented feature is not proof this particular Production DB has a restorable, tested copy.
+- Do not require the Founder to provide credentials, password hashes, personal records or any archive. Only the snapshot *date and UTC time* (or a screenshot with other data hidden) is necessary to establish that a visible backup exists.
+
+### Production migration-ledger reconciliation: identified discrepancy, NOT resolved
+Verified SELECT-only query against **Production** `supabase_migrations.schema_migrations` found **13 records**, latest `version = 20261005021810`, with columns `version, statements, name, created_by, idempotency_key, rollback`.
+By contrast, the official Production repository `main` currently has **14 SQL files** under `supabase/migrations/`, including:
+`20261008100000_c5_tighten_database_privileges.sql`, which is **NOT represented in the database ledger**.
+
+This does **not** establish whether C5 was executed manually, partially applied, applied through a separate mechanism, or never applied. Independent SELECT-only privilege checks **match important C5 intended effects** (e.g., `anon` cannot SELECT profiles/user_roles; `authenticated` cannot INSERT/UPDATE/DELETE user_roles or TRUNCATE opportunities; `postgres` default ACL in public no longer grants clients). However, `supabase_admin`'s public default ACL **still grants clients**, so C5's changes to `postgres` default ACL alone do not prove all future objects are born private. A1.8's proposed new-table SQL explicitly REVOKEs broad privileges on both tables and new functions.
+
+**STOP before any Production schema execution** until the migration author/runner and ledger expectations are reconciled. Do not fabricate an entry for C5 or run C5 merely to make counts match. The current repository is a legacy `supabase/migrations/` project; official modern Lovable documentation now describes `drizzle/migrations/` for new projects. Follow the actual project's confirmed migration engine rather than assuming a newer documented default applies here.
+
+### Verified minimal live-Production data footprint (counts only)
+Read-only counts: **14 opportunities, 10 profiles, 0 saved opportunities**. These are dynamic and were not exported. Neither backup nor storage state was queried.
+
+**Current outcome:** Production DB unchanged; the review-only A1.8 SQL is **not cleared for execution** because verified backup/restore evidence, C5 ledger reconciliation, and real authenticated A/B tests are missing.
