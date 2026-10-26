@@ -24,7 +24,7 @@ The GitHub workflow `.github/workflows/a18-isolated-db-ci.yml` uses a **disposab
 
 ## Before real deployment — required Founder-approved gates
 1. **Review the schema proposal** against current Lovable Cloud schema, auth `users`, privileges, extensions, grant inheritance, available quota and migration conflicts. Confirm naming conventions and timestamp policy. Decide whether preference owner can delete rows; deleting a preference must be interpreted as opt-out.
-2. Add SQL constraints to prevent NULL array elements, normalize timezone based on IANA library, and test all preference JSON / malicious array inputs. Avoid relying on client-side input validation alone.
+2. The isolated prototype already rejects NULL elements and duplicate values in preference arrays; still normalize and validate timezone using an IANA library in the future trusted backend and test real API preference payloads. Avoid relying on client-side input validation alone.
 3. **Rehearse actual migration** on a truly isolated Lovable Cloud-compatible staging database. The CI test fixture is incomplete and not an alternative to a real staging clone.
 4. With two genuine SIGNED JWT accounts (A and B) and anon role, run cross-tenant read/write denial, role-change, row tampering and immutable event-key tests through real Supabase client and PostgREST. Check pre-existing default grants and any SECURITY DEFINER RPCs. No service secret in frontend.
 5. Finalize audit logs, idempotent trusted worker and consent re-check at persistence time, rate limits, retention, kill switch and notification revocation policy. Test concurrency `ON CONFLICT DO NOTHING` and subscriber opt-out.
