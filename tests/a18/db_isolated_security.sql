@@ -187,6 +187,27 @@ BEGIN
       WHERE user_id='11111111-1111-4111-8111-111111111111';
   EXCEPTION WHEN check_violation THEN denied := true; END;
   IF NOT denied THEN RAISE EXCEPTION 'Duplicate categories accepted'; END IF;
-END $$;
+
+  denied := false;
+  BEGIN
+    UPDATE public.alert_preferences SET minimum_match_score=101
+      WHERE user_id='11111111-1111-4111-8111-111111111111';
+  EXCEPTION WHEN check_violation THEN denied := true; END;
+  IF NOT denied THEN RAISE EXCEPTION 'Score above 100 accepted'; END IF;
+
+  denied := false;
+  BEGIN
+    UPDATE public.alert_preferences SET categories=ARRAY[NULL]::public.opportunity_category[]
+      WHERE user_id='11111111-1111-4111-8111-111111111111';
+  EXCEPTION WHEN check_violation THEN denied := true; END;
+  IF NOT denied THEN RAISE EXCEPTION 'NULL opportunity category accepted'; END IF;
+
+  denied := false;
+  BEGIN
+    UPDATE public.alert_preferences SET deadline_lead_days=ARRAY[NULL]::smallint[]
+      WHERE user_id='11111111-1111-4111-8111-111111111111';
+  EXCEPTION WHEN check_violation THEN denied := true; END;
+  IF NOT denied THEN RAISE EXCEPTION 'NULL reminder milestone accepted'; END IF;
+END $;
 
 \echo 'PASS: isolated PG16 grants, RLS ownership, default off, spoof denial and dedupe'
