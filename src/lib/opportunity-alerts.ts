@@ -96,9 +96,12 @@ export function buildInAppAlertCandidates(input: {
     preferences.newMatchesEnabled &&
     preferences.categories.length > 0 &&
     profile &&
-    isProfileReadyForMatching(profile)
+    isProfileReadyForMatching(profile) &&
+    Number.isInteger(preferences.minimumMatchScore) &&
+    preferences.minimumMatchScore >= 0 &&
+    preferences.minimumMatchScore <= 100
   ) {
-    const minimum = Math.max(0, Math.min(100, Math.round(preferences.minimumMatchScore)));
+    const minimum = preferences.minimumMatchScore;
     const filtered = allowed.filter((item) => preferences.categories.includes(item.category));
     // Reuse the EXISTING recommendation model and explicitly pass today's date.
     for (const ranked of rankOpportunities(filtered, profile, minimum, todayLocalDate)) {
