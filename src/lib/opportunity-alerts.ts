@@ -143,7 +143,10 @@ export function buildInAppAlertCandidates(input: {
         eventKey,
         score: null,
         daysUntilDeadline: remaining,
-        reason: remaining === 0 ? "Saved opportunity closes today" : `Saved opportunity closes in ${remaining} day(s)`,
+        reason:
+          remaining === 0
+            ? "Saved opportunity closes today"
+            : `Saved opportunity closes in ${remaining} day(s)`,
       });
     }
   }
