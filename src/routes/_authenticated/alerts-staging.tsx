@@ -44,15 +44,19 @@ function AlertsStagingPage() {
       <div className="mx-auto max-w-3xl px-5 py-14" role="status">
         <h1 className="font-display text-2xl font-bold">Alerts test is not available here</h1>
         <p className="mt-4 text-muted-foreground">
-          This restricted preview works only on the separate Security Staging database.
-          No preferences or notifications were changed.
+          This restricted preview works only on the separate Security Staging database. No
+          preferences or notifications were changed.
         </p>
       </div>
     );
   }
 
   if (loading || !user) {
-    return <p className="mx-auto max-w-3xl px-5 py-14" role="status">Checking your session…</p>;
+    return (
+      <p className="mx-auto max-w-3xl px-5 py-14" role="status">
+        Checking your session…
+      </p>
+    );
   }
 
   // Tear down all local state when the signed-in account changes.
@@ -141,21 +145,29 @@ function AlertsStagingForAccount({ userId }: { userId: string }) {
         <span className="rounded-full border border-warning/50 bg-warning/10 px-3 py-1 text-xs font-bold text-foreground">
           Security Staging only — not a public release
         </span>
-        <h1 className="mt-4 font-display text-3xl font-bold">Opportunity alerts — staging verification</h1>
+        <h1 className="mt-4 font-display text-3xl font-bold">
+          Opportunity alerts — staging verification
+        </h1>
         <p className="mt-3 max-w-3xl text-muted-foreground">
-          You can test your own in-app preferences against the separate Staging database.
-          Enabling this setting saves consent only; no scheduled notifications, emails,
-          messages or push delivery are enabled.
+          You can test your own in-app preferences against the separate Staging database. Enabling
+          this setting saves consent only; no scheduled notifications, emails, messages or push
+          delivery are enabled.
         </p>
       </header>
 
       {problem && (
-        <p role="alert" className="mt-5 rounded-xl border border-destructive p-4 text-sm text-destructive">
+        <p
+          role="alert"
+          className="mt-5 rounded-xl border border-destructive p-4 text-sm text-destructive"
+        >
           {problem}
         </p>
       )}
       {message && (
-        <p role="status" className="mt-5 rounded-xl border border-border p-4 text-sm text-foreground">
+        <p
+          role="status"
+          className="mt-5 rounded-xl border border-border p-4 text-sm text-foreground"
+        >
           {message}
         </p>
       )}
