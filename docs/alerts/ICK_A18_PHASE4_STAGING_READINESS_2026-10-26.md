@@ -19,8 +19,8 @@
 
 ### Important limits / unresolved differences
 
-1. The **identity of the extra Production public table** is not yet verified: Production returned count 19 and Staging listed 18. Do not assume identical schemas solely from common table names.
-2. A complete per-column, constraint, grant, function, index and migration-ledger diff was **not** completed. Production follow-up read was rate-limited by Lovable's free-plan MCP database action quota.
+1. **RESOLVED by later Phase 4.5 read-only inventory:** the extra Production-only table is `public.university_review_events`; it is absent in Staging. The other 18 observed public base-table names match.
+2. Full per-column/constraint/grant/function/index/deployment parity remains **not established**. Later targeted metadata hash checks match for `opportunities`, `profiles`, `saved_opportunities` columns and RLS policies. **Production has `supabase_migrations.schema_migrations`; Staging does not**. See Phase 4.5.
 3. `VITE_` config matching within each project and different URLs strongly support separation, but are **not** proof of every runtime/preview/deployment mapping or backup policy.
 4. No actual signed Supabase user-A/user-B/anonymous PostgREST requests were executed for the proposed alerts schema; the earlier PostgreSQL 16 CI used **mocked session claims**.
 5. Neither database has the two new tables yet, so no live privilege, RLS, or performance findings about those tables can be asserted.
@@ -58,7 +58,7 @@ The future adapter must handle secure explicit Save, server confirmation/read-ba
 
 ## 3. Staging-only execution plan — NOT APPROVED / NOT RUN
 
-1. **Target preflight:** obtain exact authoritative staging API hostname/project ID, inspect actual database identity and migration runner; explicitly reject any match with Production. Identify the unaccounted-for Production table and evaluate relevant schema drift.
+1. **Target preflight:** obtain exact authoritative staging API hostname/project ID, inspect actual database identity and migration runner; explicitly reject any match with Production. Account for the Production-only `university_review_events` table and the divergent migration-ledger presence; evaluate only relevant alert dependencies.
 2. **Backup/restore:** establish documented staging backup or disposable replacement and *demonstrated* restore path; never assume a Git branch/Vercel preview clones data.
 3. **Migration review:** revise the prototype into a separately reviewed, **staging-only**, precondition-checked transactional migration through the verified Lovable deployment/migration mechanism. Confirm expected enum/table/FK/unique/index/column structure, effective default grants and version compatibility. No copy into `supabase/migrations` until runner behavior is proven.
 4. **Security assertions:** after a distinct Founder approval to run staging DDL, inspect RLS enabled status, `pg_policies`, `has_table_privilege`, `has_column_privilege`, `pg_default_acl`, index/FK ownership and no exposure to `anon`.
@@ -80,4 +80,4 @@ The future adapter must handle secure explicit Save, server confirmation/read-ba
 - Supabase: [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security).
 - Related repository artifacts: `design/a18/README.md`, `design/a18/alert_schema_prototype.sql`, `tests/a18/db_isolated_security.sql`, `docs/alerts/ICK_A18_PHASE3_UI_PREVIEW_2026-10-26.md`.
 
-**Current decision:** **HOLD** staging DDL until (a) table drift and migration target resolved, (b) revised least-privilege design reviewed, (c) backup/restore path verified, and (d) explicit Founder authorization for staging execution is recorded.
+**Updated decision after Phase 4.5:** **HOLD** staging DDL until (a) migration target/ledger mechanism resolved, (b) revised least-privilege design reviewed, (c) actual staging backup/restore path verified, and (d) explicit Founder authorization for staging execution is recorded. See `ICK_A18_PHASE4_5_BLOCKER_RESOLUTION_2026-10-26.md`.
