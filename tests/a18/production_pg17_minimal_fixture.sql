@@ -3,8 +3,18 @@
 -- Session claim simulation is NOT cryptographic JWT or PostgREST testing.
 \set ON_ERROR_STOP 1
 
-CREATE ROLE anon NOLOGIN;
-CREATE ROLE authenticated NOLOGIN;
+-- PostgreSQL roles belong to the cluster, not an individual database.
+-- Tests bootstrap both positive and negative databases in the same CI cluster.
+DO $a18_roles$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
+    CREATE ROLE anon NOLOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
+    CREATE ROLE authenticated NOLOGIN;
+  END IF;
+END
+$a18_roles$;
 CREATE SCHEMA auth;
 CREATE TABLE auth.users(id uuid PRIMARY KEY);
 CREATE FUNCTION auth.uid() RETURNS uuid
