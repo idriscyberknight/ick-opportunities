@@ -18,10 +18,13 @@ import { Route as InternshipsRouteImport } from './routes/internships'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ScholarshipNavigatorRouteImport } from './routes/scholarship-navigator'
 import { Route as ScholarshipsRouteImport } from './routes/scholarships'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
+import { Route as AuthenticatedAlertsPreviewRouteImport } from './routes/_authenticated/alerts-preview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -30,10 +33,14 @@ import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTrackerRouteImport } from './routes/_authenticated/tracker'
 import { Route as OpportunitiesIndexRouteImport } from './routes/opportunities.index'
 import { Route as OpportunitiesIdRouteImport } from './routes/opportunities.$id'
+import { Route as ScholarshipNavigatorGlobalSearchRouteImport } from './routes/scholarship-navigator_.global-search'
+import { Route as ScholarshipNavigatorUniversitiesRouteImport } from './routes/scholarship-navigator_.universities'
 import { Route as AuthenticatedAdminDiscoveryRouteImport } from './routes/_authenticated/admin.discovery'
 import { Route as AuthenticatedAdminOpportunitiesRouteImport } from './routes/_authenticated/admin.opportunities'
 import { Route as AuthenticatedAdminReviewRouteImport } from './routes/_authenticated/admin.review'
 import { Route as AuthenticatedAdminSourcesRouteImport } from './routes/_authenticated/admin.sources'
+import { Route as AuthenticatedAdminUniversitiesRouteImport } from './routes/_authenticated/admin.universities'
+import { Route as ScholarshipNavigatorUniversitiesSlugRouteImport } from './routes/scholarship-navigator_.universities_.$slug'
 import { Route as ApiPublicHooksDiscoveryRouteImport } from './routes/api/public/hooks/discovery'
 
 const IndexRoute = IndexRouteImport.update({
@@ -80,6 +87,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScholarshipNavigatorRoute = ScholarshipNavigatorRouteImport.update({
+  id: '/scholarship-navigator',
+  path: '/scholarship-navigator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ScholarshipsRoute = ScholarshipsRouteImport.update({
   id: '/scholarships',
   path: '/scholarships',
@@ -100,6 +112,17 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAlertsRoute = AuthenticatedAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAlertsPreviewRoute =
+  AuthenticatedAlertsPreviewRouteImport.update({
+    id: '/alerts-preview',
+    path: '/alerts-preview',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -141,6 +164,18 @@ const OpportunitiesIdRoute = OpportunitiesIdRouteImport.update({
   path: '/opportunities/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScholarshipNavigatorGlobalSearchRoute =
+  ScholarshipNavigatorGlobalSearchRouteImport.update({
+    id: '/scholarship-navigator_/global-search',
+    path: '/scholarship-navigator/global-search',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ScholarshipNavigatorUniversitiesRoute =
+  ScholarshipNavigatorUniversitiesRouteImport.update({
+    id: '/scholarship-navigator_/universities',
+    path: '/scholarship-navigator/universities',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAdminDiscoveryRoute =
   AuthenticatedAdminDiscoveryRouteImport.update({
     id: '/admin/discovery',
@@ -165,6 +200,18 @@ const AuthenticatedAdminSourcesRoute =
     path: '/admin/sources',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminUniversitiesRoute =
+  AuthenticatedAdminUniversitiesRouteImport.update({
+    id: '/admin/universities',
+    path: '/admin/universities',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ScholarshipNavigatorUniversitiesSlugRoute =
+  ScholarshipNavigatorUniversitiesSlugRouteImport.update({
+    id: '/scholarship-navigator_/universities_/$slug',
+    path: '/scholarship-navigator/universities/$slug',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDiscoveryRoute = ApiPublicHooksDiscoveryRouteImport.update({
   id: '/api/public/hooks/discovery',
   path: '/api/public/hooks/discovery',
@@ -180,10 +227,13 @@ export interface FileRoutesByFullPath {
   '/jobs': typeof JobsRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/scholarship-navigator': typeof ScholarshipNavigatorRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/alerts': typeof AuthenticatedAlertsRoute
+  '/alerts-preview': typeof AuthenticatedAlertsPreviewRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -191,11 +241,15 @@ export interface FileRoutesByFullPath {
   '/saved': typeof AuthenticatedSavedRoute
   '/tracker': typeof AuthenticatedTrackerRoute
   '/opportunities/$id': typeof OpportunitiesIdRoute
+  '/scholarship-navigator/global-search': typeof ScholarshipNavigatorGlobalSearchRoute
+  '/scholarship-navigator/universities': typeof ScholarshipNavigatorUniversitiesRoute
   '/opportunities/': typeof OpportunitiesIndexRoute
   '/admin/discovery': typeof AuthenticatedAdminDiscoveryRoute
   '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/admin/sources': typeof AuthenticatedAdminSourcesRoute
+  '/admin/universities': typeof AuthenticatedAdminUniversitiesRoute
+  '/scholarship-navigator/universities/$slug': typeof ScholarshipNavigatorUniversitiesSlugRoute
   '/api/public/hooks/discovery': typeof ApiPublicHooksDiscoveryRoute
 }
 export interface FileRoutesByTo {
@@ -207,10 +261,13 @@ export interface FileRoutesByTo {
   '/jobs': typeof JobsRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/scholarship-navigator': typeof ScholarshipNavigatorRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/alerts': typeof AuthenticatedAlertsRoute
+  '/alerts-preview': typeof AuthenticatedAlertsPreviewRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -218,11 +275,15 @@ export interface FileRoutesByTo {
   '/saved': typeof AuthenticatedSavedRoute
   '/tracker': typeof AuthenticatedTrackerRoute
   '/opportunities/$id': typeof OpportunitiesIdRoute
+  '/scholarship-navigator/global-search': typeof ScholarshipNavigatorGlobalSearchRoute
+  '/scholarship-navigator/universities': typeof ScholarshipNavigatorUniversitiesRoute
   '/opportunities': typeof OpportunitiesIndexRoute
   '/admin/discovery': typeof AuthenticatedAdminDiscoveryRoute
   '/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
   '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/admin/sources': typeof AuthenticatedAdminSourcesRoute
+  '/admin/universities': typeof AuthenticatedAdminUniversitiesRoute
+  '/scholarship-navigator/universities/$slug': typeof ScholarshipNavigatorUniversitiesSlugRoute
   '/api/public/hooks/discovery': typeof ApiPublicHooksDiscoveryRoute
 }
 export interface FileRoutesById {
@@ -236,10 +297,13 @@ export interface FileRoutesById {
   '/jobs': typeof JobsRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/scholarship-navigator': typeof ScholarshipNavigatorRoute
   '/scholarships': typeof ScholarshipsRoute
   '/signin': typeof SigninRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
+  '/_authenticated/alerts-preview': typeof AuthenticatedAlertsPreviewRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -247,11 +311,15 @@ export interface FileRoutesById {
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
   '/_authenticated/tracker': typeof AuthenticatedTrackerRoute
   '/opportunities/$id': typeof OpportunitiesIdRoute
+  '/scholarship-navigator_/global-search': typeof ScholarshipNavigatorGlobalSearchRoute
+  '/scholarship-navigator_/universities': typeof ScholarshipNavigatorUniversitiesRoute
   '/opportunities/': typeof OpportunitiesIndexRoute
   '/_authenticated/admin/discovery': typeof AuthenticatedAdminDiscoveryRoute
   '/_authenticated/admin/opportunities': typeof AuthenticatedAdminOpportunitiesRoute
   '/_authenticated/admin/review': typeof AuthenticatedAdminReviewRoute
   '/_authenticated/admin/sources': typeof AuthenticatedAdminSourcesRoute
+  '/_authenticated/admin/universities': typeof AuthenticatedAdminUniversitiesRoute
+  '/scholarship-navigator_/universities_/$slug': typeof ScholarshipNavigatorUniversitiesSlugRoute
   '/api/public/hooks/discovery': typeof ApiPublicHooksDiscoveryRoute
 }
 export interface FileRouteTypes {
@@ -265,10 +333,13 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/privacy'
     | '/reset-password'
+    | '/scholarship-navigator'
     | '/scholarships'
     | '/signin'
     | '/sitemap.xml'
     | '/terms'
+    | '/alerts'
+    | '/alerts-preview'
     | '/dashboard'
     | '/onboarding'
     | '/profile'
@@ -276,11 +347,15 @@ export interface FileRouteTypes {
     | '/saved'
     | '/tracker'
     | '/opportunities/$id'
+    | '/scholarship-navigator/global-search'
+    | '/scholarship-navigator/universities'
     | '/opportunities/'
     | '/admin/discovery'
     | '/admin/opportunities'
     | '/admin/review'
     | '/admin/sources'
+    | '/admin/universities'
+    | '/scholarship-navigator/universities/$slug'
     | '/api/public/hooks/discovery'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -292,10 +367,13 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/privacy'
     | '/reset-password'
+    | '/scholarship-navigator'
     | '/scholarships'
     | '/signin'
     | '/sitemap.xml'
     | '/terms'
+    | '/alerts'
+    | '/alerts-preview'
     | '/dashboard'
     | '/onboarding'
     | '/profile'
@@ -303,11 +381,15 @@ export interface FileRouteTypes {
     | '/saved'
     | '/tracker'
     | '/opportunities/$id'
+    | '/scholarship-navigator/global-search'
+    | '/scholarship-navigator/universities'
     | '/opportunities'
     | '/admin/discovery'
     | '/admin/opportunities'
     | '/admin/review'
     | '/admin/sources'
+    | '/admin/universities'
+    | '/scholarship-navigator/universities/$slug'
     | '/api/public/hooks/discovery'
   id:
     | '__root__'
@@ -320,10 +402,13 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/privacy'
     | '/reset-password'
+    | '/scholarship-navigator'
     | '/scholarships'
     | '/signin'
     | '/sitemap.xml'
     | '/terms'
+    | '/_authenticated/alerts'
+    | '/_authenticated/alerts-preview'
     | '/_authenticated/dashboard'
     | '/_authenticated/onboarding'
     | '/_authenticated/profile'
@@ -331,11 +416,15 @@ export interface FileRouteTypes {
     | '/_authenticated/saved'
     | '/_authenticated/tracker'
     | '/opportunities/$id'
+    | '/scholarship-navigator_/global-search'
+    | '/scholarship-navigator_/universities'
     | '/opportunities/'
     | '/_authenticated/admin/discovery'
     | '/_authenticated/admin/opportunities'
     | '/_authenticated/admin/review'
     | '/_authenticated/admin/sources'
+    | '/_authenticated/admin/universities'
+    | '/scholarship-navigator_/universities_/$slug'
     | '/api/public/hooks/discovery'
   fileRoutesById: FileRoutesById
 }
@@ -349,12 +438,16 @@ export interface RootRouteChildren {
   JobsRoute: typeof JobsRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ScholarshipNavigatorRoute: typeof ScholarshipNavigatorRoute
   ScholarshipsRoute: typeof ScholarshipsRoute
   SigninRoute: typeof SigninRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   OpportunitiesIdRoute: typeof OpportunitiesIdRoute
+  ScholarshipNavigatorGlobalSearchRoute: typeof ScholarshipNavigatorGlobalSearchRoute
+  ScholarshipNavigatorUniversitiesRoute: typeof ScholarshipNavigatorUniversitiesRoute
   OpportunitiesIndexRoute: typeof OpportunitiesIndexRoute
+  ScholarshipNavigatorUniversitiesSlugRoute: typeof ScholarshipNavigatorUniversitiesSlugRoute
   ApiPublicHooksDiscoveryRoute: typeof ApiPublicHooksDiscoveryRoute
 }
 
@@ -423,6 +516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/scholarship-navigator': {
+      id: '/scholarship-navigator'
+      path: '/scholarship-navigator'
+      fullPath: '/scholarship-navigator'
+      preLoaderRoute: typeof ScholarshipNavigatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/scholarships': {
       id: '/scholarships'
       path: '/scholarships'
@@ -450,6 +550,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/alerts': {
+      id: '/_authenticated/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AuthenticatedAlertsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/alerts-preview': {
+      id: '/_authenticated/alerts-preview'
+      path: '/alerts-preview'
+      fullPath: '/alerts-preview'
+      preLoaderRoute: typeof AuthenticatedAlertsPreviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
@@ -507,6 +621,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpportunitiesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/scholarship-navigator_/global-search': {
+      id: '/scholarship-navigator_/global-search'
+      path: '/scholarship-navigator/global-search'
+      fullPath: '/scholarship-navigator/global-search'
+      preLoaderRoute: typeof ScholarshipNavigatorGlobalSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scholarship-navigator_/universities': {
+      id: '/scholarship-navigator_/universities'
+      path: '/scholarship-navigator/universities'
+      fullPath: '/scholarship-navigator/universities'
+      preLoaderRoute: typeof ScholarshipNavigatorUniversitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/discovery': {
       id: '/_authenticated/admin/discovery'
       path: '/admin/discovery'
@@ -535,6 +663,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSourcesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/universities': {
+      id: '/_authenticated/admin/universities'
+      path: '/admin/universities'
+      fullPath: '/admin/universities'
+      preLoaderRoute: typeof AuthenticatedAdminUniversitiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/scholarship-navigator_/universities_/$slug': {
+      id: '/scholarship-navigator_/universities_/$slug'
+      path: '/scholarship-navigator/universities/$slug'
+      fullPath: '/scholarship-navigator/universities/$slug'
+      preLoaderRoute: typeof ScholarshipNavigatorUniversitiesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/discovery': {
       id: '/api/public/hooks/discovery'
       path: '/api/public/hooks/discovery'
@@ -546,6 +688,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
+  AuthenticatedAlertsPreviewRoute: typeof AuthenticatedAlertsPreviewRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -556,9 +700,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminOpportunitiesRoute: typeof AuthenticatedAdminOpportunitiesRoute
   AuthenticatedAdminReviewRoute: typeof AuthenticatedAdminReviewRoute
   AuthenticatedAdminSourcesRoute: typeof AuthenticatedAdminSourcesRoute
+  AuthenticatedAdminUniversitiesRoute: typeof AuthenticatedAdminUniversitiesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
+  AuthenticatedAlertsPreviewRoute: AuthenticatedAlertsPreviewRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
@@ -569,6 +716,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminOpportunitiesRoute: AuthenticatedAdminOpportunitiesRoute,
   AuthenticatedAdminReviewRoute: AuthenticatedAdminReviewRoute,
   AuthenticatedAdminSourcesRoute: AuthenticatedAdminSourcesRoute,
+  AuthenticatedAdminUniversitiesRoute: AuthenticatedAdminUniversitiesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -584,12 +732,17 @@ const rootRouteChildren: RootRouteChildren = {
   JobsRoute: JobsRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ScholarshipNavigatorRoute: ScholarshipNavigatorRoute,
   ScholarshipsRoute: ScholarshipsRoute,
   SigninRoute: SigninRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   OpportunitiesIdRoute: OpportunitiesIdRoute,
+  ScholarshipNavigatorGlobalSearchRoute: ScholarshipNavigatorGlobalSearchRoute,
+  ScholarshipNavigatorUniversitiesRoute: ScholarshipNavigatorUniversitiesRoute,
   OpportunitiesIndexRoute: OpportunitiesIndexRoute,
+  ScholarshipNavigatorUniversitiesSlugRoute:
+    ScholarshipNavigatorUniversitiesSlugRoute,
   ApiPublicHooksDiscoveryRoute: ApiPublicHooksDiscoveryRoute,
 }
 export const routeTree = rootRouteImport
