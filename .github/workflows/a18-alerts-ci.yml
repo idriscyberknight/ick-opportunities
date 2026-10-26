@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - "src/lib/opportunity-alerts.ts"
+      - "src/lib/alert-production-client.ts"
+      - "src/routes/_authenticated/alerts.tsx"
+      - "src/routeTree.gen.ts"
+      - "tsconfig.a18-production.json"
       - "src/lib/matching.ts"
       - "src/components/alerts/**"
       - "src/routes/_authenticated/alerts-preview.tsx"
@@ -37,11 +41,20 @@ jobs:
         run: bun test tests/a18
       - name: Verify production build and strict TypeScript
         run: bun run build
+      - name: Verify newly registered /alerts route
+        run: |
+          grep -q "AuthenticatedAlertsRouteImport" src/routeTree.gen.ts
+          grep -q "'/alerts'" src/routeTree.gen.ts
+          git diff --exit-code -- src/routeTree.gen.ts
+      - name: TypeScript check of all application source
+        run: bunx tsc --noEmit --project tsconfig.a18-production.json
       - name: Lint changed production source
         run: |
           bunx eslint \
             src/lib/opportunity-alerts.ts \
+            src/lib/alert-production-client.ts \
             src/lib/matching.ts \
             src/components/alerts/AlertPreferencesPanel.tsx \
             src/components/alerts/NotificationCenterPanel.tsx \
-            src/routes/_authenticated/alerts-preview.tsx
+            src/routes/_authenticated/alerts-preview.tsx \
+            src/routes/_authenticated/alerts.tsx
