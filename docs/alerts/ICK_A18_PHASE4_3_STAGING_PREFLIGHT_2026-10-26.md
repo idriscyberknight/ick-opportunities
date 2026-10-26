@@ -22,7 +22,7 @@ The main GitHub repository and Lovable **Security Staging** repository are not a
 | `public.user_notifications` | Absent | Absent |
 | Broad creator default grants | Observed | Observed |
 
-The specific Production-only table is still **unknown**: a new read-only Production inventory request was rejected due to Lovable free-plan action limits and was **not executed**. Neither role-by-role real JWT authorization testing nor backup-restoration testing has occurred.
+**Updated by later Phase 4.5 metadata query:** the sole Production-only table is `public.university_review_events`. Targeted column/policy metadata fingerprints match for `opportunities`, `profiles`, and `saved_opportunities`. The migrations ledger relation is present in Production but absent in Security Staging. Genuine signed-JWT authorization and restore tests remain **not run**.
 
 ## A. Independent, READ-ONLY environment preflight
 
@@ -83,7 +83,7 @@ Record effective `anon`/`authenticated` privileges and creator default ACLs in a
 ### A4. Runner and restore gate (DOCUMENTATION CHECK — no SQL mutation)
 
 - Identify which *actual Lovable Cloud* project receives deployments and which migration runner (if any) applies SQL. A separate personal Supabase workspace/project is **not** interchangeable.
-- Inspect **read-only** migration ledger metadata and compare against repository-managed migrations, avoiding fabricated adoption entries for earlier direct university-registry DDL.
+- **Observed in Phase 4.5:** the `supabase_migrations.schema_migrations` relation exists in Production, but not in Security Staging. Identify the actual supported Lovable staging change runner, avoid fabricated ledger entries, and compare to repository-managed migrations if applicable.
 - Verify there is a *working staging restore/reprovision plan* suitable for DDL testing. **Not yet demonstrated.**
 - Do not copy a design SQL document into auto-applied `supabase/migrations`; do not change existing university tables or production tables.
 
