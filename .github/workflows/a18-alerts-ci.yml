@@ -6,6 +6,8 @@ on:
     paths:
       - "src/lib/opportunity-alerts.ts"
       - "src/lib/matching.ts"
+      - "src/components/alerts/**"
+      - "src/routes/_authenticated/alerts-preview.tsx"
       - "tests/a18/**"
       - "docs/alerts/**"
       - ".github/workflows/a18-alerts-ci.yml"
@@ -39,4 +41,7 @@ jobs:
         run: |
           bunx eslint \
             src/lib/opportunity-alerts.ts \
-            src/lib/matching.ts
+            src/lib/matching.ts \
+            src/components/alerts/AlertPreferencesPanel.tsx \
+            src/components/alerts/NotificationCenterPanel.tsx \
+            src/routes/_authenticated/alerts-preview.tsx
