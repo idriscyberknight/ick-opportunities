@@ -171,7 +171,7 @@ VALUES ('22222222-2222-4222-8222-222222222222',
         'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','new_match','match:A');
 
 -- Bad days and category duplicates blocked by DB constraints.
-DO $$
+DO $a18check$
 DECLARE denied boolean := false;
 BEGIN
   BEGIN
@@ -208,6 +208,6 @@ BEGIN
       WHERE user_id='11111111-1111-4111-8111-111111111111';
   EXCEPTION WHEN check_violation THEN denied := true; END;
   IF NOT denied THEN RAISE EXCEPTION 'NULL reminder milestone accepted'; END IF;
-END $;
+END $a18check$;
 
 \echo 'PASS: isolated PG16 grants, RLS ownership, default off, spoof denial and dedupe'
