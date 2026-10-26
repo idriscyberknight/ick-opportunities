@@ -45,23 +45,32 @@ export function AlertPreferencesPanel({
           <SlidersHorizontal className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 id="alert-settings-heading" className="font-display text-xl font-bold text-foreground">
+          <h2
+            id="alert-settings-heading"
+            className="font-display text-xl font-bold text-foreground"
+          >
             Your alert preferences
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            Choose the opportunity alerts you want to receive. Alerts are off unless you
-            explicitly turn them on after this feature is launched.
+            Choose the opportunity alerts you want to receive. Alerts are off unless you explicitly
+            turn them on after this feature is launched.
           </p>
         </div>
       </div>
 
       {disabled ? (
-        <p role="status" className="mt-5 flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm leading-relaxed text-foreground">
+        <p
+          role="status"
+          className="mt-5 flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm leading-relaxed text-foreground"
+        >
           <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           UI preview only — settings are disabled and cannot be saved. No alerts are being sent.
         </p>
       ) : (
-        <p className="mt-5 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status">
+        <p
+          className="mt-5 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground"
+          role="status"
+        >
           Editing a setting does not save it. A secure Save action with confirmed server response
           must be provided before this feature is released.
         </p>
@@ -97,7 +106,9 @@ export function AlertPreferencesPanel({
                 onChange={(event) => assign({ newMatchesEnabled: event.currentTarget.checked })}
                 className={checkbox}
               />
-              <span className="text-sm text-foreground">New opportunities matching your profile</span>
+              <span className="text-sm text-foreground">
+                New opportunities matching your profile
+              </span>
             </label>
             <label className={row}>
               <input
@@ -157,7 +168,10 @@ export function AlertPreferencesPanel({
             className="mt-4 w-full accent-primary"
             aria-describedby="a18-score-explainer"
           />
-          <p id="a18-score-explainer" className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          <p
+            id="a18-score-explainer"
+            className="mt-2 text-xs leading-relaxed text-muted-foreground"
+          >
             This is matching relevance, not a guarantee of eligibility or acceptance.
           </p>
         </div>
