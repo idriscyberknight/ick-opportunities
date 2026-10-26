@@ -86,7 +86,7 @@ function scoreOne(o: Opportunity, p: ProfileData): Recommendation {
   }
 
   // Education
-  const eduKeys = p.education_level ? EDUCATION_KEYWORDS[p.education_level] ?? [] : [];
+  const eduKeys = p.education_level ? (EDUCATION_KEYWORDS[p.education_level] ?? []) : [];
   if (eduKeys.some((k) => text.includes(k))) {
     score += W.education;
     reasons.push(`Suits your ${labelFor(EDUCATION_LEVELS, p.education_level).toLowerCase()} level`);
@@ -117,8 +117,8 @@ export function rankOpportunities(
   opportunities: Opportunity[],
   profile: ProfileData,
   minScore = 20,
+  today = new Date().toISOString().slice(0, 10),
 ): Recommendation[] {
-  const today = new Date().toISOString().slice(0, 10);
   return opportunities
     .filter((o) => o.status === "active" && (!o.deadline || o.deadline >= today))
     .map((o) => scoreOne(o, profile))
