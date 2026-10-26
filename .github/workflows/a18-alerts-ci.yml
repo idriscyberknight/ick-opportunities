@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "src/lib/opportunity-alerts.ts"
+      - "src/lib/alert-staging-client.ts"
+      - "src/routes/_authenticated/alerts-staging.tsx"
       - "src/lib/matching.ts"
       - "src/components/alerts/**"
       - "src/routes/_authenticated/alerts-preview.tsx"
@@ -41,6 +43,8 @@ jobs:
         run: |
           bunx eslint \
             src/lib/opportunity-alerts.ts \
+            src/lib/alert-staging-client.ts \
+            src/routes/_authenticated/alerts-staging.tsx \
             src/lib/matching.ts \
             src/components/alerts/AlertPreferencesPanel.tsx \
             src/components/alerts/NotificationCenterPanel.tsx \
