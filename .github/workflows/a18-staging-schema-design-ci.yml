@@ -1,0 +1,58 @@
+name: A1.8 Candidate Staging SQL — Disposable PostgreSQL 17 ONLY
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "design/a18/alert_staging_schema_REVIEW_ONLY.sql"
+      - "tests/a18/staging_pg17_*.sql"
+      - ".github/workflows/a18-staging-schema-design-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a18-staging-design-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  isolated-pg17:
+    name: SQL semantics + owner isolation (DISPOSABLE PG17, NO CLOUD)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ci_disposable_only
+          POSTGRES_USER: postgres
+          POSTGRES_DB: a18_staging_design_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d a18_staging_design_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ci_disposable_only
+      PGDATABASE: a18_staging_design_ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify local Postgres version
+        run: psql -X -v ON_ERROR_STOP=1 -c 'SHOW server_version;'
+      - name: Bootstrap disposable mock auth + published opportunity policy
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/a18/staging_pg17_fixture.sql
+      - name: Parse and execute UNAPPROVED design in disposable database ONLY
+        run: psql -X -v ON_ERROR_STOP=1 -f design/a18/alert_staging_schema_REVIEW_ONLY.sql
+      - name: Verify grants, public-only visibility, owner scoping, and duplicate prevention
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/a18/staging_pg17_security.sql
+
+# This CI must never connect to Lovable Cloud or real Supabase, run signed JWT
+# PostgREST requests, modify Staging/Production, or claim migration readiness.
+# "PASS" would prove only isolated PostgreSQL-level semantics with mock roles.
