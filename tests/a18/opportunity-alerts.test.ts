@@ -141,11 +141,11 @@ describe("A1.8 passive in-app alert proposal", () => {
 
   it("uses stable milestone keys and catches up within a window without daily duplicates", () => {
     const row = opportunity();
-    const early = derive([row], { userProfile: null, saved: ["opp-a"], todayLocalDate: "2026-10-27" });
-    const later = derive([row], { userProfile: null, saved: ["opp-a"], todayLocalDate: "2026-10-28" });
+    const early = derive([row], { userProfile: null, saved: ["opp-a"], todayLocalDate: "2026-10-26" });
+    const later = derive([row], { userProfile: null, saved: ["opp-a"], todayLocalDate: "2026-10-27" });
     expect(early[0]?.eventKey).toBe(later[0]?.eventKey);
     expect(early[0]?.eventKey).toBe("saved_deadline:opp-a:2026-10-29:3");
-    const last = derive([row], { userProfile: null, saved: ["opp-a"], todayLocalDate: "2026-10-29" });
+    const last = derive([row], { userProfile: null, saved: ["opp-a"], todayLocalDate: "2026-10-28" });
     expect(last[0]?.eventKey).toBe("saved_deadline:opp-a:2026-10-29:1");
     expect(derive([row, row], { userProfile: null, saved: ["opp-a"] })).toHaveLength(1);
   });
