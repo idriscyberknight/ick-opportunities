@@ -18,6 +18,7 @@ CREATE TABLE public.alert_preferences (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT alert_preferences_categories_unique CHECK (
     cardinality(categories) <= 4
+    AND array_position(categories, NULL::public.opportunity_category) IS NULL
     AND cardinality(array_positions(categories, 'scholarship'::public.opportunity_category)) <= 1
     AND cardinality(array_positions(categories, 'job'::public.opportunity_category)) <= 1
     AND cardinality(array_positions(categories, 'internship'::public.opportunity_category)) <= 1
@@ -26,6 +27,7 @@ CREATE TABLE public.alert_preferences (
   CONSTRAINT alert_preferences_deadline_window CHECK (
     deadline_lead_days <@ ARRAY[1, 3, 7]::smallint[]
     AND cardinality(deadline_lead_days) BETWEEN 1 AND 3
+    AND array_position(deadline_lead_days, NULL::smallint) IS NULL
     AND cardinality(array_positions(deadline_lead_days, 1::smallint)) <= 1
     AND cardinality(array_positions(deadline_lead_days, 3::smallint)) <= 1
     AND cardinality(array_positions(deadline_lead_days, 7::smallint)) <= 1
