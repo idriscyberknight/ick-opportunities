@@ -28,7 +28,7 @@ const ALLOWED_DAYS = new Set([1, 3, 7]);
 export function isVerifiedAlertStagingBackend(): boolean {
   try {
     // Evaluated in the browser at build time by Vite; no secret involved.
-    return new URL(import.meta.env.VITE_SUPABASE_URL ?? "").hostname === STAGING_BACKEND_HOST;
+    return new URL(import.meta.env['VITE_SUPABASE_URL'] ?? "").hostname === STAGING_BACKEND_HOST;
   } catch {
     return false;
   }
@@ -269,8 +269,11 @@ export async function updateMyAlertNotification(
     throw new Error("Invalid notification ID.");
   }
   const column = action === "read" ? "read_at" : "dismissed_at";
+  const payload = action === "read"
+    ? { read_at: new Date().toISOString() }
+    : { dismissed_at: new Date().toISOString() };
   const { data, error } = await client.from("user_notifications")
-    .update({ [column]: new Date().toISOString() })
+    .update(payload)
     .eq("id", id)
     .is(column, null)
     .select("id")
