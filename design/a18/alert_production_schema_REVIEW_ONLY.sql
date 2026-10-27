@@ -322,6 +322,10 @@ BEGIN
 END
 $a18_verify$;
 
+-- PostgREST caches schema metadata; request reload ONLY on successful COMMIT.
+-- The NOTIFY is transaction-scoped and has no effect if the transaction aborts.
+NOTIFY pgrst, 'reload schema';
+
 COMMIT;
 
 -- POST-COMMIT OBSERVATION QUERIES ARE IN THE ACCOMPANYING REVIEW RUNBOOK.
