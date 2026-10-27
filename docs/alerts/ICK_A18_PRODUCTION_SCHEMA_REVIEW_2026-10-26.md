@@ -186,3 +186,16 @@ Supabase's current official database migration documentation states that remote/
 4. After a separately approved run via a verified mechanism, use the `design/a18/alert_production_postflight_READ_ONLY.sql` report and controlled two-user/anon PostgREST tests; do not turn on the feature flag until these checks pass.
 
 **Latest execution observation:** The final live Production preflight was blocked by the platform's safety checks. That query did **not** execute; no Production DDL was attempted after the block. This document is a safety-preserving handoff, not a workaround or proof of Production deployment.
+
+## 15. Verified platform-supported direct SQL path, and its limits (2026-10-27)
+Following independent review of the official Lovable documentation and the repository's own verified deployment history:
+
+**Supported mechanism identified:** The Lovable Database view officially provides `More → Database → Manage → SQL editor` for SQL queries on a project's managed Cloud database. Lovable docs state that SQL editor writes apply to the same live database as the app. See https://docs.lovable.dev/features/database . The separate Git-sync documentation confirms that repository commits synchronize *code*, not an automatic execution of every migration file: https://docs.lovable.dev/integrations/git-sync-overview .
+
+**Project-specific precedent:** Existing Production records in `docs/database/ICK_A15_MIGRATION_RECONCILIATION_FINDINGS_2026-10-25.md` and merged PR #29 describe prior Founder-approved, manually applied **A1.4/A1.6.2 SQL** subsequently verified against the real Production catalog. Those changes did not create new `supabase_migrations.schema_migrations` rows. These past events support the feasibility of **explicitly documented manual database change management** for this legacy Lovable project, **not** native tracked migration execution.
+
+**What's now clarified:** A supported SQL editor exists. However, its existence does **not** resolve how Lovable's legacy `supabase_migrations` ledger should be adopted or updated for existing untracked changes. Raw editor execution does not by itself prove ledger registration, and automatic `db push` remains unsafe given unrecorded C5/A1.4 objects. Past manual installations are **not authorization to run new SQL now**.
+
+**Independent execution interlock:** A proposed final Production preflight was blocked by platform safety controls and DID NOT run. Do not use the editor, a different connector, or a personal Supabase project as a workaround for a platform-blocked operation. Obtain a platform-approved review/path for the blocked check rather than treating the earlier preflight as a passing result.
+
+**Remaining actionable handoff, single track:** Ask the owner/vendor only for a safe, tracked-or-manually-documented migration application procedure **and** for explanation/resolution of the blocked preflight; avoid recreating any database or replaying older SQL. Keep the current A1.8 GitHub PR #43 as a Draft and feature flag OFF. The prepared SQL blob and isolated PostgreSQL 17 tests remain reusable once the release gate is genuinely cleared.
