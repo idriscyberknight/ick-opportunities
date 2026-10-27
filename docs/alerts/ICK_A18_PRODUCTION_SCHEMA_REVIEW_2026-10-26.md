@@ -114,3 +114,18 @@ New evidence from **read-only** Production SQL catalog checks compared against e
 5. Do not assume historical C5 uncertainty means current ACLs are unsafe: distinguish **privilege evidence** from **migration bookkeeping**. No need to restart earlier staging work.
 
 This reduces the C5 security uncertainty materially but does NOT constitute authorization for Production A1.8 schema changes or production pilot activation.
+
+
+## 10. Recovery gate refined from official Lovable documentation (reviewed 2026-10-27)
+Authoritative reference: https://docs.lovable.dev/features/database-backups
+
+**Critical operational finding:** Lovable's "Restore to this backup" action **always replaces that same project's database**, causing all changes since the snapshot to be lost and potentially creating a schema/code mismatch. The connected tools provide **no non-destructive restore drill or backup-snapshot inspection API**. Do **not** attempt a Production restore just to test backup usability.
+
+A safer recovery-evidence path for this small, prelaunch project:
+1. **Observed:** the Founder-provided Lovable Backups screenshot lists daily snapshot entries, latest visible 2026-10-26 04:17:07 UTC. This snapshot will age; reconfirm a current snapshot date/target when scheduling any Production write.
+2. **Independent copy — not yet performed:** from the *confirmed Production project* go to `More → Database → Manage → Settings → Export project data → Export data → Start export`. Official docs say the export arrives through Storage and email; download and preserve it **outside Lovable Storage**, in a secure, private location. **Never upload it to a public repository, this chat, or CI** because the archive contains user records and password hashes. Storage files/Edge Function secrets require separate treatment.
+3. **Export verification — not yet performed:** confirm the archive exists, is non-empty, can be read as a PostgreSQL archive with `pg_restore --list` by an authorized administrator **offline**, and contains the expected production schema/table descriptions. This is not proof of a successful restore, but it is stronger than an untested UI snapshot. A full independent isolated restore needs a secure, separate destination and explicit approval; do not spin up paid infrastructure or move user data casually.
+4. **Recovery plan:** preserve the export, keep UI alert flag OFF, and document that a committed Production migration cannot be undone automatically. If anything goes wrong, perform an incident review and choose a targeted schema fix or separately approved recovery; don't blindly click an old snapshot and erase newer data.
+5. **Migration-ledger execution path:** confirmed Production has `supabase_migrations.schema_migrations` with 13 older rows; C5 Github PR #1 was merged and 26/26 live permissions now match, but C5's corresponding ledger entry is absent. Review the actual Lovable migration mechanism before choosing between an approved migration runner vs manual SQL. Neither creating a SQL file in GitHub nor calling a raw query automatically proves a ledger entry was created. **Do not manufacture a C5 or A1.8 record**.
+
+**Release gate adjustment:** a destructive Production restore is **NOT** a reasonable prerequisite or a safe proof of backup correctness. Instead, require (a) a recent on-screen Lovable backup plus (b) a separately stored, integrity-checked export where available, with any true restore rehearsal only on a secure isolated system, and (c) an approved execution + rollback/recovery plan. The actual Production DDL still requires exact Founder approval and validation of its target, migration bookkeeping, and security. 
