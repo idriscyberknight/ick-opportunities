@@ -64,6 +64,63 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f tests/a18/production_pg17_security.sql
       - name: Parse read-only postflight report against disposable migrated DB
         run: psql -X -v ON_ERROR_STOP=1 -f design/a18/alert_production_postflight_READ_ONLY.sql
+      - name: Negative test — never replay a migrated database
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The earlier security step left 2 synthetic preferences and 5 synthetic
+          # notification records in the disposable positive-test database.
+          before="$(psql -X -At -v ON_ERROR_STOP=1 -c "
+            SELECT (SELECT count(*) FROM public.alert_preferences)::text || ':' ||
+                   (SELECT count(*) FROM public.user_notifications)::text || ':' ||
+                   (SELECT count(*) FROM public.opportunities)::text;")"
+          test "$before" = "2:5:4"
+          if psql -X -v ON_ERROR_STOP=1 \
+             -f design/a18/alert_production_schema_REVIEW_ONLY.sql \
+             > /tmp/a18_replay_guard.log 2>&1; then
+            echo "FAIL: Production DDL silently replayed an existing installation"
+            exit 1
+          fi
+          grep -q 'A1.8 PRODUCTION STOP: alert objects already exist' /tmp/a18_replay_guard.log
+          after="$(psql -X -At -v ON_ERROR_STOP=1 -c "
+            SELECT (SELECT count(*) FROM public.alert_preferences)::text || ':' ||
+                   (SELECT count(*) FROM public.user_notifications)::text || ':' ||
+                   (SELECT count(*) FROM public.opportunities)::text;")"
+          test "$before" = "$after"
+          echo "PASS: rejected replay without changing previously inserted data"
+
+      - name: Negative test — roll back fully on a mid-DDL index collision
+        shell: bash
+        run: |
+          set -euo pipefail
+          createdb a18_collision_ci
+          export PGDATABASE=a18_collision_ci
+          # This database passes the normal preflight before reaching the
+          # deliberate failure AFTER CREATE TABLE statements have started.
+          psql -X -v ON_ERROR_STOP=1 -f tests/a18/production_pg17_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -c '
+            CREATE TABLE public.a18_collision_holder (id uuid PRIMARY KEY);
+            CREATE INDEX a18_notifications_user_created_idx
+              ON public.a18_collision_holder(id);'
+          if psql -X -v ON_ERROR_STOP=1 \
+             -f design/a18/alert_production_schema_REVIEW_ONLY.sql \
+             > /tmp/a18_mid_ddl_collision.log 2>&1; then
+            echo "FAIL: Production DDL unexpectedly committed after index collision"
+            exit 1
+          fi
+          grep -q 'relation "a18_notifications_user_created_idx" already exists' /tmp/a18_mid_ddl_collision.log
+          result="$(psql -X -At -v ON_ERROR_STOP=1 -c "
+            SELECT CASE WHEN
+              to_regclass('public.alert_preferences') IS NULL AND
+              to_regclass('public.user_notifications') IS NULL AND
+              to_regprocedure('public.a18_preferences_stamp_updated()') IS NULL AND
+              to_regprocedure('public.a18_notification_stamp_actions()') IS NULL AND
+              (SELECT count(*) FROM public.opportunities) = 4 AND
+              to_regclass('public.a18_collision_holder') IS NOT NULL
+            THEN 'PASS' ELSE 'FAIL' END;")"
+          test "$result" = PASS
+          echo "PASS: atomic rollback prevented partial alert schema and preserved existing fixture"
+
       - name: Negative test — refuse a non-Production-signature database without changes
         shell: bash
         run: |
