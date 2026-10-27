@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "design/a18/alert_production_schema_REVIEW_ONLY.sql"
+      - "design/a18/alert_production_post_commit_READ_ONLY.sql"
       - "design/a18/alert_production_postflight_READ_ONLY.sql"
       - "tests/a18/production_pg17_*.sql"
       - ".github/workflows/a18-production-schema-design-ci.yml"
@@ -52,6 +53,13 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f tests/a18/production_pg17_fixture.sql
       - name: Parse and apply REVIEW-ONLY Production DDL in disposable CI DB ONLY
         run: psql -X -v ON_ERROR_STOP=1 -f design/a18/alert_production_schema_REVIEW_ONLY.sql
+      - name: Assert all post-commit read-only schema, RLS and privileges checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -A -t -q -v ON_ERROR_STOP=1 \
+            -f design/a18/alert_production_post_commit_READ_ONLY.sql \
+            | jq -e '.status == "PASS" and .checked == 22'
       - name: Test mock-auth RLS owner isolation, opt-out, column grants and dedupe
         run: psql -X -v ON_ERROR_STOP=1 -f tests/a18/production_pg17_security.sql
       - name: Parse read-only postflight report against disposable migrated DB
