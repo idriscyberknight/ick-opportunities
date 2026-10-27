@@ -146,3 +146,24 @@ A safer recovery-evidence path for this small, prelaunch project:
 - Proposed exact SQL file Git blob SHA at this checkpoint: `3bf2198bb8c8583100f310354d8b0b4c418259ce`, path `design/a18/alert_production_schema_REVIEW_ONLY.sql`. Tests used a disposable PostgreSQL 17 mock; **no SQL was run against Production**.
 
 **Execution decision remains separate**. The additive, fail-closed transaction is designed to create exactly two new alert tables and associated narrowly-scoped policies, grants, functions, indexes and triggers; the code-side feature flag remains OFF and no delivery worker exists. This is not a proof of actual production PostgREST signed-user isolation. Before running, an authorized operator must independently ensure the private export is a usable archive or explicitly accept residual recovery risk, choose and document how this change will be tracked given the existing missing C5 ledger entry, inspect current deployment environment and fresh backup, and obtain **an explicit separate approval referring to the exact Production target and SQL candidate**. Never treat the user's message "Yes, I exported and saved it" as DDL approval.
+
+
+## 12. Single-operation Production execution handoff (DRAFT; no authority granted)
+**Purpose:** Avoid repeating Staging work or performing unaudited SQL. This is a **proposal only** for the existing Lovable Production PostgreSQL database, not the GitHub CI container and not the separate Security Staging database.
+
+### Exact asset pointers
+- Production target: Lovable Project ID `433a53c8-8872-49f2-b7b8-3e8dc7e96e35`.
+- Candidate DDL: `design/a18/alert_production_schema_REVIEW_ONLY.sql` on GitHub PR #43. Capture the **current** Git blob SHA again just before any execution; review-only blob SHA may change during PR review. Never execute the Staging SQL.
+- Prepared verification: `design/a18/alert_production_postflight_READ_ONLY.sql` (read-only, **after** DDL; on disposable CI also tested for syntax).
+- Existing application: GitHub Production PR #42 is already merged, but feature flag `VITE_A18_PRODUCTION_ALERTS_ENABLED` remains OFF and the `/alerts` pilot route unlinked. There is no notification writer, scheduler, email or WhatsApp delivery.
+
+### Operator protocol for a later separately approved run
+1. Capture precise approved blob SHA and target Project ID in change record. Obtain a fresh read-only Production schema/enum/security snapshot; if drift, STOP.
+2. Confirm the independently saved Lovable project data export is safely available to the Founder, and its archive can be read when feasible; recent dated Lovable daily backup should be visible. A Production `Restore` operation must **never** be used as a harmless drill.
+3. Explicitly choose a **manual one-time DDL execution** against the approved Lovable Production project via the connector SQL action, *or* an explicitly verified native migration runner with history recording. The connector's generic SQL execution should be presumed **not to create a `supabase_migrations.schema_migrations` record**. Any manual migration MUST be documented separately with exact SHA, timing, operator, target, success/failure and postflight evidence in project docs; **do not fabricate or update a ledger entry**.
+4. Run the reviewed single transaction ONLY after explicit Founder authorization naming Production target and the exact SQL. On a preflight error or lock timeout, STOP; PostgreSQL will roll back the uncommitted transaction. On uncertain provider timeout, **re-check read-only existence/status before ever retrying**; never blindly replay.
+5. Immediately perform the read-only postflight verification, verify **exactly 2 new tables**, default OFF, RLS, 6 policies, specific grants, zero new rows and existing opportunities unaffected. Any mismatch is an INCIDENT and triggers a STOP, not automatic DROP or Restore.
+6. **Do not enable pilot flag yet**. Design a controlled real signed User A/B+anon PostgREST test procedure with explicitly authorized accounts and a safe test-data policy. Only after independently approved tests, and an additional Founder decision, permit limited opt-in pilot. Actual notification generation/delivery remains not implemented.
+
+### Explicit remaining approval
+A casual "yes", backup export confirmation, or PR review does **NOT** approve a Production schema write. The Founder must separately authorize the **exact SQL blob** against the **named Production Lovable project** and acknowledge that it will create two tables, six policies, functions, indexes, triggers and grants. This operation changes schema but is designed not to edit existing user/opportunity rows, not to activate the alert feature, and not to send any messages. Backup/export recoverability is presently **not independently demonstrated**. No execution has occurred in this handoff.
