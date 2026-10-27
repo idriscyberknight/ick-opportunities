@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "design/a18/alert_production_schema_REVIEW_ONLY.sql"
+      - "design/a18/alert_production_postflight_READ_ONLY.sql"
       - "tests/a18/production_pg17_*.sql"
       - ".github/workflows/a18-production-schema-design-ci.yml"
       - "docs/alerts/ICK_A18_PRODUCTION_SCHEMA_REVIEW_2026-10-26.md"
@@ -53,6 +54,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f design/a18/alert_production_schema_REVIEW_ONLY.sql
       - name: Test mock-auth RLS owner isolation, opt-out, column grants and dedupe
         run: psql -X -v ON_ERROR_STOP=1 -f tests/a18/production_pg17_security.sql
+      - name: Parse read-only postflight report against disposable migrated DB
+        run: psql -X -v ON_ERROR_STOP=1 -f design/a18/alert_production_postflight_READ_ONLY.sql
       - name: Negative test — refuse a non-Production-signature database without changes
         shell: bash
         run: |
