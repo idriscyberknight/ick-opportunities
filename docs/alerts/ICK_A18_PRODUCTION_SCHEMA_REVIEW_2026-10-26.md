@@ -128,4 +128,21 @@ A safer recovery-evidence path for this small, prelaunch project:
 4. **Recovery plan:** preserve the export, keep UI alert flag OFF, and document that a committed Production migration cannot be undone automatically. If anything goes wrong, perform an incident review and choose a targeted schema fix or separately approved recovery; don't blindly click an old snapshot and erase newer data.
 5. **Migration-ledger execution path:** confirmed Production has `supabase_migrations.schema_migrations` with 13 older rows; C5 Github PR #1 was merged and 26/26 live permissions now match, but C5's corresponding ledger entry is absent. Review the actual Lovable migration mechanism before choosing between an approved migration runner vs manual SQL. Neither creating a SQL file in GitHub nor calling a raw query automatically proves a ledger entry was created. **Do not manufacture a C5 or A1.8 record**.
 
-**Release gate adjustment:** a destructive Production restore is **NOT** a reasonable prerequisite or a safe proof of backup correctness. Instead, require (a) a recent on-screen Lovable backup plus (b) a separately stored, integrity-checked export where available, with any true restore rehearsal only on a secure isolated system, and (c) an approved execution + rollback/recovery plan. The actual Production DDL still requires exact Founder approval and validation of its target, migration bookkeeping, and security. 
+**Release gate adjustment:** a destructive Production restore is **NOT** a reasonable prerequisite or a safe proof of backup correctness. Instead, require (a) a recent on-screen Lovable backup plus (b) a separately stored, integrity-checked export where available, with any true restore rehearsal only on a secure isolated system, and (c) an approved execution + rollback/recovery plan. The actual Production DDL still requires exact Founder approval and validation of its target, migration bookkeeping, and security.
+
+
+## 11. Founder-confirmed private Production export and current read-only preflight (2026-10-27)
+**Founder statement:** The export from the requested Lovable Production backup/export workflow has **been completed and the file saved**. This is **user-confirmed backup-export possession**, not independent verification of the archive format, completeness, storage location, test restore, or integrity. No archive contents, password hashes or credentials were requested or uploaded.
+
+**Additional independent read-only Production catalog preflight on 2026-10-27:**
+- Exact connector project targeted: `433a53c8-8872-49f2-b7b8-3e8dc7e96e35`; PostgreSQL `17.6`.
+- Both `public.alert_preferences` and `public.user_notifications` **still absent**.
+- All required preexisting objects observed, including `public.opportunities`, `public.saved_opportunities`, `public.profiles`, `public.university_review_events`, `supabase_migrations.schema_migrations`, `auth.users`.
+- RLS on both existing `opportunities` and `saved_opportunities`: **enabled**.
+- All three expected enum arrays match the exact Production migration preflight.
+- Authenticated SELECT privilege on `public.opportunities`: **present**.
+- 13 ledger rows, latest `20261005021810`; C5 `20261008100000` **still absent from ledger** (despite current C5-style privilege parity).
+- 14 opportunities, 10 profiles during snapshot. These are time-specific counts, not a backup export audit.
+- Proposed exact SQL file Git blob SHA at this checkpoint: `3bf2198bb8c8583100f310354d8b0b4c418259ce`, path `design/a18/alert_production_schema_REVIEW_ONLY.sql`. Tests used a disposable PostgreSQL 17 mock; **no SQL was run against Production**.
+
+**Execution decision remains separate**. The additive, fail-closed transaction is designed to create exactly two new alert tables and associated narrowly-scoped policies, grants, functions, indexes and triggers; the code-side feature flag remains OFF and no delivery worker exists. This is not a proof of actual production PostgREST signed-user isolation. Before running, an authorized operator must independently ensure the private export is a usable archive or explicitly accept residual recovery risk, choose and document how this change will be tracked given the existing missing C5 ledger entry, inspect current deployment environment and fresh backup, and obtain **an explicit separate approval referring to the exact Production target and SQL candidate**. Never treat the user's message "Yes, I exported and saved it" as DDL approval.
