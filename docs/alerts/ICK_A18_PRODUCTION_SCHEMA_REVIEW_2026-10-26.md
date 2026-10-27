@@ -143,7 +143,7 @@ A safer recovery-evidence path for this small, prelaunch project:
 - Authenticated SELECT privilege on `public.opportunities`: **present**.
 - 13 ledger rows, latest `20261005021810`; C5 `20261008100000` **still absent from ledger** (despite current C5-style privilege parity).
 - 14 opportunities, 10 profiles during snapshot. These are time-specific counts, not a backup export audit.
-- Proposed exact SQL file Git blob SHA at this checkpoint: `3bf2198bb8c8583100f310354d8b0b4c418259ce`, path `design/a18/alert_production_schema_REVIEW_ONLY.sql`. Tests used a disposable PostgreSQL 17 mock; **no SQL was run against Production**.
+- Proposed exact SQL file Git blob SHA at this checkpoint: `13c474d71946f8732d92c6923e6c50bae76d2bbf`, path `design/a18/alert_production_schema_REVIEW_ONLY.sql`. Tests used a disposable PostgreSQL 17 mock; **no SQL was run against Production**.
 
 **Execution decision remains separate**. The additive, fail-closed transaction is designed to create exactly two new alert tables and associated narrowly-scoped policies, grants, functions, indexes and triggers; the code-side feature flag remains OFF and no delivery worker exists. This is not a proof of actual production PostgREST signed-user isolation. Before running, an authorized operator must independently ensure the private export is a usable archive or explicitly accept residual recovery risk, choose and document how this change will be tracked given the existing missing C5 ledger entry, inspect current deployment environment and fresh backup, and obtain **an explicit separate approval referring to the exact Production target and SQL candidate**. Never treat the user's message "Yes, I exported and saved it" as DDL approval.
 
@@ -167,3 +167,9 @@ A safer recovery-evidence path for this small, prelaunch project:
 
 ### Explicit remaining approval
 A casual "yes", backup export confirmation, or PR review does **NOT** approve a Production schema write. The Founder must separately authorize the **exact SQL blob** against the **named Production Lovable project** and acknowledge that it will create two tables, six policies, functions, indexes, triggers and grants. This operation changes schema but is designed not to edit existing user/opportunity rows, not to activate the alert feature, and not to send any messages. Backup/export recoverability is presently **not independently demonstrated**. No execution has occurred in this handoff.
+
+
+## 13. API schema refresh and final exact SQL reference (2026-10-27)
+The reviewed Production SQL candidate now includes `NOTIFY pgrst, 'reload schema';` **inside its explicit transaction**, before `COMMIT`. PostgREST documents this as the standard method to reload metadata for newly created tables; notifications from aborted transactions do not deliver. This reduces the risk that the REST API continues using a stale schema cache after an approved migration. Reference: https://docs.postgrest.org/en/v16/references/schema_cache.html.
+
+Current reviewed SQL Git blob SHA: **`13c474d71946f8732d92c6923e6c50bae76d2bbf`** (`design/a18/alert_production_schema_REVIEW_ONLY.sql`). This supersedes the SHA in any older handoff/PR description. **The migration is still only a proposal; no Production DDL has run.**
