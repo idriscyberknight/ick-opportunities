@@ -173,3 +173,16 @@ A casual "yes", backup export confirmation, or PR review does **NOT** approve a 
 The reviewed Production SQL candidate now includes `NOTIFY pgrst, 'reload schema';` **inside its explicit transaction**, before `COMMIT`. PostgREST documents this as the standard method to reload metadata for newly created tables; notifications from aborted transactions do not deliver. This reduces the risk that the REST API continues using a stale schema cache after an approved migration. Reference: https://docs.postgrest.org/en/v16/references/schema_cache.html.
 
 Current reviewed SQL Git blob SHA: **`13c474d71946f8732d92c6923e6c50bae76d2bbf`** (`design/a18/alert_production_schema_REVIEW_ONLY.sql`). This supersedes the SHA in any older handoff/PR description. **The migration is still only a proposal; no Production DDL has run.**
+
+## 14. Supported migration runner review — 2026-10-27 (read-only)
+Supabase's current official database migration documentation states that remote/manual SQL editor changes **bypass migration history** and can cause future `supabase db push` to fail because the schema and migration ledger diverge. Source: https://supabase.com/docs/guides/deployment/database-migrations
+
+**Implication for this specific Lovable Cloud project:** Production currently has 13 entries in `supabase_migrations.schema_migrations` but 14 SQL migration files in GitHub (C5 is absent from the recorded history). All 26 selected live permissions match C5's intended post-change state, but its execution mechanism is historically unverified. A *raw SQL one-time apply* of A1.8 would introduce another untracked database change if the connector does not register migrations; **avoid treating this as the preferred execution path**. Also **do not blindly run `supabase db push`**, as an unrecorded C5 file could be replayed. Reconciliation must be demonstrated and approved before any automated migration push.
+
+**Safe recommendation:**
+1. Verify if the Lovable Cloud-managed backend supports a native, tracked migration application for *this exact project*, or whether a supported platform procedure is required. The available Lovable connector actions here are `get_database_status` and a generic `query_database`; they do **not expose a verified, ledger-aware migration runner**. Do not infer Supabase MCP authorization to an unrelated Lovable-managed backend.
+2. Escalate the migration-runner/ledger question to authorized Lovable support or an administrator rather than circumventing a platform-safety-blocked live preflight.
+3. Keep Production A1.8 DDL proposed and unexecuted until the safety block is resolved, exact backup/export recovery precautions are documented, and a tracked migration path is approved.
+4. After a separately approved run via a verified mechanism, use the `design/a18/alert_production_postflight_READ_ONLY.sql` report and controlled two-user/anon PostgREST tests; do not turn on the feature flag until these checks pass.
+
+**Latest execution observation:** The final live Production preflight was blocked by the platform's safety checks. That query did **not** execute; no Production DDL was attempted after the block. This document is a safety-preserving handoff, not a workaround or proof of Production deployment.
