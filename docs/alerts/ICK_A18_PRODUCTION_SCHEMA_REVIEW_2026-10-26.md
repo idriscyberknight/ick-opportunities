@@ -96,3 +96,21 @@ Each row shows a `Restore to this backup` action. **No Restore was clicked by th
 **Evidence scope:** The screenshot establishes backup entries were displayed in the Lovable UI. It does **not** itself display a project ID; association with the Production project is supported by the prior user navigation instructions/context but has not been independently verified from a visible project identifier. The screenshot does **not** prove a successful restore, the archive contents' integrity, a backup of non-database Storage objects, or zero data loss. The latest visible snapshot preceded subsequent changes on 2026-10-26; recovery to it could lose all intervening writes.
 
 **Updated gate:** Presence of UI snapshot entries: **OBSERVED**. Exact target identity for these entries: **CONTEXTUAL, not independently proven**. Actual safe restore/rehearsal: **NOT VERIFIED**. Production SQL remains **NOT AUTHORIZED**. Do not press any `Restore` control or upload sensitive database archives to GitHub/ChatGPT.
+
+
+## 9. C5 migration-status investigation: privilege parity confirmed, historical execution route unresolved (2026-10-27)
+New evidence from **read-only** Production SQL catalog checks compared against exact `supabase/migrations/20261008100000_c5_tighten_database_privileges.sql`:
+- **21 of 21** targeted table-level privileges match the C5 post-change expectation, including anonymous read limited to appropriate opportunity access, no user-role writes by authenticated users, restricted audit/discovery DML, and authenticated INSERT/DELETE but no UPDATE on saved opportunities.
+- **5 of 5** targeted column-level checks match C5: `discovery_settings.cron_token` unreadable/uneditable to authenticated; its allowlisted `scheduled_enabled` and `updated_at` grants intact.
+- Default privilege checks confirm **`postgres` public schema new-table, sequence, and function defaults do not grant client privileges**; `supabase_admin` defaults DO still grant to clients, which was identified and left untouched in the original C5 design.
+- **GitHub PR #1 `C5: Tighten database privileges` was merged on 2026-10-20 at 00:02:03 UTC** (commit `b65b9686322a7dffe035e85542f327ec409aded7`). This merged the SQL file to GitHub code, **not independent proof it was run against the database**.
+- The Production migration ledger still has **13 records** and latest recorded version `20261005021810`, while the repository contains **14** migration files (the newer C5 file has timestamp/version `20261008100000`).
+
+### Reconciled conclusions
+1. **C5 intended *effective* privilege state: STRONGLY SUPPORTED by all 26 targeted, independently queried permissions and default ACL evidence.** This mitigates suspicion that the broad pre-C5 permissions remain active.
+2. **C5 historical application method and migration tracking: NOT PROVEN.** Possibilities include an SQL application that bypassed the tracked ledger, other manual grant changes with the same effect, or an alternative migration runner. Neither a successful GitHub merge nor an equivalent ACL state proves how changes occurred.
+3. **Never rerun C5 or insert a ledger record just to reconcile the count.** A failed/idempotent-safe status cannot be inferred from historical metadata.
+4. For A1.8, keep new migration as `design/` **REVIEW_ONLY** until the actual Lovable migration-runner procedure is documented, the Production snapshot/backups are confirmed as restorable by an authorized, non-destructive rehearsal if feasible, and exact SQL receives a separate explicit approval. **No new Production SQL writes have been made.**
+5. Do not assume historical C5 uncertainty means current ACLs are unsafe: distinguish **privilege evidence** from **migration bookkeeping**. No need to restart earlier staging work.
+
+This reduces the C5 security uncertainty materially but does NOT constitute authorization for Production A1.8 schema changes or production pilot activation.
