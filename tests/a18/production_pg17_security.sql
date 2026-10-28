@@ -145,6 +145,22 @@ BEGIN
   SELECT count(*) INTO n FROM public.user_notifications;
   IF n <> 0 THEN RAISE EXCEPTION 'Default-off B can see notifications'; END IF;
 
+  -- Account B must never inspect, edit or delete A's preferences, even
+  -- when B has authenticated table-level SELECT / DELETE privileges.
+  SELECT count(*) INTO n FROM public.alert_preferences
+    WHERE user_id='11111111-1111-4111-8111-111111111111';
+  IF n <> 0 THEN RAISE EXCEPTION 'B read A preferences'; END IF;
+
+  UPDATE public.alert_preferences SET enabled=false
+    WHERE user_id='11111111-1111-4111-8111-111111111111';
+  GET DIAGNOSTICS changed = ROW_COUNT;
+  IF changed <> 0 THEN RAISE EXCEPTION 'B updated A preferences'; END IF;
+
+  DELETE FROM public.alert_preferences
+    WHERE user_id='11111111-1111-4111-8111-111111111111';
+  GET DIAGNOSTICS changed = ROW_COUNT;
+  IF changed <> 0 THEN RAISE EXCEPTION 'B deleted A preferences'; END IF;
+
   UPDATE public.alert_preferences SET enabled=true
   WHERE user_id='22222222-2222-4222-8222-222222222222';
   SELECT count(*) INTO n FROM public.user_notifications;
