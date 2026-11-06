@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "src/lib/opportunity-alerts.ts"
+      - "src/lib/a18-trusted-notification-plan.ts"
       - "src/lib/alert-production-client.ts"
       - "src/routes/_authenticated/alerts.tsx"
       - "src/routeTree.gen.ts"
@@ -52,6 +53,7 @@ jobs:
         run: |
           bunx eslint \
             src/lib/opportunity-alerts.ts \
+            src/lib/a18-trusted-notification-plan.ts \
             src/lib/alert-production-client.ts \
             src/lib/matching.ts \
             src/components/alerts/AlertPreferencesPanel.tsx \
