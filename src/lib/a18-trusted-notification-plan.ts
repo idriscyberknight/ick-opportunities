@@ -12,10 +12,7 @@
  * actual row owner in a single trusted transaction. No service-role token
  * should ever be exposed to frontend code.
  */
-import {
-  buildInAppAlertCandidates,
-  type InAppAlertPreferences,
-} from "./opportunity-alerts";
+import { buildInAppAlertCandidates, type InAppAlertPreferences } from "./opportunity-alerts";
 import type { Opportunity, OpportunityCategory } from "./opportunities";
 import type { ProfileData } from "./profile";
 
@@ -68,8 +65,7 @@ function localDateForTimezone(now: Date, zone: string): string {
     throw new Error("Unsupported IANA timezone for notification planning");
   }
 
-  const part = (type: "year" | "month" | "day") =>
-    parts.find((item) => item.type === type)?.value;
+  const part = (type: "year" | "month" | "day") => parts.find((item) => item.type === type)?.value;
   const year = part("year");
   const month = part("month");
   const day = part("day");
