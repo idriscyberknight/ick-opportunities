@@ -138,7 +138,9 @@ export function planTrustedInAppNotificationInserts(
     opportunities: input.opportunities,
     profile: input.profile,
     preferences: input.preferences,
-    savedOpportunityIds: new Set(input.savedOpportunities.map((saved) => saved.opportunityId)),
+    savedOpportunityIds: new Set(
+      input.savedOpportunities.map((saved) => saved.opportunityId),
+    ),
     nowIso: input.now.toISOString(),
     todayLocalDate,
   });
