@@ -54,7 +54,7 @@ function input(patch: Partial<TrustedAlertPlanInput> = {}): TrustedAlertPlanInpu
     preferences: optIn,
     profile: null,
     opportunities: [opportunity()],
-    savedOpportunityIds: [PUBLIC],
+    savedOpportunities: [{ userId: A, opportunityId: PUBLIC }],
     now: NOW,
     ...patch,
   };
@@ -83,7 +83,7 @@ describe("A1.8 trusted-worker notification plan (offline, NEVER inserts)", () =>
     ];
     const found = planTrustedInAppNotificationInserts(input({
       opportunities: rows,
-      savedOpportunityIds: rows.map((r) => r.id),
+      savedOpportunities: rows.map((r) => ({ userId: A, opportunityId: r.id })),
     }));
     expect(found).toEqual([{
       user_id: A,
@@ -95,10 +95,13 @@ describe("A1.8 trusted-worker notification plan (offline, NEVER inserts)", () =>
 
   it("keeps rows tenant-keyed, with stable keys for idempotent future insert", () => {
     const a = planTrustedInAppNotificationInserts(input({
-      savedOpportunityIds: [PUBLIC, PUBLIC],
+      savedOpportunities: [{ userId: A, opportunityId: PUBLIC }, { userId: A, opportunityId: PUBLIC }],
       opportunities: [opportunity(), opportunity()],
     }));
-    const b = planTrustedInAppNotificationInserts(input({ userId: B }));
+    const b = planTrustedInAppNotificationInserts(input({
+      userId: B,
+      savedOpportunities: [{ userId: B, opportunityId: PUBLIC }],
+    }));
     expect(a).toHaveLength(1);
     expect(b).toHaveLength(1);
     expect(a[0]?.user_id).toBe(A);
@@ -149,10 +152,26 @@ describe("A1.8 trusted-worker notification plan (offline, NEVER inserts)", () =>
     }
   });
 
+  it("rejects cross-account saved-record inputs instead of planning leaked alerts", () => {
+    expect(() => planTrustedInAppNotificationInserts(input({
+      savedOpportunities: [{ userId: B, opportunityId: PUBLIC }],
+    }))).toThrow("Cross-account or invalid saved opportunity metadata");
+
+    expect(() => planTrustedInAppNotificationInserts(input({
+      savedOpportunities: [{ userId: A, opportunityId: "invalid-id" }],
+    }))).toThrow("Cross-account or invalid saved opportunity metadata");
+  });
+
+  it("rejects a profile belonging to another user before generating matches", () => {
+    expect(() => planTrustedInAppNotificationInserts(input({
+      profile: { id: B } as TrustedAlertPlanInput["profile"],
+    }))).toThrow("Cross-account alert profile mismatch");
+  });
+
   it("never reads DB, schedules jobs or sends messages", () => {
     // Planner inputs are plain in-memory values and return proposed metadata.
     // No credentials or network mocks are used; its caller still needs a
     // separately reviewed, authenticated, trusted DB runner and live RLS tests.
-    expect(planTrustedInAppNotificationInserts(input({ savedOpportunityIds: [] }))).toEqual([]);
+    expect(planTrustedInAppNotificationInserts(input({ savedOpportunities: [] }))).toEqual([]);
   });
 });
