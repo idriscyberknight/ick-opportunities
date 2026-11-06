@@ -42,8 +42,8 @@ export type TrustedAlertPlanInput = Readonly<{
   profile: ProfileData | null;
   /** Already restricted to published, reviewed public candidates. */
   opportunities: readonly Opportunity[];
-  /** Must be queried with user_id = this account's id, not global saved IDs. */
-  savedOpportunityIds: readonly string[];
+  /** Must come from an owner-scoped DB query. Tags allow a second ownership check. */
+  savedOpportunities: readonly Readonly<{ userId: string; opportunityId: string }>[];
   /** Trusted job clock; never user supplied. */
   now: Date;
 }>;
@@ -114,12 +114,31 @@ export function planTrustedInAppNotificationInserts(
     throw new Error("Invalid account alert preferences; failing closed");
   }
 
+  // Extra defense against accidental cross-account joins in a future worker.
+  // This checks supplied owner metadata; only a properly scoped backend query
+  // can establish that the source rows actually belong to this user.
+  if (input.profile && input.profile.id !== input.userId) {
+    throw new Error("Cross-account alert profile mismatch");
+  }
+  if (
+    !Array.isArray(input.savedOpportunities) ||
+    input.savedOpportunities.some(
+      (saved) =>
+        !saved ||
+        saved.userId !== input.userId ||
+        typeof saved.opportunityId !== "string" ||
+        !USER_ID_SHAPE.test(saved.opportunityId),
+    )
+  ) {
+    throw new Error("Cross-account or invalid saved opportunity metadata");
+  }
+
   const todayLocalDate = localDateForTimezone(input.now, input.timezone);
   const candidates = buildInAppAlertCandidates({
     opportunities: input.opportunities,
     profile: input.profile,
     preferences: input.preferences,
-    savedOpportunityIds: new Set(input.savedOpportunityIds),
+    savedOpportunityIds: new Set(input.savedOpportunities.map((saved) => saved.opportunityId)),
     nowIso: input.now.toISOString(),
     todayLocalDate,
   });
