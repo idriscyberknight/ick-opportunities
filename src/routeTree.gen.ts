@@ -42,6 +42,7 @@ import { Route as AuthenticatedAdminSourcesRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminUniversitiesRouteImport } from './routes/_authenticated/admin.universities'
 import { Route as ScholarshipNavigatorUniversitiesSlugRouteImport } from './routes/scholarship-navigator_.universities_.$slug'
 import { Route as ApiPublicHooksDiscoveryRouteImport } from './routes/api/public/hooks/discovery'
+import { Route as ApiPublicJobsAlertsRouteImport } from './routes/api/public/jobs/alerts'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -217,6 +218,11 @@ const ApiPublicHooksDiscoveryRoute = ApiPublicHooksDiscoveryRouteImport.update({
   path: '/api/public/hooks/discovery',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicJobsAlertsRoute = ApiPublicJobsAlertsRouteImport.update({
+  id: '/api/public/jobs/alerts',
+  path: '/api/public/jobs/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -251,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/admin/universities': typeof AuthenticatedAdminUniversitiesRoute
   '/scholarship-navigator/universities/$slug': typeof ScholarshipNavigatorUniversitiesSlugRoute
   '/api/public/hooks/discovery': typeof ApiPublicHooksDiscoveryRoute
+  '/api/public/jobs/alerts': typeof ApiPublicJobsAlertsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -285,6 +292,7 @@ export interface FileRoutesByTo {
   '/admin/universities': typeof AuthenticatedAdminUniversitiesRoute
   '/scholarship-navigator/universities/$slug': typeof ScholarshipNavigatorUniversitiesSlugRoute
   '/api/public/hooks/discovery': typeof ApiPublicHooksDiscoveryRoute
+  '/api/public/jobs/alerts': typeof ApiPublicJobsAlertsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/universities': typeof AuthenticatedAdminUniversitiesRoute
   '/scholarship-navigator_/universities_/$slug': typeof ScholarshipNavigatorUniversitiesSlugRoute
   '/api/public/hooks/discovery': typeof ApiPublicHooksDiscoveryRoute
+  '/api/public/jobs/alerts': typeof ApiPublicJobsAlertsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -357,6 +366,7 @@ export interface FileRouteTypes {
     | '/admin/universities'
     | '/scholarship-navigator/universities/$slug'
     | '/api/public/hooks/discovery'
+    | '/api/public/jobs/alerts'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | '/admin/universities'
     | '/scholarship-navigator/universities/$slug'
     | '/api/public/hooks/discovery'
+    | '/api/public/jobs/alerts'
   id:
     | '__root__'
     | '/'
@@ -426,6 +437,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/universities'
     | '/scholarship-navigator_/universities_/$slug'
     | '/api/public/hooks/discovery'
+    | '/api/public/jobs/alerts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -449,6 +461,7 @@ export interface RootRouteChildren {
   OpportunitiesIndexRoute: typeof OpportunitiesIndexRoute
   ScholarshipNavigatorUniversitiesSlugRoute: typeof ScholarshipNavigatorUniversitiesSlugRoute
   ApiPublicHooksDiscoveryRoute: typeof ApiPublicHooksDiscoveryRoute
+  ApiPublicJobsAlertsRoute: typeof ApiPublicJobsAlertsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -684,6 +697,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDiscoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/alerts': {
+      id: '/api/public/jobs/alerts'
+      path: '/api/public/jobs/alerts'
+      fullPath: '/api/public/jobs/alerts'
+      preLoaderRoute: typeof ApiPublicJobsAlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -744,6 +764,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScholarshipNavigatorUniversitiesSlugRoute:
     ScholarshipNavigatorUniversitiesSlugRoute,
   ApiPublicHooksDiscoveryRoute: ApiPublicHooksDiscoveryRoute,
+  ApiPublicJobsAlertsRoute: ApiPublicJobsAlertsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
