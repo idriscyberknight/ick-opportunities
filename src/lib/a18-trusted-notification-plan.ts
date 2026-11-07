@@ -44,6 +44,8 @@ export type TrustedAlertPlanInput = Readonly<{
   opportunities: readonly Opportunity[];
   /** Must come from an owner-scoped DB query. Tags allow a second ownership check. */
   savedOpportunities: readonly Readonly<{ userId: string; opportunityId: string }>[];
+  /** Already stored event keys, queried privately for this account by the trusted worker. */
+  storedNotificationKeys: readonly Readonly<{ userId: string; eventKey: string }>[];
   /** Trusted job clock; never user supplied. */
   now: Date;
 }>;
@@ -133,12 +135,29 @@ export function planTrustedInAppNotificationInserts(
     throw new Error("Cross-account or invalid saved opportunity metadata");
   }
 
+  // Older events must be filtered BEFORE the candidate engine's 50-row cap.
+  // These keys are internal notification metadata: never expose to browsers.
+  if (
+    !Array.isArray(input.storedNotificationKeys) ||
+    input.storedNotificationKeys.some(
+      (stored) =>
+        !stored ||
+        stored.userId !== input.userId ||
+        typeof stored.eventKey !== "string" ||
+        stored.eventKey.length < 1 ||
+        stored.eventKey.length > 180,
+    )
+  ) {
+    throw new Error("Cross-account or invalid stored notification metadata");
+  }
+
   const todayLocalDate = localDateForTimezone(input.now, input.timezone);
   const candidates = buildInAppAlertCandidates({
     opportunities: input.opportunities,
     profile: input.profile,
     preferences: input.preferences,
     savedOpportunityIds: new Set(input.savedOpportunities.map((saved) => saved.opportunityId)),
+    excludedEventKeys: new Set(input.storedNotificationKeys.map((stored) => stored.eventKey)),
     nowIso: input.now.toISOString(),
     todayLocalDate,
   });
