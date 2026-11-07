@@ -487,6 +487,247 @@ export type Database = {
         }
         Relationships: []
       }
+      universities: {
+        Row: {
+          city: string | null
+          country_code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          official_name: string
+          official_website: string | null
+          publication_status: string
+          published_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          ror_id: string | null
+          slug: string
+          summary: string | null
+          updated_at: string
+          verification_status: string
+        }
+        Insert: {
+          city?: string | null
+          country_code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          official_name: string
+          official_website?: string | null
+          publication_status?: string
+          published_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          ror_id?: string | null
+          slug: string
+          summary?: string | null
+          updated_at?: string
+          verification_status?: string
+        }
+        Update: {
+          city?: string | null
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          official_name?: string
+          official_website?: string | null
+          publication_status?: string
+          published_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          ror_id?: string | null
+          slug?: string
+          summary?: string | null
+          updated_at?: string
+          verification_status?: string
+        }
+        Relationships: []
+      }
+      university_aliases: {
+        Row: {
+          alias: string
+          created_at: string
+          id: string
+          language_code: string | null
+          script_code: string | null
+          university_id: string
+        }
+        Insert: {
+          alias: string
+          created_at?: string
+          id?: string
+          language_code?: string | null
+          script_code?: string | null
+          university_id: string
+        }
+        Update: {
+          alias?: string
+          created_at?: string
+          id?: string
+          language_code?: string | null
+          script_code?: string | null
+          university_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "university_aliases_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      university_classifications: {
+        Row: {
+          classification_key: string
+          created_at: string
+          evidence_id: string
+          id: string
+          review_status: string
+          university_id: string
+          updated_at: string
+        }
+        Insert: {
+          classification_key: string
+          created_at?: string
+          evidence_id: string
+          id?: string
+          review_status?: string
+          university_id: string
+          updated_at?: string
+        }
+        Update: {
+          classification_key?: string
+          created_at?: string
+          evidence_id?: string
+          id?: string
+          review_status?: string
+          university_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "university_classifications_same_university_evidence"
+            columns: ["evidence_id", "university_id"]
+            isOneToOne: false
+            referencedRelation: "university_evidence"
+            referencedColumns: ["id", "university_id"]
+          },
+          {
+            foreignKeyName: "university_classifications_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      university_evidence: {
+        Row: {
+          checked_at: string | null
+          checked_by: string | null
+          claim_type: string
+          created_at: string
+          id: string
+          review_status: string
+          source_title: string | null
+          source_url: string
+          university_id: string
+          visibility: string
+        }
+        Insert: {
+          checked_at?: string | null
+          checked_by?: string | null
+          claim_type: string
+          created_at?: string
+          id?: string
+          review_status?: string
+          source_title?: string | null
+          source_url: string
+          university_id: string
+          visibility?: string
+        }
+        Update: {
+          checked_at?: string | null
+          checked_by?: string | null
+          claim_type?: string
+          created_at?: string
+          id?: string
+          review_status?: string
+          source_title?: string | null
+          source_url?: string
+          university_id?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "university_evidence_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      university_review_events: {
+        Row: {
+          claim_type_at_review: string
+          decision: string
+          evidence_id: string
+          id: string
+          new_state: string
+          previous_state: string
+          review_reason: string
+          reviewed_at: string
+          reviewed_by: string
+          source_url_at_review: string
+          university_id: string
+        }
+        Insert: {
+          claim_type_at_review: string
+          decision: string
+          evidence_id: string
+          id?: string
+          new_state: string
+          previous_state: string
+          review_reason: string
+          reviewed_at?: string
+          reviewed_by: string
+          source_url_at_review: string
+          university_id: string
+        }
+        Update: {
+          claim_type_at_review?: string
+          decision?: string
+          evidence_id?: string
+          id?: string
+          new_state?: string
+          previous_state?: string
+          review_reason?: string
+          reviewed_at?: string
+          reviewed_by?: string
+          source_url_at_review?: string
+          university_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "university_review_events_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "university_evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "university_review_events_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_interests: {
         Row: {
           created_at: string
@@ -613,6 +854,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      ick_a16_review_evidence: {
+        Args: {
+          p_decision: string
+          p_evidence_id: string
+          p_expected_state?: string
+          p_reason: string
+        }
+        Returns: string
       }
     }
     Enums: {
