@@ -65,11 +65,14 @@ export function buildInAppAlertCandidates(input: {
   profile: ProfileData | null;
   preferences: InAppAlertPreferences;
   savedOpportunityIds: ReadonlySet<string>;
+  /** Trusted, owner-scoped keys already stored; skip before the 50-result cap. */
+  excludedEventKeys?: ReadonlySet<string>;
   nowIso: string;
   todayLocalDate: string;
 }): OpportunityAlertCandidate[] {
   const { opportunities, profile, preferences, savedOpportunityIds, nowIso, todayLocalDate } =
     input;
+  const excludedEventKeys = input.excludedEventKeys;
   if (!preferences.enabled) return [];
 
   const nowMs = Date.parse(nowIso);
@@ -110,7 +113,7 @@ export function buildInAppAlertCandidates(input: {
       if (nowMs - publishedMs > MAX_PUBLICATION_AGE_DAYS * DAY_MS) continue;
 
       const eventKey = `new_match:${item.id}:${item.published_at}`;
-      if (keys.has(eventKey)) continue;
+      if (keys.has(eventKey) || excludedEventKeys?.has(eventKey)) continue;
       keys.add(eventKey);
       alerts.push({
         kind: "new_match",
@@ -135,7 +138,7 @@ export function buildInAppAlertCandidates(input: {
       if (lead === undefined) continue;
 
       const eventKey = `saved_deadline:${item.id}:${item.deadline}:${lead}`;
-      if (keys.has(eventKey)) continue;
+      if (keys.has(eventKey) || excludedEventKeys?.has(eventKey)) continue;
       keys.add(eventKey);
       alerts.push({
         kind: "saved_deadline",
