@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_preferences: {
+        Row: {
+          categories: Database["public"]["Enums"]["opportunity_category"][]
+          deadline_lead_days: number[]
+          enabled: boolean
+          minimum_match_score: number
+          new_matches_enabled: boolean
+          saved_deadlines_enabled: boolean
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categories?: Database["public"]["Enums"]["opportunity_category"][]
+          deadline_lead_days?: number[]
+          enabled?: boolean
+          minimum_match_score?: number
+          new_matches_enabled?: boolean
+          saved_deadlines_enabled?: boolean
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categories?: Database["public"]["Enums"]["opportunity_category"][]
+          deadline_lead_days?: number[]
+          enabled?: boolean
+          minimum_match_score?: number
+          new_matches_enabled?: boolean
+          saved_deadlines_enabled?: boolean
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       application_tracking: {
         Row: {
           created_at: string
@@ -750,6 +794,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "user_interests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_notifications: {
+        Row: {
+          created_at: string
+          dismissed_at: string | null
+          event_key: string
+          id: string
+          kind: string
+          opportunity_id: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dismissed_at?: string | null
+          event_key: string
+          id?: string
+          kind: string
+          opportunity_id: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dismissed_at?: string | null
+          event_key?: string
+          id?: string
+          kind?: string
+          opportunity_id?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

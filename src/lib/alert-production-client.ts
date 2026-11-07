@@ -159,6 +159,19 @@ function toPreferences(row: PreferenceRow | null): InAppAlertPreferences {
   };
 }
 
+/** IANA zone for date-correct reminders; falls back to the database default shape. */
+function browserTimezone(): string {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (zone && /^[A-Za-z][A-Za-z0-9_+.-]*\/[A-Za-z][A-Za-z0-9_+./-]*$/.test(zone) && zone.length <= 64) {
+      return zone;
+    }
+  } catch {
+    /* ignore */
+  }
+  return "Etc/UTC";
+}
+
 const PREFERENCE_COLUMNS =
   "user_id,enabled,new_matches_enabled,saved_deadlines_enabled,categories,minimum_match_score,deadline_lead_days,timezone,updated_at";
 
@@ -191,6 +204,7 @@ export async function saveMyAlertPreferences(
     categories: [...input.categories],
     minimum_match_score: input.minimumMatchScore,
     deadline_lead_days: [...input.deadlineLeadDays],
+    timezone: browserTimezone(),
   };
   const { data: existing, error: fetchError } = await client
     .from("alert_preferences")
