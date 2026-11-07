@@ -55,6 +55,7 @@ function input(patch: Partial<TrustedAlertPlanInput> = {}): TrustedAlertPlanInpu
     profile: null,
     opportunities: [opportunity()],
     savedOpportunities: [{ userId: A, opportunityId: PUBLIC }],
+    storedNotificationKeys: [],
     now: NOW,
     ...patch,
   };
@@ -166,6 +167,45 @@ describe("A1.8 trusted-worker notification plan (offline, NEVER inserts)", () =>
     expect(() => planTrustedInAppNotificationInserts(input({
       profile: { id: B } as TrustedAlertPlanInput["profile"],
     }))).toThrow("Cross-account alert profile mismatch");
+  });
+
+  it("does not starve the 51st candidate when the first 50 were already stored", () => {
+    const rows = Array.from({ length: 51 }, (_, index) => opportunity({
+      id: `aaaaaaaa-aaaa-4aaa-8aaa-${(index + 1).toString(16).padStart(12, "0")}`,
+    }));
+    const first = planTrustedInAppNotificationInserts(input({
+      opportunities: rows,
+      savedOpportunities: rows.map((row) => ({ userId: A, opportunityId: row.id })),
+    }));
+    expect(first).toHaveLength(50);
+
+    const next = planTrustedInAppNotificationInserts(input({
+      opportunities: rows,
+      savedOpportunities: rows.map((row) => ({ userId: A, opportunityId: row.id })),
+      storedNotificationKeys: first.map((row) => ({ userId: A, eventKey: row.event_key })),
+    }));
+    expect(next).toHaveLength(1);
+    expect(first.some((row) => row.opportunity_id === next[0]?.opportunity_id)).toBe(false);
+
+    const none = planTrustedInAppNotificationInserts(input({
+      opportunities: rows,
+      savedOpportunities: rows.map((row) => ({ userId: A, opportunityId: row.id })),
+      storedNotificationKeys: [...first, ...next].map((row) => ({
+        userId: A,
+        eventKey: row.event_key,
+      })),
+    }));
+    expect(none).toEqual([]);
+  });
+
+  it("refuses stored notification keys assigned to a different user", () => {
+    expect(() => planTrustedInAppNotificationInserts(input({
+      storedNotificationKeys: [{ userId: B, eventKey: "saved_deadline:test" }],
+    }))).toThrow("Cross-account or invalid stored notification metadata");
+
+    expect(() => planTrustedInAppNotificationInserts(input({
+      storedNotificationKeys: [{ userId: A, eventKey: "" }],
+    }))).toThrow("Cross-account or invalid stored notification metadata");
   });
 
   it("never reads DB, schedules jobs or sends messages", () => {
