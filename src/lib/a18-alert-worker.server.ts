@@ -1,155 +1,319 @@
 /**
  * A1.8 trusted in-app notification worker (server-only).
- * Called only by the authenticated scheduled route. Uses the service-role client
- * after the caller is verified. Never import from browser code.
+ * Called only by the cron-authenticated scheduled route with the service-role
+ * client. Never import from browser code.
  *
- * Safety: opt-in only; only active+verified+reviewed+published opportunities;
- * owner-scoped saved rows; consent + publication re-checked right before insert;
- * atomic dedup via UNIQUE(user_id,event_key) + ON CONFLICT DO NOTHING, so retries
- * and overlapping runs never create duplicates.
+ * Safety model:
+ *  - opt-in only; users paged deterministically by user_id (keyset cursor), so
+ *    nobody is permanently skipped by a per-run cap;
+ *  - opportunities paged by id; only fully published rows (active, verified,
+ *    reviewed_by/at, published_at <= now, deadline not passed);
+ *  - immediately before insert, the user's LATEST preference row and the
+ *    LATEST publication state of every planned opportunity are re-read and the
+ *    plan is recomputed from that fresh state (categories, score, toggles,
+ *    reminder days all honoured; withdrawn consent => nothing inserted);
+ *  - inserts use UNIQUE(user_id,event_key) + ON CONFLICT DO NOTHING, so retries
+ *    and overlapping runs never duplicate.
+ *  - Residual: PostgREST calls are separate statements, so a change committed in
+ *    the milliseconds between the re-read and the insert is not seen. The guarded
+ *    single-statement insert in design/a18/a18_guarded_insert_REVIEW_ONLY.sql
+ *    closes that window once approved.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { planTrustedInAppNotificationInserts } from "./a18-trusted-notification-plan";
+import {
+  planTrustedInAppNotificationInserts,
+  type ProposedNotificationInsert,
+} from "./a18-trusted-notification-plan";
 import type { Opportunity, OpportunityCategory } from "./opportunities";
 import type { ProfileData } from "./profile";
 
-const MAX_USERS_PER_RUN = 500;
-const MAX_INSERTS_PER_USER = 20;
+export const WORKER_LIMITS = {
+  userPageSize: 200,
+  maxUsersPerRun: 2000,
+  opportunityPageSize: 500,
+  maxOpportunities: 5000,
+  storedKeyPageSize: 1000,
+  maxInsertsPerUser: 20,
+} as const;
+
+export type AlertPrefRow = {
+  user_id: string;
+  enabled: boolean;
+  new_matches_enabled: boolean;
+  saved_deadlines_enabled: boolean;
+  categories: string[];
+  minimum_match_score: number;
+  deadline_lead_days: number[];
+  timezone: string;
+};
+
+/** Data-access seam: production uses Supabase; tests use an in-memory store. */
+export interface AlertWorkerStore {
+  listEnabledPrefs(afterUserId: string | null, limit: number): Promise<AlertPrefRow[]>;
+  listPublishedOpportunities(
+    afterId: string | null,
+    limit: number,
+    nowIso: string,
+    today: string,
+  ): Promise<Opportunity[]>;
+  getPref(userId: string): Promise<AlertPrefRow | null>;
+  getProfile(userId: string): Promise<ProfileData | null>;
+  listSavedIds(userId: string): Promise<string[]>;
+  listStoredKeys(userId: string, afterKey: string | null, limit: number): Promise<string[]>;
+  /** Re-read: only ids that are fully published right now. */
+  filterPublished(ids: string[], nowIso: string, today: string): Promise<Opportunity[]>;
+  /** Must be ON CONFLICT (user_id,event_key) DO NOTHING; returns rows actually inserted. */
+  insertIgnoringDuplicates(rows: ProposedNotificationInsert[]): Promise<number>;
+}
 
 export type AlertWorkerResult = {
   usersConsidered: number;
   inserted: number;
   failures: number;
+  skippedConsentChanged: number;
+  truncatedUsers: boolean;
+  truncatedOpportunities: boolean;
 };
+
+function plan(
+  pref: AlertPrefRow,
+  profile: ProfileData | null,
+  opportunities: Opportunity[],
+  savedIds: string[],
+  storedKeys: string[],
+  now: Date,
+) {
+  return planTrustedInAppNotificationInserts({
+    userId: pref.user_id,
+    timezone: pref.timezone,
+    preferences: {
+      enabled: pref.enabled,
+      newMatchesEnabled: pref.new_matches_enabled,
+      savedDeadlineRemindersEnabled: pref.saved_deadlines_enabled,
+      categories: pref.categories as OpportunityCategory[],
+      minimumMatchScore: pref.minimum_match_score,
+      deadlineLeadDays: pref.deadline_lead_days,
+    },
+    profile,
+    opportunities,
+    savedOpportunities: savedIds.map((opportunityId) => ({ userId: pref.user_id, opportunityId })),
+    storedNotificationKeys: storedKeys.map((eventKey) => ({ userId: pref.user_id, eventKey })),
+    now,
+  });
+}
+
+async function loadAllStoredKeys(store: AlertWorkerStore, userId: string) {
+  const keys: string[] = [];
+  let after: string | null = null;
+  for (;;) {
+    const page = await store.listStoredKeys(userId, after, WORKER_LIMITS.storedKeyPageSize);
+    keys.push(...page);
+    if (page.length < WORKER_LIMITS.storedKeyPageSize) return keys;
+    after = page[page.length - 1] ?? null;
+  }
+}
+
+export async function processUser(
+  store: AlertWorkerStore,
+  pref: AlertPrefRow,
+  opportunities: Opportunity[],
+  now: Date,
+): Promise<{ inserted: number; consentChanged: boolean }> {
+  const userId = pref.user_id;
+  const [profile, savedIds, storedKeys] = await Promise.all([
+    store.getProfile(userId),
+    store.listSavedIds(userId),
+    loadAllStoredKeys(store, userId),
+  ]);
+  const first = plan(pref, profile, opportunities, savedIds, storedKeys, now);
+  if (!first.length) return { inserted: 0, consentChanged: false };
+
+  // Fresh re-read of consent + publication immediately before persistence.
+  const nowIso = now.toISOString();
+  const today = nowIso.slice(0, 10);
+  const latest = await store.getPref(userId);
+  if (!latest || latest.user_id !== userId || !latest.enabled) {
+    return { inserted: 0, consentChanged: true };
+  }
+  const ids = Array.from(new Set(first.map((r) => r.opportunity_id)));
+  const live = await store.filterPublished(ids, nowIso, today);
+  // Recompute from fresh state; keep only rows present in both plans.
+  const firstKeys = new Set(first.map((r) => r.event_key));
+  const rows = plan(latest, profile, live, savedIds, storedKeys, now)
+    .filter((r) => firstKeys.has(r.event_key) && r.user_id === userId)
+    .slice(0, WORKER_LIMITS.maxInsertsPerUser);
+  const consentChanged = rows.length < Math.min(first.length, WORKER_LIMITS.maxInsertsPerUser);
+  if (!rows.length) return { inserted: 0, consentChanged };
+  return { inserted: await store.insertIgnoringDuplicates(rows), consentChanged };
+}
+
+export async function runAlertWorkerWithStore(
+  store: AlertWorkerStore,
+  now = new Date(),
+): Promise<AlertWorkerResult> {
+  const result: AlertWorkerResult = {
+    usersConsidered: 0,
+    inserted: 0,
+    failures: 0,
+    skippedConsentChanged: 0,
+    truncatedUsers: false,
+    truncatedOpportunities: false,
+  };
+  const nowIso = now.toISOString();
+  const today = nowIso.slice(0, 10);
+
+  // Load published opportunities with keyset pagination.
+  const opportunities: Opportunity[] = [];
+  let oppCursor: string | null = null;
+  for (;;) {
+    const page = await store.listPublishedOpportunities(
+      oppCursor,
+      WORKER_LIMITS.opportunityPageSize,
+      nowIso,
+      today,
+    );
+    opportunities.push(...page);
+    if (page.length < WORKER_LIMITS.opportunityPageSize) break;
+    if (opportunities.length >= WORKER_LIMITS.maxOpportunities) {
+      result.truncatedOpportunities = true;
+      break;
+    }
+    oppCursor = page[page.length - 1]?.id ?? null;
+  }
+
+  let userCursor: string | null = null;
+  for (;;) {
+    const page = await store.listEnabledPrefs(userCursor, WORKER_LIMITS.userPageSize);
+    for (const pref of page) {
+      result.usersConsidered++;
+      try {
+        const r = await processUser(store, pref, opportunities, now);
+        result.inserted += r.inserted;
+        if (r.consentChanged) result.skippedConsentChanged++;
+      } catch (e) {
+        result.failures++;
+        // No user ids or opportunity details in logs.
+        console.error("[a18-worker] account processing failed:", (e as Error).message);
+      }
+    }
+    if (page.length < WORKER_LIMITS.userPageSize) break;
+    if (result.usersConsidered >= WORKER_LIMITS.maxUsersPerRun) {
+      result.truncatedUsers = true; // remaining users are picked up next run (dedup keeps it safe)
+      break;
+    }
+    userCursor = page[page.length - 1]?.user_id ?? null;
+  }
+  return result;
+}
+
+// ---------------- Supabase adapter ----------------
 
 type Admin = SupabaseClient<Database>;
 
-async function loadPublicOpportunities(db: Admin): Promise<Opportunity[]> {
-  const today = new Date().toISOString().slice(0, 10);
-  const { data, error } = await db
-    .from("opportunities")
-    .select("*")
+const PUBLISHED = (q: any, nowIso: string, today: string) =>
+  q
     .eq("status", "active")
     .eq("verified_status", "verified")
     .not("reviewed_by", "is", null)
     .not("reviewed_at", "is", null)
     .not("published_at", "is", null)
-    .lte("published_at", new Date().toISOString())
-    .or(`deadline.is.null,deadline.gte.${today}`)
-    .limit(1000);
-  if (error) throw new Error("opportunity load failed");
-  return data ?? [];
-}
+    .lte("published_at", nowIso)
+    .or(`deadline.is.null,deadline.gte.${today}`);
 
-async function loadProfile(db: Admin, userId: string): Promise<ProfileData | null> {
-  const [p, prefs, skills, interests] = await Promise.all([
-    db.from("profiles").select("*").eq("id", userId).maybeSingle(),
-    db.from("user_opportunity_preferences").select("opportunity_type").eq("user_id", userId),
-    db.from("user_skills").select("skills(name)").eq("user_id", userId),
-    db.from("user_interests").select("interest").eq("user_id", userId),
-  ]);
-  if (p.error || !p.data) return null;
-  const r = p.data;
+export function supabaseAlertStore(db: Admin): AlertWorkerStore {
   return {
-    id: r.id,
-    full_name: r.full_name,
-    education_level: r.education_level,
-    field_of_study: r.field_of_study,
-    career_field: r.career_field,
-    experience_level: r.experience_level,
-    country: r.country,
-    state: r.state,
-    city: r.city,
-    remote_preference: r.remote_preference,
-    onboarding_completed: r.onboarding_completed,
-    opportunityTypes: (prefs.data ?? []).map((x) => x.opportunity_type),
-    skills: (skills.data ?? [])
-      .map((x) => (x.skills as { name: string } | null)?.name)
-      .filter((n): n is string => !!n),
-    interests: (interests.data ?? []).map((x) => x.interest),
-  };
-}
-
-export async function runAlertWorker(db: Admin, now = new Date()): Promise<AlertWorkerResult> {
-  const result: AlertWorkerResult = { usersConsidered: 0, inserted: 0, failures: 0 };
-
-  const { data: prefRows, error } = await db
-    .from("alert_preferences")
-    .select("*")
-    .eq("enabled", true)
-    .limit(MAX_USERS_PER_RUN);
-  if (error) throw new Error("preference load failed");
-  if (!prefRows?.length) return result;
-
-  const opportunities = await loadPublicOpportunities(db);
-
-  for (const pref of prefRows) {
-    result.usersConsidered++;
-    try {
-      const userId = pref.user_id;
-      const [profile, saved, stored] = await Promise.all([
-        loadProfile(db, userId),
-        db.from("saved_opportunities").select("opportunity_id").eq("user_id", userId),
-        db.from("user_notifications").select("event_key").eq("user_id", userId).limit(5000),
-      ]);
-      if (saved.error || stored.error) throw new Error("owner data load failed");
-
-      const plan = planTrustedInAppNotificationInserts({
-        userId,
-        timezone: pref.timezone,
-        preferences: {
-          enabled: pref.enabled,
-          newMatchesEnabled: pref.new_matches_enabled,
-          savedDeadlineRemindersEnabled: pref.saved_deadlines_enabled,
-          categories: pref.categories as OpportunityCategory[],
-          minimumMatchScore: pref.minimum_match_score,
-          deadlineLeadDays: pref.deadline_lead_days,
-        },
-        profile,
-        opportunities,
-        savedOpportunities: (saved.data ?? []).map((s) => ({
-          userId,
-          opportunityId: s.opportunity_id,
-        })),
-        storedNotificationKeys: (stored.data ?? []).map((s) => ({ userId, eventKey: s.event_key })),
-        now,
-      }).slice(0, MAX_INSERTS_PER_USER);
-      if (!plan.length) continue;
-
-      // Revalidate consent immediately before persistence.
-      const recheck = await db
+    async listEnabledPrefs(after, limit) {
+      let q = db.from("alert_preferences").select("*").eq("enabled", true).order("user_id");
+      if (after) q = q.gt("user_id", after);
+      const { data, error } = await q.limit(limit);
+      if (error) throw new Error("preference load failed");
+      return (data ?? []) as AlertPrefRow[];
+    },
+    async listPublishedOpportunities(after, limit, nowIso, today) {
+      let q = PUBLISHED(db.from("opportunities").select("*"), nowIso, today).order("id");
+      if (after) q = q.gt("id", after);
+      const { data, error } = await q.limit(limit);
+      if (error) throw new Error("opportunity load failed");
+      return (data ?? []) as Opportunity[];
+    },
+    async getPref(userId) {
+      const { data, error } = await db
         .from("alert_preferences")
-        .select("enabled")
+        .select("*")
         .eq("user_id", userId)
         .maybeSingle();
-      if (!recheck.data?.enabled) continue;
-
-      // Revalidate publication immediately before persistence.
-      const ids = Array.from(new Set(plan.map((p) => p.opportunity_id)));
-      const live = await db
-        .from("opportunities")
-        .select("id")
-        .in("id", ids)
-        .eq("status", "active")
-        .eq("verified_status", "verified")
-        .not("published_at", "is", null);
-      if (live.error) throw new Error("publication recheck failed");
-      const liveIds = new Set((live.data ?? []).map((o) => o.id));
-      const rows = plan.filter((p) => liveIds.has(p.opportunity_id));
-      if (!rows.length) continue;
-
-      const ins = await db
+      if (error) throw new Error("consent recheck failed");
+      return (data as AlertPrefRow | null) ?? null;
+    },
+    async getProfile(userId) {
+      const [p, prefs, skills, interests] = await Promise.all([
+        db.from("profiles").select("*").eq("id", userId).maybeSingle(),
+        db.from("user_opportunity_preferences").select("opportunity_type").eq("user_id", userId),
+        db.from("user_skills").select("skills(name)").eq("user_id", userId),
+        db.from("user_interests").select("interest").eq("user_id", userId),
+      ]);
+      if (p.error || !p.data) return null;
+      const r = p.data;
+      return {
+        id: r.id,
+        full_name: r.full_name,
+        education_level: r.education_level,
+        field_of_study: r.field_of_study,
+        career_field: r.career_field,
+        experience_level: r.experience_level,
+        country: r.country,
+        state: r.state,
+        city: r.city,
+        remote_preference: r.remote_preference,
+        onboarding_completed: r.onboarding_completed,
+        opportunityTypes: (prefs.data ?? []).map((x) => x.opportunity_type),
+        skills: (skills.data ?? [])
+          .map((x) => (x.skills as { name: string } | null)?.name)
+          .filter((n): n is string => !!n),
+        interests: (interests.data ?? []).map((x) => x.interest),
+      };
+    },
+    async listSavedIds(userId) {
+      const { data, error } = await db
+        .from("saved_opportunities")
+        .select("opportunity_id")
+        .eq("user_id", userId);
+      if (error) throw new Error("saved load failed");
+      return (data ?? []).map((s) => s.opportunity_id);
+    },
+    async listStoredKeys(userId, after, limit) {
+      let q = db
+        .from("user_notifications")
+        .select("event_key")
+        .eq("user_id", userId)
+        .order("event_key");
+      if (after) q = q.gt("event_key", after);
+      const { data, error } = await q.limit(limit);
+      if (error) throw new Error("stored key load failed");
+      return (data ?? []).map((s) => s.event_key);
+    },
+    async filterPublished(ids, nowIso, today) {
+      if (!ids.length) return [];
+      const { data, error } = await PUBLISHED(
+        db.from("opportunities").select("*").in("id", ids),
+        nowIso,
+        today,
+      );
+      if (error) throw new Error("publication recheck failed");
+      return (data ?? []) as Opportunity[];
+    },
+    async insertIgnoringDuplicates(rows) {
+      const { data, error } = await db
         .from("user_notifications")
         .upsert(rows, { onConflict: "user_id,event_key", ignoreDuplicates: true })
         .select("id");
-      if (ins.error) throw new Error("insert failed");
-      result.inserted += ins.data?.length ?? 0;
-    } catch (e) {
-      result.failures++;
-      // Log without user IDs or opportunity details.
-      console.error("[a18-worker] account processing failed:", (e as Error).message);
-    }
-  }
-  return result;
+      if (error) throw new Error("insert failed");
+      return data?.length ?? 0;
+    },
+  };
+}
+
+export function runAlertWorker(db: Admin, now = new Date()) {
+  return runAlertWorkerWithStore(supabaseAlertStore(db), now);
 }
