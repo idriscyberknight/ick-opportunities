@@ -21,7 +21,8 @@ import type { InAppAlertPreferences } from "@/lib/opportunity-alerts";
  *  - never enters main navigation;
  *  - keeps all writes blocked unless actual build-time Supabase host matches
  *    exact approved Production backend host and OFF-by-default feature flag;
- *  - no delivery worker, email, SMS, push, cron, or fake alert data.
+ *  - in-app only; notifications are created solely by the cron-authenticated
+ *    daily worker (src/lib/a18-alert-worker.server.ts). No email/SMS/push.
  *
  * Real signed-session RLS tests must pass before enabling the Production pilot.
  */
@@ -117,7 +118,7 @@ function AlertsPilotForAccount({ userId }: { userId: string }) {
       await queryClient.invalidateQueries({ queryKey: notificationsKey });
       setMessage(
         confirmed.enabled
-          ? "Your in-app alert preference was saved and confirmed. No notification worker is running."
+          ? "Saved. You'll get in-app alerts for verified opportunities that match your settings. We check once a day in the morning."
           : "Alerts remain OFF. Your choice was confirmed.",
       );
     } catch (err) {
@@ -149,9 +150,10 @@ function AlertsPilotForAccount({ userId }: { userId: string }) {
         </span>
         <h1 className="mt-4 font-display text-3xl font-bold">Opportunity alerts — early access</h1>
         <p className="mt-3 max-w-3xl text-muted-foreground">
-          You can save your own in-app preferences if this limited pilot is enabled. Enabling this
-          setting saves consent only; no scheduled notifications, emails, messages or push delivery
-          are enabled.
+          Turn on alerts to get in-app notices about new verified opportunities that match your
+          profile and reminders before deadlines of opportunities you saved. Alerts appear here only
+          — no emails, SMS or push messages. You can turn them off at any time; once off, no new
+          alerts are created.
         </p>
       </header>
 
