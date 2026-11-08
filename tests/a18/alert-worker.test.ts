@@ -144,9 +144,16 @@ describe("A1.8 worker persistence safety (isolated in-memory data)", () => {
     expect((await runAlertWorkerWithStore(s, NOW)).inserted).toBe(0);
   });
 
-  it("category removed during generation => nothing inserted", async () => {
+  it("categories filter new matches only; a saved item's reminder still follows the reminder toggle", async () => {
     const s = baseStore();
     s.beforeRecheck = (u) => s.prefs.set(u, pref(u, { categories: ["job"] }));
+    expect((await runAlertWorkerWithStore(s, NOW)).inserted).toBe(1);
+  });
+
+  it("new-match toggle enabled late does not inject rows that were not in the original plan", async () => {
+    const s = baseStore();
+    s.saved.set(A, []);
+    s.beforeRecheck = (u) => s.prefs.set(u, pref(u, { new_matches_enabled: true }));
     expect((await runAlertWorkerWithStore(s, NOW)).inserted).toBe(0);
   });
 
