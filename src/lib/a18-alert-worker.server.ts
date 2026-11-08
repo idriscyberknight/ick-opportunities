@@ -110,7 +110,7 @@ async function loadAllStoredKeys(store: AlertWorkerStore, userId: string) {
     const page = await store.listStoredKeys(userId, after, WORKER_LIMITS.storedKeyPageSize);
     keys.push(...page);
     if (page.length < WORKER_LIMITS.storedKeyPageSize) return keys;
-    after = page[page.length - 1];
+    after = page[page.length - 1] ?? null;
   }
 }
 
@@ -179,7 +179,7 @@ export async function runAlertWorkerWithStore(
       result.truncatedOpportunities = true;
       break;
     }
-    oppCursor = page[page.length - 1].id;
+    oppCursor = page[page.length - 1]?.id ?? null;
   }
 
   let userCursor: string | null = null;
@@ -202,7 +202,7 @@ export async function runAlertWorkerWithStore(
       result.truncatedUsers = true; // remaining users are picked up next run (dedup keeps it safe)
       break;
     }
-    userCursor = page[page.length - 1].user_id;
+    userCursor = page[page.length - 1]?.user_id ?? null;
   }
   return result;
 }
