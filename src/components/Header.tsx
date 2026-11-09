@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AlertBell } from "@/components/alerts/AlertBell";
 import { supabase } from "@/integrations/supabase/client";
 
 /** Every route listed here already exists in the inspected project. */
@@ -208,6 +209,7 @@ export function Header() {
             <ThemeToggle />
             {isAuthenticated ? (
               <>
+                <AlertBell />
                 <Link
                   to="/dashboard"
                   className={cn(
