@@ -163,7 +163,11 @@ function toPreferences(row: PreferenceRow | null): InAppAlertPreferences {
 function browserTimezone(): string {
   try {
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (zone && /^[A-Za-z][A-Za-z0-9_+.-]*\/[A-Za-z][A-Za-z0-9_+./-]*$/.test(zone) && zone.length <= 64) {
+    if (
+      zone &&
+      /^[A-Za-z][A-Za-z0-9_+.-]*\/[A-Za-z][A-Za-z0-9_+./-]*$/.test(zone) &&
+      zone.length <= 64
+    ) {
       return zone;
     }
   } catch {
