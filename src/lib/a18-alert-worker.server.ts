@@ -20,7 +20,7 @@
  *    closes that window once approved.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import {
   planTrustedInAppNotificationInserts,
   type ProposedNotificationInsert,
@@ -321,21 +321,17 @@ export function supabaseAlertStore(db: Admin): AlertWorkerStore {
         };
       });
 
-      // 1. Kira aikin kariya na rumbun bayanai (Atomic Guarded RPC)
-      const { data, error } = await (db as any).rpc("a18_insert_notifications_guarded", {
-        _rows: payload,
+      // Fail closed: only the database's atomic consent/publication guarded RPC
+      // may persist notifications. A direct table upsert would bypass its
+      // insert-time checks if this function is unavailable or fails.
+      const { data, error } = await db.rpc("a18_insert_notifications_guarded", {
+        _rows: payload as unknown as Json,
       });
-      if (!error && typeof data === "number") {
-        return data;
+      if (error) throw new Error("guarded notification insert failed");
+      if (typeof data !== "number" || !Number.isSafeInteger(data) || data < 0 || data > rows.length) {
+        throw new Error("guarded notification insert returned invalid count");
       }
-
-      // 2. Madadin kariya idan ba a samu RPC ba (Fallback)
-      const { data: upsertData, error: upsertError } = await db
-        .from("user_notifications")
-        .upsert(rows, { onConflict: "user_id,event_key", ignoreDuplicates: true })
-        .select("id");
-      if (upsertError) throw new Error("insert failed");
-      return upsertData?.length ?? 0;
+      return data;
     },
   };
 }
