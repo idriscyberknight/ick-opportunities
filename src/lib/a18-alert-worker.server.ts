@@ -74,6 +74,8 @@ export type AlertWorkerResult = {
   skippedConsentChanged: number;
   truncatedUsers: boolean;
   truncatedOpportunities: boolean;
+  /** Present when more opted-in users remain after this bounded batch. */
+  nextUserCursor: string | null;
 };
 
 function plan(
@@ -131,13 +133,13 @@ export async function processUser(
 
   // Fresh re-read of consent + publication immediately before persistence.
   const nowIso = now.toISOString();
-  const today = nowIso.slice(0, 10);
+  const earliestLocalDate = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10);
   const latest = await store.getPref(userId);
   if (!latest || latest.user_id !== userId || !latest.enabled) {
     return { inserted: 0, consentChanged: true };
   }
   const ids = Array.from(new Set(first.map((r) => r.opportunity_id)));
-  const live = await store.filterPublished(ids, nowIso, today);
+  const live = await store.filterPublished(ids, nowIso, earliestLocalDate);
   // Recompute from fresh state; keep only rows present in both plans.
   const firstKeys = new Set(first.map((r) => r.event_key));
   const rows = plan(latest, profile, live, savedIds, storedKeys, now)
@@ -148,9 +150,14 @@ export async function processUser(
   return { inserted: await store.insertIgnoringDuplicates(rows), consentChanged };
 }
 
+/**
+ * Resume an authorized scheduler batch with `afterUserId` from the previous
+ * result. Never silently start again at user zero while more users remain.
+ */
 export async function runAlertWorkerWithStore(
   store: AlertWorkerStore,
   now = new Date(),
+  afterUserId: string | null = null,
 ): Promise<AlertWorkerResult> {
   const result: AlertWorkerResult = {
     usersConsidered: 0,
@@ -159,9 +166,13 @@ export async function runAlertWorkerWithStore(
     skippedConsentChanged: 0,
     truncatedUsers: false,
     truncatedOpportunities: false,
+    nextUserCursor: null,
   };
   const nowIso = now.toISOString();
-  const today = nowIso.slice(0, 10);
+  // Include yesterday in the initial SQL candidate window: at UTC midnight,
+  // users west of UTC can still legitimately have the previous local date.
+  // The trusted planner and guarded RPC enforce exact user-local deadlines.
+  const earliestLocalDate = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10);
 
   // Load published opportunities with keyset pagination.
   const opportunities: Opportunity[] = [];
@@ -171,7 +182,7 @@ export async function runAlertWorkerWithStore(
       oppCursor,
       WORKER_LIMITS.opportunityPageSize,
       nowIso,
-      today,
+      earliestLocalDate,
     );
     opportunities.push(...page);
     if (page.length < WORKER_LIMITS.opportunityPageSize) break;
@@ -182,7 +193,7 @@ export async function runAlertWorkerWithStore(
     oppCursor = page[page.length - 1]?.id ?? null;
   }
 
-  let userCursor: string | null = null;
+  let userCursor: string | null = afterUserId;
   for (;;) {
     const page = await store.listEnabledPrefs(userCursor, WORKER_LIMITS.userPageSize);
     for (const pref of page) {
@@ -199,7 +210,16 @@ export async function runAlertWorkerWithStore(
     }
     if (page.length < WORKER_LIMITS.userPageSize) break;
     if (result.usersConsidered >= WORKER_LIMITS.maxUsersPerRun) {
-      result.truncatedUsers = true; // remaining users are picked up next run (dedup keeps it safe)
+      // Expose a real resume cursor; repeated scheduled calls MUST supply it.
+      // Without a cursor, the initial 2,000 users would be processed forever.
+      const remaining = await store.listEnabledPrefs(
+        page[page.length - 1]?.user_id ?? null,
+        1,
+      );
+      if (remaining.length > 0) {
+        result.truncatedUsers = true;
+        result.nextUserCursor = page[page.length - 1]?.user_id ?? null;
+      }
       break;
     }
     userCursor = page[page.length - 1]?.user_id ?? null;
@@ -253,7 +273,10 @@ export function supabaseAlertStore(db: Admin): AlertWorkerStore {
         db.from("user_skills").select("skills(name)").eq("user_id", userId),
         db.from("user_interests").select("interest").eq("user_id", userId),
       ]);
-      if (p.error || !p.data) return null;
+      if (p.error || prefs.error || skills.error || interests.error) {
+        throw new Error("alert matching profile load failed");
+      }
+      if (!p.data) return null;
       const r = p.data;
       return {
         id: r.id,
@@ -275,12 +298,24 @@ export function supabaseAlertStore(db: Admin): AlertWorkerStore {
       };
     },
     async listSavedIds(userId) {
-      const { data, error } = await db
-        .from("saved_opportunities")
-        .select("opportunity_id")
-        .eq("user_id", userId);
-      if (error) throw new Error("saved load failed");
-      return (data ?? []).map((s) => s.opportunity_id);
+      // PostgREST may cap one response at 1,000 rows. Use a stable keyset
+      // cursor so saved-deadline reminders aren't silently dropped.
+      const ids: string[] = [];
+      let afterId: string | null = null;
+      for (;;) {
+        let q = db
+          .from("saved_opportunities")
+          .select("opportunity_id")
+          .eq("user_id", userId)
+          .order("opportunity_id");
+        if (afterId) q = q.gt("opportunity_id", afterId);
+        const { data, error } = await q.limit(WORKER_LIMITS.storedKeyPageSize);
+        if (error) throw new Error("saved load failed");
+        const page = (data ?? []).map((s) => s.opportunity_id);
+        ids.push(...page);
+        if (page.length < WORKER_LIMITS.storedKeyPageSize) return ids;
+        afterId = page[page.length - 1] ?? null;
+      }
     },
     async listStoredKeys(userId, after, limit) {
       let q = db
@@ -336,6 +371,19 @@ export function supabaseAlertStore(db: Admin): AlertWorkerStore {
   };
 }
 
-export function runAlertWorker(db: Admin, now = new Date()) {
-  return runAlertWorkerWithStore(supabaseAlertStore(db), now);
+/** Accept only UUID cursors from the authenticated scheduler's prior result. */
+export function parseAlertWorkerCursor(raw: string | null): string | null {
+  if (raw === null) return null;
+  if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(raw)) {
+    throw new Error("invalid alert worker continuation cursor");
+  }
+  return raw.toLowerCase();
+}
+
+export function runAlertWorker(
+  db: Admin,
+  now = new Date(),
+  afterUserId: string | null = null,
+) {
+  return runAlertWorkerWithStore(supabaseAlertStore(db), now, afterUserId);
 }
