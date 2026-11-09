@@ -940,6 +940,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      a18_insert_notifications_guarded: {
+        Args: { _rows: Json }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
