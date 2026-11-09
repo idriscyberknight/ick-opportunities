@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
   runAlertWorkerWithStore,
+  supabaseAlertStore,
   WORKER_LIMITS,
   type AlertPrefRow,
   type AlertWorkerStore,
@@ -237,6 +238,58 @@ describe("A1.8 worker persistence safety (isolated in-memory data)", () => {
     const r = await runAlertWorkerWithStore(s, NOW);
     expect(r.failures).toBe(1);
     expect(r.inserted).toBe(1);
+  });
+});
+
+describe("A1.8 Production insert adapter must fail closed", () => {
+  const row: ProposedNotificationInsert = {
+    user_id: A,
+    opportunity_id: OPP,
+    kind: "saved_deadline",
+    event_key: `saved_deadline:${OPP}:2026-10-29:3`,
+  };
+
+  it("does not fall back to a direct upsert when guarded RPC fails", async () => {
+    let directTableCalls = 0;
+    const stubDb = {
+      rpc: async () => ({ data: null, error: { message: "RPC unavailable" } }),
+      from: () => {
+        directTableCalls++;
+        throw new Error("unsafe direct-table fallback");
+      },
+    } as unknown as Parameters<typeof supabaseAlertStore>[0];
+    const store = supabaseAlertStore(stubDb);
+
+    await expect(store.insertIgnoringDuplicates([row])).rejects.toThrow(
+      "guarded notification insert failed",
+    );
+    expect(directTableCalls).toBe(0);
+  });
+
+  it("rejects an invalid guarded RPC result instead of writing directly", async () => {
+    let directTableCalls = 0;
+    const stubDb = {
+      rpc: async () => ({ data: "1", error: null }),
+      from: () => {
+        directTableCalls++;
+        throw new Error("unsafe direct-table fallback");
+      },
+    } as unknown as Parameters<typeof supabaseAlertStore>[0];
+
+    await expect(supabaseAlertStore(stubDb).insertIgnoringDuplicates([row])).rejects.toThrow(
+      "guarded notification insert returned invalid count",
+    );
+    expect(directTableCalls).toBe(0);
+  });
+
+  it("accepts only a valid guarded RPC insertion count", async () => {
+    const stubDb = {
+      rpc: async () => ({ data: 1, error: null }),
+      from: () => {
+        throw new Error("direct writes are forbidden");
+      },
+    } as unknown as Parameters<typeof supabaseAlertStore>[0];
+    expect(await supabaseAlertStore(stubDb).insertIgnoringDuplicates([row])).toBe(1);
   });
 });
 
