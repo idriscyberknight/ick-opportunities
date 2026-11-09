@@ -293,7 +293,17 @@ export function supabaseAlertStore(db: Admin): AlertWorkerStore {
       if (error) throw new Error("stored key load failed");
       return (data ?? []).map((s) => s.event_key);
     },
-        async insertIgnoringDuplicates(rows) {
+            async filterPublished(ids, nowIso, today) {
+      if (!ids.length) return [];
+      const { data, error } = await PUBLISHED(
+        db.from("opportunities").select("*").in("id", ids),
+        nowIso,
+        today,
+      );
+      if (error) throw new Error("publication recheck failed");
+      return (data ?? []) as Opportunity[];
+    },
+    async insertIgnoringDuplicates(rows) {
       if (!rows.length) return 0;
       const payload = rows.map((r) => {
         let lead_days: number | null = null;
@@ -326,18 +336,6 @@ export function supabaseAlertStore(db: Admin): AlertWorkerStore {
         .select("id");
       if (upsertError) throw new Error("insert failed");
       return upsertData?.length ?? 0;
-    },
-    
-      if (error) throw new Error("publication recheck failed");
-      return (data ?? []) as Opportunity[];
-    },
-    async insertIgnoringDuplicates(rows) {
-      const { data, error } = await db
-        .from("user_notifications")
-        .upsert(rows, { onConflict: "user_id,event_key", ignoreDuplicates: true })
-        .select("id");
-      if (error) throw new Error("insert failed");
-      return data?.length ?? 0;
     },
   };
 }
