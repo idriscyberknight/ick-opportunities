@@ -6,7 +6,7 @@
  * set VITE_SITE_URL at build time (or edit DEFAULT_SITE_ORIGIN) and update the
  * Sitemap line in public/robots.txt to match.
  */
-const DEFAULT_SITE_ORIGIN = "https://ickopportunities.lovable.app";
+const DEFAULT_SITE_ORIGIN = "https://ick-opportunities.vercel.app";
 
 const fromEnv = (import.meta.env["VITE_SITE_URL"] as string | undefined)?.trim();
 
