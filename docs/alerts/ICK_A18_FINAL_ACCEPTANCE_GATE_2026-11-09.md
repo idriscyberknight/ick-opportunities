@@ -38,3 +38,14 @@ Each test must retain redacted evidence with target ID, commit, role, time, expe
 **Status: BLOCKED FOR PRODUCTION ACTIVATION.** Passing CI means reviewable code, not live-system completion. Do not merge PR #45 or turn alerts/email ON solely because build, TypeScript and offline tests passed.
 
 **Next safe action:** review the current draft PR and the Production deployment's server-side secret/scheduler availability in read-only mode, then perform authorized real signed-session tests on a separate controlled test target. Production user writes, SQL changes, release and email sending each require specific approval.
+
+## 2026-11-09 read-only/code regression follow-up — PR #45
+
+- **Cursor coverage:** The server-only route `POST /api/public/jobs/alerts` accepts an *authenticated* `?afterUserId=<UUID>` cursor. Each bounded batch returns `nextUserCursor` when additional opted-in users exist. The trusted scheduler must call again with this value until it is null. This is **not evidence the existing scheduler already does so**; absent an orchestrator that follows cursors, users after the first 2,000 remain at risk of starvation.
+- **Saved opportunities:** The service-role adapter uses `opportunity_id` keyset pagination instead of relying on PostgREST's possible 1,000-row default limit; a mock coverage test checks 2,003 saved IDs.
+- **Timezone eligibility:** The candidate query accepts a conservative one-day-earlier UTC deadline cutoff so users west of UTC are not lost at midnight. The planner subsequently applies per-user local date and the installed guarded RPC has a per-user timezone deadline condition.
+- **Backend matching inputs:** Errors in skills/interests/preferences queries now fail the affected account instead of silently generating an incomplete match.
+- **New CI evidence:** GitHub Actions run #42604273323 passed 59 A1.8 tests and 18 email tests, build, TypeScript and the scoped linter, all on a proposal branch. No real user messages or Production writes were performed.
+- **Observed deployment discrepancy:** Read-only Vercel domain resolution at this review returned Production deployment `dpl_BUCyXRtVqKsEdvHNefM8Lz2H19aH`, commit `67b60f3780d23708e7fda5297dfad13ba07b3fac`. GitHub main head remained `e18d8cf39380efbf7d60c290ed99eda024d75876`. Both are distinct from draft PR #45; verify deployment provenance before any release and do not assume how the discrepancy arose.
+- **Unresolved at scale:** Opportunities are capped at 5,000 per worker run; `truncatedOpportunities: true` signals incomplete coverage. The scheduler continuation mechanism is newly introduced and is not proven in any actual runtime. Neither deficiency should be represented as production-ready.
+- **STOP:** No automatic Production merge, SQL, credential modification, user email, in-app notification dispatch, or release flag changes are authorized by this document.
