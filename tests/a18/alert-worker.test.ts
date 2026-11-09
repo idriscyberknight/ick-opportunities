@@ -372,6 +372,31 @@ describe("A1.8 complete batch coverage and strict backend reads", () => {
     expect(calls).toBe(3);
   });
 
+  it("does not persist partial matches when there are more than 5,000 public candidates", async () => {
+    const store = baseStore();
+    for (let i = 0; i < WORKER_LIMITS.maxOpportunities; i++) {
+      const id = `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+      store.opps.set(id, opp({ id }));
+    }
+    const result = await runAlertWorkerWithStore(store, NOW);
+    expect(result.truncatedOpportunities).toBe(true);
+    expect(result.usersConsidered).toBe(0);
+    expect(result.inserted).toBe(0);
+    expect(store.notifications).toEqual([]);
+  });
+
+  it("allows processing exactly 5,000 fully published candidates", async () => {
+    const store = baseStore();
+    for (let i = 0; i < WORKER_LIMITS.maxOpportunities - 1; i++) {
+      const id = `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+      store.opps.set(id, opp({ id }));
+    }
+    const result = await runAlertWorkerWithStore(store, NOW);
+    expect(result.truncatedOpportunities).toBe(false);
+    expect(result.usersConsidered).toBe(1);
+    expect(result.inserted).toBe(1);
+  });
+
   it("refuses partial user-profile queries instead of silently degrading matching", async () => {
     const db = {
       from: (table: string) => ({
