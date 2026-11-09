@@ -1,0 +1,154 @@
+import { expect, test, describe } from "bun:test";
+import {
+  buildDigestPayload,
+  processEmailDigestQueue,
+  SUPPORT_EMAIL,
+  type EmailWorkerStore,
+  type EmailRecipientPref,
+  type EmailTransport,
+} from "@/lib/email-digest-worker.server";
+import type { Opportunity } from "@/lib/opportunities";
+import type { ProfileData } from "@/lib/profile";
+
+describe("Email Digest Worker Server Logic", () => {
+  const mockNow = new Date("2026-11-09T08:00:00Z");
+  const today = "2026-11-09";
+
+  const sampleOpportunities: Opportunity[] = [
+    {
+      id: "opp-verified-1",
+      title: "PTDF Overseas Masters Scholarship",
+      category: "scholarship",
+      organization: "PTDF Nigeria",
+      country: "Nigeria",
+      state: "Abuja",
+      deadline: "2026-12-31",
+      status: "active",
+      verified_status: "verified",
+      reviewed_at: "2026-11-01T00:00:00Z",
+      reviewed_by: "admin-user",
+      published_at: "2026-11-02T00:00:00Z",
+      created_at: "2026-11-01T00:00:00Z",
+      updated_at: "2026-11-02T00:00:00Z",
+      description: "Scholarship for engineering graduates in Nigeria",
+      eligibility: "B.Sc first class or second class upper",
+      benefits: "Full tuition and stipend",
+      link: "https://example.com/apply",
+      source_id: null,
+      verification_notes: null,
+    },
+    {
+      id: "opp-draft-2",
+      title: "Unreviewed Fake Scholarship",
+      category: "scholarship",
+      organization: "Unknown Org",
+      country: "Nigeria",
+      state: null,
+      deadline: "2026-12-31",
+      status: "draft", // DRAFT: Must never be included
+      verified_status: "pending_review",
+      reviewed_at: null,
+      reviewed_by: null,
+      published_at: null,
+      created_at: "2026-11-01T00:00:00Z",
+      updated_at: "2026-11-02T00:00:00Z",
+      description: "Draft opportunity",
+      eligibility: null,
+      benefits: null,
+      link: "https://example.com/draft",
+      source_id: null,
+      verification_notes: null,
+    },
+  ];
+
+  const sampleRecipient: EmailRecipientPref = {
+    user_id: "user-100",
+    email: "applicant@example.com",
+    name: "Amina Lawal",
+    email_enabled: true,
+    categories: ["scholarship"],
+  };
+
+  const sampleProfile: ProfileData = {
+    full_name: "Amina Lawal",
+    country: "Nigeria",
+    state: "Kano",
+    education_level: "undergraduate",
+    field_of_study: "Computer Engineering",
+    career_field: "Technology",
+    skills: ["Python", "Engineering"],
+    interests: ["Scholarships", "Coding"],
+    opportunityTypes: ["scholarships"],
+    remote_preference: "any",
+  };
+
+  test("uses ickopportunity@gmail.com as canonical support and replyTo address", () => {
+    expect(SUPPORT_EMAIL).toBe("ickopportunity@gmail.com");
+  });
+
+  test("filters out unreviewed/draft opportunities strictly", () => {
+    const payload = buildDigestPayload(
+      sampleRecipient,
+      sampleProfile,
+      sampleOpportunities,
+      today
+    );
+
+    expect(payload).not.toBeNull();
+    expect(payload?.opportunities.length).toBe(1);
+    expect(payload?.opportunities[0]?.id).toBe("opp-verified-1");
+    expect(payload?.opportunities.some((o) => o.id === "opp-draft-2")).toBe(false);
+  });
+
+  test("returns null if recipient has disabled email notifications", () => {
+    const disabledRecipient = { ...sampleRecipient, email_enabled: false };
+    const payload = buildDigestPayload(
+      disabledRecipient,
+      sampleProfile,
+      sampleOpportunities,
+      today
+    );
+    expect(payload).toBeNull();
+  });
+
+  test("processes email queue and dispatches email with replyTo ickopportunity@gmail.com", async () => {
+    const sentCalls: any[] = [];
+    const recordedRecords: any[] = [];
+
+    const mockStore: EmailWorkerStore = {
+      async listEligibleRecipients() {
+        return [sampleRecipient];
+      },
+      async getProfile() {
+        return sampleProfile;
+      },
+      async listPublishedOpportunities() {
+        return sampleOpportunities;
+      },
+      async recordDigestSent(userId, dateStr, ids) {
+        recordedRecords.push({ userId, dateStr, ids });
+      },
+    };
+
+    const mockTransport: EmailTransport = async (params) => {
+      sentCalls.push(params);
+      return { success: true, messageId: "msg-123" };
+    };
+
+    const result = await processEmailDigestQueue(mockStore, mockTransport, mockNow);
+
+    expect(result.considered).toBe(1);
+    expect(result.sent).toBe(1);
+    expect(result.failed).toBe(0);
+
+    expect(sentCalls.length).toBe(1);
+    expect(sentCalls[0].to).toBe("applicant@example.com");
+    expect(sentCalls[0].replyTo).toBe("ickopportunity@gmail.com");
+    expect(sentCalls[0].subject).toContain("Scholarship");
+    expect(sentCalls[0].html).toContain("PTDF Overseas Masters Scholarship");
+    expect(sentCalls[0].html).toContain("Amina Lawal");
+
+    expect(recordedRecords.length).toBe(1);
+    expect(recordedRecords[0].userId).toBe("user-100");
+  });
+});
