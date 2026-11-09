@@ -42,6 +42,17 @@ jobs:
           bun-version: "1.3.14"
       - name: Install locked packages
         run: bun install --frozen-lockfile
+      - name: Print formatter proposals without modifying git (temporary)
+        run: |
+          set -euo pipefail
+          for file in src/lib/alert-production-client.ts src/lib/matching.ts src/lib/emails/opportunity-digest.ts; do
+            bunx prettier --write "$file" >/dev/null
+            echo "BEGIN_FORMATTED_FILE $file"
+            base64 -w0 "$file"
+            echo
+            echo "END_FORMATTED_FILE $file"
+          done
+          git diff --exit-code -- src/lib/alert-production-client.ts src/lib/matching.ts src/lib/emails/opportunity-digest.ts
       - name: Test alert derivation and existing ranking regression
         run: bun test tests/a18
       - name: Test email digest consent, content and queue safety
