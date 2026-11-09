@@ -33,6 +33,8 @@ export interface EmailRecipientPref {
 export interface EmailWorkerStore {
   listEligibleRecipients(limit: number): Promise<EmailRecipientPref[]>;
   getProfile(userId: string): Promise<ProfileData | null>;
+  /** Fresh read from authoritative consent store, never a stale queue snapshot. */
+  getLatestRecipient(userId: string): Promise<EmailRecipientPref | null>;
   listPublishedOpportunities(nowIso: string, today: string): Promise<Opportunity[]>;
   recordDigestSent(userId: string, dateStr: string, opportunityIds: string[]): Promise<void>;
 }
@@ -183,52 +185,60 @@ export async function processEmailDigestQueue(
       result.skippedOptOut++;
       continue;
     }
-
-    // Skip if already sent today
-    if (recipient.last_digest_sent_at && recipient.last_digest_sent_at.startsWith(today)) {
-      continue;
-    }
-
-    const profile = await store.getProfile(recipient.user_id);
-    const payload = buildDigestPayload(
-      recipient,
-      profile,
-      opportunities,
-      today,
-      minScore,
-      maxItems,
-      nowIso,
-    );
-
-    if (!payload || payload.opportunities.length === 0) {
-      result.skippedNoMatches++;
-      continue;
-    }
-
-    const subject = getDigestSubject(payload);
-    const html = renderOpportunityDigestHtml(payload);
-    const text = renderOpportunityDigestText(payload);
+    // The initial queue snapshot may be stale; a completed send is not evidence
+    // of email-specific consent unless the trusted store re-verifies it.
+    if (recipient.last_digest_sent_at?.startsWith(today)) continue;
 
     try {
+      const profile = await store.getProfile(recipient.user_id);
+      // Re-read consent, destination email, filters and daily-send state directly
+      // before building the outgoing email. Never send from the queue snapshot.
+      const latest = await store.getLatestRecipient(recipient.user_id);
+      if (latest && latest.user_id !== recipient.user_id) {
+        throw new Error("cross-account email recipient mismatch");
+      }
+      if (!latest || !latest.email_enabled) {
+        result.skippedOptOut++;
+        continue;
+      }
+      if (latest.last_digest_sent_at?.startsWith(today)) continue;
+
+      const payload = buildDigestPayload(
+        latest,
+        profile,
+        opportunities,
+        today,
+        minScore,
+        maxItems,
+        nowIso,
+      );
+      if (!payload) {
+        result.skippedNoMatches++;
+        continue;
+      }
+
       const sendRes = await transport({
-        to: recipient.email,
-        subject,
-        html,
-        text,
+        to: latest.email,
+        subject: getDigestSubject(payload),
+        html: renderOpportunityDigestHtml(payload),
+        text: renderOpportunityDigestText(payload),
         replyTo: SUPPORT_EMAIL,
       });
-
-      if (sendRes.success) {
-        result.sent++;
-        await store.recordDigestSent(
-          recipient.user_id,
-          today,
-          payload.opportunities.map((o) => o.id),
-        );
-      } else {
+      if (!sendRes.success) {
         result.failed++;
+        continue;
       }
+
+      // Still requires a durable delivery claim / provider idempotency before
+      // production use: a crash after sending can otherwise trigger a retry.
+      await store.recordDigestSent(
+        recipient.user_id,
+        today,
+        payload.opportunities.map((o) => o.id),
+      );
+      result.sent++;
     } catch {
+      // Fail the affected account; never abort all subsequent recipients.
       result.failed++;
     }
   }
