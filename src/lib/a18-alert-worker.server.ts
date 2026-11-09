@@ -293,13 +293,41 @@ export function supabaseAlertStore(db: Admin): AlertWorkerStore {
       if (error) throw new Error("stored key load failed");
       return (data ?? []).map((s) => s.event_key);
     },
-    async filterPublished(ids, nowIso, today) {
-      if (!ids.length) return [];
-      const { data, error } = await PUBLISHED(
-        db.from("opportunities").select("*").in("id", ids),
-        nowIso,
-        today,
-      );
+        async insertIgnoringDuplicates(rows) {
+      if (!rows.length) return 0;
+      const payload = rows.map((r) => {
+        let lead_days: number | null = null;
+        if (r.kind === "saved_deadline") {
+          const parts = r.event_key.split(":");
+          const parsed = parseInt(parts[parts.length - 1] ?? "", 10);
+          if (!Number.isNaN(parsed)) lead_days = parsed;
+        }
+        return {
+          user_id: r.user_id,
+          opportunity_id: r.opportunity_id,
+          kind: r.kind,
+          event_key: r.event_key,
+          lead_days,
+        };
+      });
+
+      // 1. Kira aikin kariya na rumbun bayanai (Atomic Guarded RPC)
+      const { data, error } = await (db as any).rpc("a18_insert_notifications_guarded", {
+        _rows: payload,
+      });
+      if (!error && typeof data === "number") {
+        return data;
+      }
+
+      // 2. Madadin kariya idan ba a samu RPC ba (Fallback)
+      const { data: upsertData, error: upsertError } = await db
+        .from("user_notifications")
+        .upsert(rows, { onConflict: "user_id,event_key", ignoreDuplicates: true })
+        .select("id");
+      if (upsertError) throw new Error("insert failed");
+      return upsertData?.length ?? 0;
+    },
+    
       if (error) throw new Error("publication recheck failed");
       return (data ?? []) as Opportunity[];
     },
