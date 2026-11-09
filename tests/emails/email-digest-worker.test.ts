@@ -111,6 +111,72 @@ describe("Email Digest Worker Server Logic", () => {
     expect(payload).toBeNull();
   });
 
+  test("limits personalized results to the recipient's selected categories", () => {
+    const job = {
+      ...sampleOpportunities[0],
+      id: "opp-job-3",
+      title: "Engineering graduate job",
+      category: "job" as const,
+    };
+    const payload = buildDigestPayload(
+      { ...sampleRecipient, minimum_match_score: 0 },
+      sampleProfile,
+      [...sampleOpportunities, job],
+      today,
+      0,
+    );
+    expect(payload?.opportunities.map((item) => item.id)).toEqual(["opp-verified-1"]);
+  });
+
+  test("does not generate a digest without explicitly selected categories", () => {
+    const payload = buildDigestPayload(
+      { ...sampleRecipient, categories: [] },
+      sampleProfile,
+      sampleOpportunities,
+      today,
+    );
+    expect(payload).toBeNull();
+  });
+
+  test("enforces the recipient's minimum match score with no category-only bypass", () => {
+    const payload = buildDigestPayload(
+      { ...sampleRecipient, minimum_match_score: 100 },
+      sampleProfile,
+      sampleOpportunities,
+      today,
+      0,
+    );
+    expect(payload).toBeNull();
+  });
+
+  test("does not invent match scores for users without a matching-ready profile", () => {
+    const payload = buildDigestPayload(
+      sampleRecipient,
+      null,
+      sampleOpportunities,
+      today,
+    );
+    expect(payload).toBeNull();
+  });
+
+  test("excludes opportunities that are not yet published at the trusted send time", () => {
+    const futurePublished = {
+      ...sampleOpportunities[0],
+      id: "opp-future",
+      published_at: "2026-11-09T12:00:00Z",
+    };
+    const payload = buildDigestPayload(
+      { ...sampleRecipient, minimum_match_score: 0 },
+      sampleProfile,
+      [...sampleOpportunities, futurePublished],
+      today,
+      0,
+      5,
+      "2026-11-09T08:00:00Z",
+    );
+    expect(payload?.opportunities.map((item) => item.id)).toEqual(["opp-verified-1"]);
+  });
+
   test("processes email queue and dispatches email with replyTo ickopportunity@gmail.com", async () => {
     const sentCalls: any[] = [];
     const recordedRecords: any[] = [];
