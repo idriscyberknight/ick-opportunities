@@ -188,6 +188,9 @@ describe("Email Digest Worker Server Logic", () => {
       async getProfile() {
         return sampleProfile;
       },
+      async getLatestRecipient() {
+        return sampleRecipient;
+      },
       async listPublishedOpportunities() {
         return sampleOpportunities;
       },
@@ -217,4 +220,133 @@ describe("Email Digest Worker Server Logic", () => {
     expect(recordedRecords.length).toBe(1);
     expect(recordedRecords[0].userId).toBe("user-100");
   });
+  test("fresh opt-out prevents a send even when the initial queue snapshot was enabled", async () => {
+    let sends = 0;
+    const store: EmailWorkerStore = {
+      async listEligibleRecipients() {
+        return [sampleRecipient];
+      },
+      async getProfile() {
+        return sampleProfile;
+      },
+      async getLatestRecipient() {
+        return { ...sampleRecipient, email_enabled: false };
+      },
+      async listPublishedOpportunities() {
+        return sampleOpportunities;
+      },
+      async recordDigestSent() {
+        throw new Error("must not record after opt-out");
+      },
+    };
+    const result = await processEmailDigestQueue(
+      store,
+      async () => {
+        sends++;
+        return { success: true };
+      },
+      mockNow,
+    );
+    expect(result.sent).toBe(0);
+    expect(result.skippedOptOut).toBe(1);
+    expect(sends).toBe(0);
+  });
+
+  test("changed categories and score are applied immediately before email dispatch", async () => {
+    const store: EmailWorkerStore = {
+      async listEligibleRecipients() {
+        return [sampleRecipient];
+      },
+      async getProfile() {
+        return sampleProfile;
+      },
+      async getLatestRecipient() {
+        return { ...sampleRecipient, categories: ["job"], minimum_match_score: 100 };
+      },
+      async listPublishedOpportunities() {
+        return sampleOpportunities;
+      },
+      async recordDigestSent() {
+        throw new Error("must not record if no live match");
+      },
+    };
+    let sends = 0;
+    const result = await processEmailDigestQueue(
+      store,
+      async () => {
+        sends++;
+        return { success: true };
+      },
+      mockNow,
+    );
+    expect(result.skippedNoMatches).toBe(1);
+    expect(result.sent).toBe(0);
+    expect(sends).toBe(0);
+  });
+
+  test("cross-account latest recipient response is rejected without sending", async () => {
+    const store: EmailWorkerStore = {
+      async listEligibleRecipients() {
+        return [sampleRecipient];
+      },
+      async getProfile() {
+        return sampleProfile;
+      },
+      async getLatestRecipient() {
+        return { ...sampleRecipient, user_id: "different-user" };
+      },
+      async listPublishedOpportunities() {
+        return sampleOpportunities;
+      },
+      async recordDigestSent() {
+        throw new Error("no delivery should be recorded");
+      },
+    };
+    let sends = 0;
+    const result = await processEmailDigestQueue(
+      store,
+      async () => {
+        sends++;
+        return { success: true };
+      },
+      mockNow,
+    );
+    expect(result.failed).toBe(1);
+    expect(result.sent).toBe(0);
+    expect(sends).toBe(0);
+  });
+
+  test("a failed recipient read does not block later opted-in accounts", async () => {
+    const second = { ...sampleRecipient, user_id: "user-200", email: "other@example.com" };
+    const destinations: string[] = [];
+    const store: EmailWorkerStore = {
+      async listEligibleRecipients() {
+        return [sampleRecipient, second];
+      },
+      async getProfile() {
+        return sampleProfile;
+      },
+      async getLatestRecipient(userId) {
+        if (userId === sampleRecipient.user_id) throw new Error("temporary read failure");
+        return second;
+      },
+      async listPublishedOpportunities() {
+        return sampleOpportunities;
+      },
+      async recordDigestSent() {},
+    };
+    const result = await processEmailDigestQueue(
+      store,
+      async ({ to }) => {
+        destinations.push(to);
+        return { success: true };
+      },
+      mockNow,
+    );
+    expect(result.considered).toBe(2);
+    expect(result.failed).toBe(1);
+    expect(result.sent).toBe(1);
+    expect(destinations).toEqual(["other@example.com"]);
+  });
+
 });
