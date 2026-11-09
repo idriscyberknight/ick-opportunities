@@ -23,10 +23,11 @@ export const Route = createFileRoute("/api/public/jobs/alerts")({
           // The authorized scheduler MUST follow nextUserCursor when non-null.
           // Partial user batches are not evidence that all opted-in users were
           // processed. Missing/failed records are surfaced, not hidden.
-          return Response.json({
-            ok: result.failures === 0 && !result.truncatedOpportunities,
-            ...result,
-          });
+          const healthy = result.failures === 0 && !result.truncatedOpportunities;
+          return Response.json(
+            { ok: healthy, ...result },
+            { status: healthy ? 200 : 503 },
+          );
         } catch (e) {
           console.error("[a18-worker] run failed:", (e as Error).message);
           return Response.json({ ok: false }, { status: 500 });
