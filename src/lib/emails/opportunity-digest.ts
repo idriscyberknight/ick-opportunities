@@ -55,8 +55,8 @@ export function renderOpportunityDigestHtml(payload: DigestEmailPayload): string
   const origin = (payload.siteOrigin || "https://ick-opportunities.vercel.app").replace(/\/+$/, "");
   const recipientName = payload.recipient.name?.trim() || "Applicant";
   const items = payload.opportunities;
-  const preferencesUrl = payload.preferencesUrl || `${origin}/dashboard/alerts`;
-  const unsubscribeUrl = payload.unsubscribeUrl || `${origin}/dashboard/alerts`;
+  const preferencesUrl = payload.preferencesUrl || `${origin}/alerts`;
+  const unsubscribeUrl = payload.unsubscribeUrl || `${origin}/alerts`;
 
   const itemsHtml = items.map((item) => {
     const itemUrl = item.url || `${origin}/opportunities/${item.id}`;
@@ -174,7 +174,7 @@ export function renderOpportunityDigestHtml(payload: DigestEmailPayload): string
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 16px;">
                 <tr>
                   <td style="font-size: 12px; color: #991b1b; line-height: 18px;">
-                    🛡️ <strong>Security Alert:</strong> All opportunities listed on ICK Opportunities are 100% free. Never send money or pay application fees to anyone claiming to represent a scholarship, internship, or job listing.
+                    🛡️ <strong>Security Alert:</strong> ICK Opportunities does not charge to browse listings. Check any legitimate application fees only with the official opportunity provider. Never pay someone claiming to guarantee an award or job.
                   </td>
                 </tr>
               </table>
@@ -235,12 +235,12 @@ Based on your profile, here are new opportunities tailored to your interests:
 ${itemsText}
 ---
 SECURITY ALERT:
-All listings on ICK Opportunities are 100% free. Never pay anyone claiming to sell scholarship slots or job opportunities.
+ICK Opportunities does not charge to browse listings. Verify any application fees directly with the official provider and beware of guaranteed-award scams.
 
 ---
 You received this email because you opted in to opportunity alerts.
-Manage Preferences: ${payload.preferencesUrl || `${origin}/dashboard/alerts`}
-Unsubscribe: ${payload.unsubscribeUrl || `${origin}/dashboard/alerts`}
+Manage Preferences: ${payload.preferencesUrl || `${origin}/alerts`}
+Unsubscribe: ${payload.unsubscribeUrl || `${origin}/alerts`}
 
 (c) 2026 ICK Opportunities (${origin})
 `;
