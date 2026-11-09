@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
   runAlertWorkerWithStore,
+  parseAlertWorkerCursor,
   supabaseAlertStore,
   WORKER_LIMITS,
   type AlertPrefRow,
@@ -290,6 +291,106 @@ describe("A1.8 Production insert adapter must fail closed", () => {
       },
     } as unknown as Parameters<typeof supabaseAlertStore>[0];
     expect(await supabaseAlertStore(stubDb).insertIgnoringDuplicates([row])).toBe(1);
+  });
+});
+
+describe("A1.8 complete batch coverage and strict backend reads", () => {
+  it("returns a working continuation cursor after 2,000 users and resumes without repeats", async () => {
+    const store = new MemStore();
+    const total = WORKER_LIMITS.maxUsersPerRun + 2;
+    for (let i = 0; i < total; i++) {
+      const userId = `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+      // No notifications are eligible; exercise only deterministic pagination.
+      store.prefs.set(userId, pref(userId, {
+        new_matches_enabled: false,
+        saved_deadlines_enabled: false,
+      }));
+    }
+
+    const first = await runAlertWorkerWithStore(store, NOW);
+    expect(first.usersConsidered).toBe(WORKER_LIMITS.maxUsersPerRun);
+    expect(first.truncatedUsers).toBe(true);
+    expect(first.nextUserCursor).not.toBeNull();
+
+    const second = await runAlertWorkerWithStore(store, NOW, first.nextUserCursor);
+    expect(second.usersConsidered).toBe(2);
+    expect(second.truncatedUsers).toBe(false);
+    expect(second.nextUserCursor).toBeNull();
+    expect(first.usersConsidered + second.usersConsidered).toBe(total);
+  });
+
+  it("validates the private scheduler continuation cursor", () => {
+    expect(parseAlertWorkerCursor(null)).toBeNull();
+    expect(parseAlertWorkerCursor(A.toUpperCase())).toBe(A);
+    expect(() => parseAlertWorkerCursor("user%27;DROP TABLE")).toThrow(
+      "invalid alert worker continuation cursor",
+    );
+  });
+
+  it("queries a conservative deadline window so UTC-11 users are not skipped at midnight", async () => {
+    const store = baseStore();
+    const queryDates: string[] = [];
+    const original = store.listPublishedOpportunities.bind(store);
+    store.listPublishedOpportunities = async (cursor, limit, now, cutoff) => {
+      queryDates.push(cutoff);
+      return original(cursor, limit, now, cutoff);
+    };
+    const r = await runAlertWorkerWithStore(store, new Date("2026-10-26T00:30:00Z"));
+    expect(r.failures).toBe(0);
+    expect(queryDates).toEqual(["2026-10-25"]);
+  });
+
+  it("fetches every saved opportunity beyond the default 1,000-row response cap", async () => {
+    const ids = Array.from(
+      { length: WORKER_LIMITS.storedKeyPageSize * 2 + 3 },
+      (_, i) => `aaaaaaaa-aaaa-4aaa-8aaa-${String(i).padStart(12, "0")}`,
+    );
+    let calls = 0;
+    const db = {
+      from: () => {
+        let cursor: string | null = null;
+        return {
+          select() { return this; },
+          eq() { return this; },
+          order() { return this; },
+          gt(_key: string, value: string) { cursor = value; return this; },
+          async limit(limit: number) {
+            calls++;
+            return {
+              data: ids
+                .filter((id) => !cursor || id > cursor)
+                .slice(0, limit)
+                .map((id) => ({ opportunity_id: id })),
+              error: null,
+            };
+          },
+        };
+      },
+    } as unknown as Parameters<typeof supabaseAlertStore>[0];
+    const actual = await supabaseAlertStore(db).listSavedIds(A);
+    expect(actual).toEqual(ids);
+    expect(calls).toBe(3);
+  });
+
+  it("refuses partial user-profile queries instead of silently degrading matching", async () => {
+    const db = {
+      from: (table: string) => ({
+        select() { return this; },
+        eq() {
+          if (table === "profiles") return this;
+          return Promise.resolve({
+            data: [],
+            error: table === "user_skills" ? { message: "permission denied" } : null,
+          });
+        },
+        async maybeSingle() {
+          return { data: { id: A }, error: null };
+        },
+      }),
+    } as unknown as Parameters<typeof supabaseAlertStore>[0];
+    await expect(supabaseAlertStore(db).getProfile(A)).rejects.toThrow(
+      "alert matching profile load failed",
+    );
   });
 });
 
