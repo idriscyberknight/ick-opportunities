@@ -4,20 +4,20 @@
  * client. Never import from browser code.
  *
  * Safety model:
- *  - opt-in only; users paged deterministically by user_id (keyset cursor), so
- *    nobody is permanently skipped by a per-run cap;
+ *  - opt-in only; users paged deterministically by user_id (keyset cursor);
+ *    the authorized scheduler MUST resume using nextUserCursor when provided.
+ *    A daily job that ignores the cursor still starves users after the run cap;
  *  - opportunities paged by id; only fully published rows (active, verified,
  *    reviewed_by/at, published_at <= now, deadline not passed);
  *  - immediately before insert, the user's LATEST preference row and the
  *    LATEST publication state of every planned opportunity are re-read and the
  *    plan is recomputed from that fresh state (categories, score, toggles,
  *    reminder days all honoured; withdrawn consent => nothing inserted);
- *  - inserts use UNIQUE(user_id,event_key) + ON CONFLICT DO NOTHING, so retries
- *    and overlapping runs never duplicate.
- *  - Residual: PostgREST calls are separate statements, so a change committed in
- *    the milliseconds between the re-read and the insert is not seen. The guarded
- *    single-statement insert in design/a18/a18_guarded_insert_REVIEW_ONLY.sql
- *    closes that window once approved.
+ *  - persistence is only via installed atomic guarded RPC plus the
+ *    UNIQUE(user_id,event_key) constraint; any RPC error fails closed.
+ *  - residual: publication preselection is capped at maxOpportunities (currently
+ *    5,000); truncation is surfaced as a release blocker, not full coverage.
+ *    Repeat scheduler calls must follow nextUserCursor until null.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
