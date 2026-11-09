@@ -187,11 +187,25 @@ export async function runAlertWorkerWithStore(
     opportunities.push(...page);
     if (page.length < WORKER_LIMITS.opportunityPageSize) break;
     if (opportunities.length >= WORKER_LIMITS.maxOpportunities) {
-      result.truncatedOpportunities = true;
+      // A full batch does not necessarily mean there is another page.
+      const lastId = page[page.length - 1]?.id ?? null;
+      const remaining = await store.listPublishedOpportunities(
+        lastId,
+        1,
+        nowIso,
+        earliestLocalDate,
+      );
+      if (remaining.length > 0) result.truncatedOpportunities = true;
       break;
     }
     oppCursor = page[page.length - 1]?.id ?? null;
   }
+
+  // Never notify on an incomplete set of published opportunities.
+  // Without this, accounts can receive biased/missing matches from the
+  // first 5,000 IDs while the API misleadingly reports partial success.
+  // This cap requires a future chunked matching design, not an unsafe skip.
+  if (result.truncatedOpportunities) return result;
 
   let userCursor: string | null = afterUserId;
   for (;;) {
