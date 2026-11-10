@@ -184,13 +184,16 @@ export async function runDiscoveryCore(
           items = null;
         }
       }
-      if (!items) {
+            if (!items) {
         entry.mode = "fallback";
         items = extractFallback(html, src.source_url).map((f) => ({
           title: f.title,
           organization: src.source_name,
-          description: `Found on ${src.source_name} by fallback discovery (no AI). Needs review — verify all details on the official page.`,
-          category: guessCategory(f.title, src.source_type),
+          description:
+            f.description && f.description.length > 20
+              ? f.description.slice(0, 2000)
+              : `Found on ${src.source_name} by fallback discovery (no AI). Needs review — verify all details on the official page.`,
+          category: f.categoryHint || guessCategory(f.title, src.source_type),
           country: null,
           deadline: f.deadline,
           eligibility: null,
@@ -199,6 +202,7 @@ export async function runDiscoveryCore(
           scores: null,
         }));
       }
+      
 
       entry.found = items.length;
       let incomplete = 0;
