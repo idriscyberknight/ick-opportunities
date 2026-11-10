@@ -8,6 +8,7 @@ import {
   SourceFetchError,
 } from "@/lib/ai/discovery.server";
 import { extractFallback } from "@/lib/ai/fallback-extract.server";
+import { isXmlFeedOrSitemap } from "@/lib/ai/rss-sitemap-extract.server";
 
 const MAX_SOURCES_PER_RUN = 5;
 const VALID_CATS = ["scholarship", "job", "internship", "grant"] as const;
@@ -151,6 +152,33 @@ export async function runDiscoveryCore(
       const { html, text } = await fetchPage(src.source_url);
       let items: Normalized[] | null = null;
       if (aiAvailable && text.length >= 200) {
+            try {
+      const { html, text } = await fetchPage(src.source_url);
+      let items: Normalized[] | null = null;
+
+      // 1. If page is an RSS/Atom feed or XML Sitemap, extract deterministically (NO AI, 0 credits, 100% accurate)
+      if (isXmlFeedOrSitemap(html)) {
+        entry.mode = "fallback";
+        items = extractFallback(html, src.source_url).map((f) => ({
+          title: f.title,
+          organization: src.source_name,
+          description:
+            f.description && f.description.length > 20
+              ? f.description.slice(0, 2000)
+              : `Found on ${src.source_name} by fallback discovery (no AI). Needs review — verify all details on the official page.`,
+          category:
+            f.categoryHint && (VALID_CATS as readonly string[]).includes(f.categoryHint.toLowerCase())
+              ? (f.categoryHint.toLowerCase() as Category)
+              : guessCategory(f.title, src.source_type),
+          country: null,
+          deadline: f.deadline,
+          eligibility: null,
+          benefits: null,
+          link: f.link,
+          scores: null,
+        }));
+      } else if (aiAvailable && text.length >= 200) {
+        // 2. Normal HTML pages: try AI if available
         try {
           const ai = await extractOpportunities(text, src.source_url, src.source_type);
           items = ai.map((it) => ({
@@ -184,7 +212,9 @@ export async function runDiscoveryCore(
           items = null;
         }
       }
-            if (!items) {
+
+      // 3. Fallback for HTML pages where AI returned nothing or is disabled
+      if (!items || items.length === 0) {
         entry.mode = "fallback";
         items = extractFallback(html, src.source_url).map((f) => ({
           title: f.title,
@@ -194,9 +224,9 @@ export async function runDiscoveryCore(
               ? f.description.slice(0, 2000)
               : `Found on ${src.source_name} by fallback discovery (no AI). Needs review — verify all details on the official page.`,
           category:
-  f.categoryHint && (VALID_CATS as readonly string[]).includes(f.categoryHint.toLowerCase())
-    ? (f.categoryHint.toLowerCase() as Category)
-    : guessCategory(f.title, src.source_type),
+            f.categoryHint && (VALID_CATS as readonly string[]).includes(f.categoryHint.toLowerCase())
+              ? (f.categoryHint.toLowerCase() as Category)
+              : guessCategory(f.title, src.source_type),
           country: null,
           deadline: f.deadline,
           eligibility: null,
@@ -204,9 +234,9 @@ export async function runDiscoveryCore(
           link: f.link,
           scores: null,
         }));
-      }
+            }
+                            
       
-
       entry.found = items.length;
       let incomplete = 0;
       const now = new Date().toISOString();
