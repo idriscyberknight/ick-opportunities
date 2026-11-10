@@ -148,10 +148,7 @@ export async function runDiscoveryCore(
       mode: "ai" as "ai" | "fallback",
     };
     result.sources.push(entry);
-    try {
-      const { html, text } = await fetchPage(src.source_url);
-      let items: Normalized[] | null = null;
-      if (aiAvailable && text.length >= 200) {
+
             try {
       const { html, text } = await fetchPage(src.source_url);
       let items: Normalized[] | null = null;
