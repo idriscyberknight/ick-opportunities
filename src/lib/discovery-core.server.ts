@@ -193,7 +193,10 @@ export async function runDiscoveryCore(
             f.description && f.description.length > 20
               ? f.description.slice(0, 2000)
               : `Found on ${src.source_name} by fallback discovery (no AI). Needs review — verify all details on the official page.`,
-          category: f.categoryHint || guessCategory(f.title, src.source_type),
+          category:
+  f.categoryHint && (VALID_CATS as readonly string[]).includes(f.categoryHint.toLowerCase())
+    ? (f.categoryHint.toLowerCase() as Category)
+    : guessCategory(f.title, src.source_type),
           country: null,
           deadline: f.deadline,
           eligibility: null,
