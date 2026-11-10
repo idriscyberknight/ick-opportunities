@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import {
+  cleanText,
   extractMetaDescription,
   findDeadlineFromText,
   extractEligibility,
@@ -8,6 +9,10 @@ import {
 } from "../../src/lib/ai/deterministic-enrichment.server";
 
 describe("Deterministic Enrichment Unit Tests", () => {
+  it("unwraps CDATA before removing embedded markup", () => {
+    expect(cleanText("<![CDATA[<strong>Official scholarship</strong> &amp; grant]]>")).toBe("Official scholarship & grant");
+  });
+
   it("extracts meta description from HTML tags", () => {
     const html1 = '<meta name="description" content="Commonwealth Master scholarship for eligible low and middle income countries.">';
     expect(extractMetaDescription(html1)).toBe("Commonwealth Master scholarship for eligible low and middle income countries.");
