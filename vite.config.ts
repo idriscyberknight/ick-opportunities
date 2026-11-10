@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { Plugin } from "vite";
 
-const reviewedHash = "ccc35767aca6a759e17af0cae72238decbfdf283ac1da2a7f28a4906cfd52104";
+const reviewedHash = "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18";
 
 function assertReviewedStorage(source: string) {
   const normalized = source.replace(/\r\n/g, "\n").trim();
