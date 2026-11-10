@@ -5,6 +5,13 @@
  * international institutions (e.g. IsDB, Commonwealth, UN, African Union, DAAD)
  * with zero AI credit consumption and zero hallucinations.
  */
+import {
+  cleanText,
+  findDeadlineFromText,
+  extractEligibility,
+  extractBenefits,
+  cleanSitemapFallbackDescription,
+} from "./deterministic-enrichment.server";
 
 export type ExtractedFeedItem = {
   title: string;
@@ -13,47 +20,11 @@ export type ExtractedFeedItem = {
   deadline: string | null;
   pubDate: string | null;
   categoryHint: string | null;
+  eligibility?: string | null;
+  benefits?: string | null;
 };
 
-const MONTHS: Record<string, number> = {
-  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
-  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
-};
-
-/**
- * Wanke rubutun CDATA da alamomin HTML domin samun tsattsarkan rubutu.
- */
-export function cleanXmlText(s: string): string {
-  if (!s) return "";
-  return s
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/gi, "$1")
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, " ")
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&#0?39;|&apos;|&rsquo;|&lsquo;/gi, "'")
-    .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
-    .replace(/&ndash;|&mdash;/gi, "-")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&#(\d+);/g, (_m, n: string) => String.fromCharCode(Number(n)))
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/**
- * Zakulo ranar ƙarewar aiki daga rubutu (misali: 30 November 2026 ko 2026-12-15).
- */
-export function findDeadlineFromText(text: string): string | null {
-  const m = text.match(/(?:deadline|closing date|closes|apply by|end date)[^0-9a-z]{0,12}(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]{3})[a-z]*,?\s+(20\d{2})/i);
-  if (m) {
-    const mo = MONTHS[m[2]!.toLowerCase()];
-    if (mo) return `${m[3]}-${String(mo).padStart(2, "0")}-${m[1]!.padStart(2, "0")}`;
-  }
-  const iso = text.match(/(?:deadline|closing date|closes|apply by|end date)[^0-9]{0,12}(20\d{2}-\d{2}-\d{2})/i);
-  return iso ? iso[1]! : null;
-}
+export { cleanText as cleanXmlText, findDeadlineFromText };
 
 /**
  * Tabbatar da cewa shafin da aka sauko XML Feed ne ko Sitemap.
@@ -88,25 +59,27 @@ export function parseRssFeed(xml: string, max = 25): ExtractedFeedItem[] {
     const pubDateM = block.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i);
     const catM = block.match(/<category\b[^>]*>([\s\S]*?)<\/category>/i);
 
-    const title = cleanXmlText(titleM ? titleM[1]! : "").slice(0, 300);
+    const title = cleanText(titleM ? titleM[1]! : "").slice(0, 300);
     let link = (linkM ? linkM[1]! : "").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/gi, "$1").trim();
     if (!link.startsWith("http://") && !link.startsWith("https://")) continue;
 
     const rawDesc = descM ? descM[1]! : "";
-    const description = cleanXmlText(rawDesc).slice(0, 2000);
+    const description = cleanText(rawDesc).slice(0, 2000);
     const deadline = findDeadlineFromText(description) || findDeadlineFromText(title);
-    const pubDate = pubDateM ? cleanXmlText(pubDateM[1]!) : null;
-    const categoryHint = catM ? cleanXmlText(catM[1]!) : null;
+    const pubDate = pubDateM ? cleanText(pubDateM[1]!) : null;
+    const categoryHint = catM ? cleanText(catM[1]!) : null;
+    const eligibility = extractEligibility(description);
+    const benefits = extractBenefits(description);
 
     if (title.length >= 8 && link) {
-      out.push({ title, link, description, deadline, pubDate, categoryHint });
+      out.push({ title, link, description, deadline, pubDate, categoryHint, eligibility, benefits });
     }
   }
   return out;
 }
 
 /**
- * Tace Atom 1.0 Feeds (wanda Majalisar Dinkin Duniya da hukumomin Turai ke yawan amfani da shi).
+ * Tace Atom 1.0 Feeds.
  */
 export function parseAtomFeed(xml: string, max = 25): ExtractedFeedItem[] {
   const out: ExtractedFeedItem[] = [];
@@ -124,19 +97,21 @@ export function parseAtomFeed(xml: string, max = 25): ExtractedFeedItem[] {
     const updatedM = block.match(/<(?:updated|published)\b[^>]*>([\s\S]*?)<\/(?:updated|published)>/i);
     const catM = block.match(/<category\b[^>]*term=["']([^"']+)["']/i);
 
-    const title = cleanXmlText(titleM ? titleM[1]! : "").slice(0, 300);
+    const title = cleanText(titleM ? titleM[1]! : "").slice(0, 300);
     let link = (linkHrefM ? linkHrefM[1]! : (linkTagM ? linkTagM[1]! : "")).trim();
     link = link.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/gi, "$1").trim();
     if (!link.startsWith("http://") && !link.startsWith("https://")) continue;
 
     const rawDesc = descM ? descM[1]! : "";
-    const description = cleanXmlText(rawDesc).slice(0, 2000);
+    const description = cleanText(rawDesc).slice(0, 2000);
     const deadline = findDeadlineFromText(description) || findDeadlineFromText(title);
-    const pubDate = updatedM ? cleanXmlText(updatedM[1]!) : null;
-    const categoryHint = catM ? cleanXmlText(catM[1]!) : null;
+    const pubDate = updatedM ? cleanText(updatedM[1]!) : null;
+    const categoryHint = catM ? cleanText(catM[1]!) : null;
+    const eligibility = extractEligibility(description);
+    const benefits = extractBenefits(description);
 
     if (title.length >= 8 && link) {
-      out.push({ title, link, description, deadline, pubDate, categoryHint });
+      out.push({ title, link, description, deadline, pubDate, categoryHint, eligibility, benefits });
     }
   }
   return out;
@@ -175,10 +150,12 @@ export function parseSitemap(xml: string, max = 25): ExtractedFeedItem[] {
       out.push({
         title,
         link,
-        description: `Discovered from official XML sitemap: ${link}`,
+        description: cleanSitemapFallbackDescription(title, "Official Program"),
         deadline: null,
-        pubDate: lastModM ? cleanXmlText(lastModM[1]!) : null,
+        pubDate: lastModM ? cleanText(lastModM[1]!) : null,
         categoryHint: null,
+        eligibility: null,
+        benefits: null,
       });
     }
   }
@@ -198,4 +175,5 @@ export function extractFeedOrSitemap(xml: string, max = 25): ExtractedFeedItem[]
     return parseSitemap(xml, max);
   }
   return parseRssFeed(xml, max);
-}
+                        }
+    
