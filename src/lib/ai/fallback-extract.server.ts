@@ -1,9 +1,17 @@
 /**
  * Deterministic (no-AI) opportunity extraction used when AI is unavailable.
  * Uses structured data (JSON-LD JobPosting), heading/list/card selectors, and
- * keyword-filtered link extraction. Only returns what is literally on the page.
+ * keyword-filtered link extraction. Also natively supports RSS, Atom and XML Sitemaps.
  */
-export type FallbackItem = { title: string; link: string; deadline: string | null };
+import { isXmlFeedOrSitemap, extractFeedOrSitemap } from "./rss-sitemap-extract.server";
+
+export type FallbackItem = {
+  title: string;
+  link: string;
+  deadline: string | null;
+  description?: string;
+  categoryHint?: string | null;
+};
 
 const KEYWORDS =
   /scholarship|fellowship|grant|internship|intern\b|vacanc|job|position|career opening|programme|program\b|award|bursary|funding|call for (applications|proposals)|apply|opportunit|recruit|hiring|officer|manager|analyst|engineer|assistant|consultant|specialist|coordinator/i;
@@ -46,6 +54,20 @@ function absolute(href: string, base: string): string | null {
 }
 
 export function extractFallback(html: string, sourceUrl: string, max = 15): FallbackItem[] {
+  // 0. Check if the page is an RSS / Atom feed or XML Sitemap
+  if (isXmlFeedOrSitemap(html)) {
+    const feedItems = extractFeedOrSitemap(html, max);
+    if (feedItems.length > 0) {
+      return feedItems.map((fi) => ({
+        title: fi.title,
+        link: fi.link,
+        deadline: fi.deadline,
+        description: fi.description,
+        categoryHint: fi.categoryHint,
+      }));
+    }
+  }
+
   const out: FallbackItem[] = [];
   const seen = new Set<string>();
   const srcNorm = absolute(sourceUrl, sourceUrl);
@@ -107,4 +129,5 @@ export function extractFallback(html: string, sourceUrl: string, max = 15): Fall
     push(text, absolute(href, sourceUrl), findDeadline(decode(ctx)));
   }
   return out;
-}
+  }
+    
