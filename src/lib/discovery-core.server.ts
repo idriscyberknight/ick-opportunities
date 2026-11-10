@@ -154,6 +154,7 @@ export async function runDiscoveryCore(
       let items: Normalized[] | null = null;
 
       // 1. If page is an RSS/Atom feed or XML Sitemap, extract deterministically (NO AI, 0 credits, 100% accurate)
+            // 1. If page is an RSS/Atom feed or XML Sitemap, extract deterministically (NO AI, 0 credits, 100% accurate)
       if (isXmlFeedOrSitemap(html)) {
         entry.mode = "fallback";
         items = extractFallback(html, src.source_url).map((f) => ({
@@ -162,15 +163,15 @@ export async function runDiscoveryCore(
           description:
             f.description && f.description.length > 20
               ? f.description.slice(0, 2000)
-              : `Found on ${src.source_name} by fallback discovery (no AI). Needs review — verify all details on the official page.`,
+              : `${f.title} — Official programme by ${src.source_name}. Check the official portal for full eligibility criteria and details.`,
           category:
             f.categoryHint && (VALID_CATS as readonly string[]).includes(f.categoryHint.toLowerCase())
               ? (f.categoryHint.toLowerCase() as Category)
               : guessCategory(f.title, src.source_type),
           country: null,
           deadline: f.deadline,
-          eligibility: null,
-          benefits: null,
+          eligibility: f.eligibility ?? null,
+          benefits: f.benefits ?? null,
           link: f.link,
           scores: null,
         }));
@@ -219,19 +220,20 @@ export async function runDiscoveryCore(
           description:
             f.description && f.description.length > 20
               ? f.description.slice(0, 2000)
-              : `Found on ${src.source_name} by fallback discovery (no AI). Needs review — verify all details on the official page.`,
+              : `${f.title} — Official programme by ${src.source_name}. Check the official portal for full eligibility criteria and details.`,
           category:
             f.categoryHint && (VALID_CATS as readonly string[]).includes(f.categoryHint.toLowerCase())
               ? (f.categoryHint.toLowerCase() as Category)
               : guessCategory(f.title, src.source_type),
           country: null,
           deadline: f.deadline,
-          eligibility: null,
-          benefits: null,
+          eligibility: f.eligibility ?? null,
+          benefits: f.benefits ?? null,
           link: f.link,
           scores: null,
         }));
-            }
+      }
+
                             
       
       entry.found = items.length;
