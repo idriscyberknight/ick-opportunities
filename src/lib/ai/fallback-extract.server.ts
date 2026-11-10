@@ -16,7 +16,7 @@ export type FallbackItem = {
   title: string;
   link: string;
   deadline: string | null;
-  description?: string;
+  description?: string | undefined;
   categoryHint?: string | null;
   eligibility?: string | null;
   benefits?: string | null;

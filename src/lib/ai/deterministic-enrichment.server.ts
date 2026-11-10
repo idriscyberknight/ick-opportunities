@@ -13,6 +13,7 @@ const MONTHS: Record<string, number> = {
 export function cleanText(s: string): string {
   if (!s) return "";
   return s
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/gi, "$1")
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, " ")
     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ")
