@@ -242,8 +242,9 @@ export async function runDiscoveryCore(
       let enrichBudget = 10; // bounded per source: one GET per new item
       const now = new Date().toISOString();
       for (const it of items) {
-        const { title, organization, description } = it;
-        if (!title || !organization || !description) {
+        const { title, organization } = it;
+        const rawDescription = it.description;
+        if (!title || !organization || !rawDescription) {
           incomplete++;
           continue;
         }
@@ -260,7 +261,7 @@ export async function runDiscoveryCore(
           entry.duplicates++;
           continue;
         }
-        let description = it.description;
+        let description = rawDescription;
         if (link && normLink(link) !== normLink(src.source_url) && enrichBudget > 0 && needsEnrichment({ description, deadline: it.deadline, eligibility: it.eligibility, benefits: it.benefits })) {
           enrichBudget--;
           const extra = await fetchDetailEnrichment(link);
