@@ -87,8 +87,8 @@ export function enrichFromDetailHtml(html: string): DetailEnrichment {
   return {
     description: description ? description.slice(0, 2000) : null,
     deadline: findDeadlineExtended(text),
-    eligibility: extractEligibility(text) ?? pick(text, ELIG_RX),
-    benefits: extractBenefits(text) ?? pick(text, BENEFIT_RX),
+    eligibility: pick(text, ELIG_RX) ?? extractEligibility(text),
+    benefits: pick(text, BENEFIT_RX) ?? extractBenefits(text),
   };
 }
 
