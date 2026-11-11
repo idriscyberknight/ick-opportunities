@@ -8,6 +8,7 @@ import {
   SourceFetchError,
 } from "@/lib/ai/discovery.server";
 import { extractFallback } from "@/lib/ai/fallback-extract.server";
+import { fetchDetailEnrichment, needsEnrichment } from "@/lib/ai/detail-page-enrich.server";
 import { isXmlFeedOrSitemap } from "@/lib/ai/rss-sitemap-extract.server";
 
 const MAX_SOURCES_PER_RUN = 5;
@@ -238,6 +239,7 @@ export async function runDiscoveryCore(
       
       entry.found = items.length;
       let incomplete = 0;
+      let enrichBudget = 10; // bounded per source: one GET per new item
       const now = new Date().toISOString();
       for (const it of items) {
         const { title, organization, description } = it;
@@ -257,6 +259,17 @@ export async function runDiscoveryCore(
         if (keys.has(key) || (nl && links.has(nl))) {
           entry.duplicates++;
           continue;
+        }
+        let description = it.description;
+        if (link && normLink(link) !== normLink(src.source_url) && enrichBudget > 0 && needsEnrichment({ description, deadline: it.deadline, eligibility: it.eligibility, benefits: it.benefits })) {
+          enrichBudget--;
+          const extra = await fetchDetailEnrichment(link);
+          if (extra) {
+            if (extra.description && (description.length < 120 || /Discovered (?:from|via) official|Check the official portal|Visit the official portal|<\w|&#x?\w+;/i.test(description))) description = extra.description;
+            it.deadline = it.deadline || extra.deadline;
+            it.eligibility = it.eligibility || extra.eligibility;
+            it.benefits = it.benefits || extra.benefits;
+          }
         }
         const deadline = it.deadline && /^\d{4}-\d{2}-\d{2}$/.test(it.deadline) ? it.deadline : null;
         const s = it.scores;
