@@ -39,17 +39,33 @@ export function cleanText(s: string): string {
 }
 
 /**
+ * Tace dukkan sanarwar cookies, privacy notices, da tracking banners daga cikin rubutu.
+ */
+export function stripCookieAndPrivacyNotices(text: string): string {
+  if (!text) return "";
+  const chunks = text.split(/(?<=[.!?])\s+|(?:\s*-->\s*)/);
+  const cleanChunks = chunks.filter((chunk) => {
+    return !/\b(?:cookies?|cookie policy|cookie settings|strictly necessary|agree and proceed|please (?:clink|click) on ["“']?agree)\b/i.test(chunk);
+  });
+  return cleanChunks
+    .join(" ")
+    .replace(/\b(?:agree|see details|accept all)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
  * Ciro taƙaitaccen bayani daga meta tags na HTML (og:description, description, twitter:description)
  */
 export function extractMetaDescription(html: string): string | null {
   if (!html) return null;
   const m1 = html.match(/<meta\s+[^>]*?(?:name|property)=["'](?:og:description|description|twitter:description)["'][^>]*?content=["']([^"']+)["']/i);
   if (m1 && m1[1] && m1[1].trim().length >= 20) {
-    return cleanText(m1[1]).slice(0, 1000);
+    return stripCookieAndPrivacyNotices(cleanText(m1[1])).slice(0, 1000);
   }
   const m2 = html.match(/<meta\s+[^>]*?content=["']([^"']+)["'][^>]*?(?:name|property)=["'](?:og:description|description|twitter:description)["']/i);
   if (m2 && m2[1] && m2[1].trim().length >= 20) {
-    return cleanText(m2[1]).slice(0, 1000);
+    return stripCookieAndPrivacyNotices(cleanText(m2[1])).slice(0, 1000);
   }
   return null;
 }
@@ -59,7 +75,7 @@ export function extractMetaDescription(html: string): string | null {
  */
 export function findDeadlineFromText(text: string): string | null {
   if (!text) return null;
-  const prefix = "(?:deadline|closing date|closes|apply by|apply before|end date|due date|cutoff)\\s*(?:is|on|by|before|at|:|–|-)?\\s*";
+  const prefix = "(?:application deadline|submission deadline|closing date|deadline|apply by|apply before|end date|due date|cutoff|last date to apply|closes)\\s*(?:is|on|by|before|at|:|–|-)?\\s*";
 
   // 1. Month DD, YYYY (misali: November 30, 2026)
   const mMonthFirst = text.match(new RegExp(prefix + "([a-z]{3})[a-z]*\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(20\\d{2})", "i"));
@@ -129,4 +145,5 @@ export function extractBenefits(text: string, maxLen = 600): string | null {
  */
 export function cleanSitemapFallbackDescription(title: string, orgName: string): string {
   return `${title} — Official programme offered by ${orgName}. Discovered via official listing. Visit the official portal for full eligibility criteria, deadlines, and application requirements.`;
-}
+    }
+  
