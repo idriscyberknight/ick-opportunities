@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { decodeEntities, enrichFromDetailHtml, findDeadlineExtended, needsEnrichment } from "../../src/lib/ai/detail-page-enrich.server";
+import { decodeEntities, enrichFromDetailHtml, findDeadlineExtended, isWeakTitle, needsEnrichment } from "../../src/lib/ai/detail-page-enrich.server";
 
 const html = `<html><head><title>x</title></head><body><nav>Home About</nav><main>
 <h1>YTB &#x2013; IsDB Joint Scholarship Program 2026</h1>
@@ -11,6 +11,7 @@ const html = `<html><head><title>x</title></head><body><nav>Home About</nav><mai
 describe("detail page enrichment", () => {
   test("decodes hex entities", () => {
     expect(decodeEntities("T&#xFC;rkiye &#x2013; 2026")).toBe("Türkiye – 2026");
+    expect(decodeEntities("broken &#x110000; entity")).toBe("broken   entity");
   });
   test("takes end date of an application date range", () => {
     expect(findDeadlineExtended("Application Dates: 10 January – 20 February 2026")).toBe("2026-02-20");
@@ -26,5 +27,19 @@ describe("detail page enrichment", () => {
   });
   test("generic sitemap placeholder needs enrichment", () => {
     expect(needsEnrichment({ description: "Discovered from official XML sitemap: https://x", deadline: null, eligibility: null, benefits: null })).toBe(true);
+  });
+  test("extracts a meaningful page title and rejects call-to-action titles", () => {
+    const result = enrichFromDetailHtml(`<html><head><title>KAUST | Official Portal</title></head><body><main><h1>Internship Opportunities</h1><p>Explore the internship program for international applicants.</p></main></body></html>`);
+    expect(result.title).toBe("Internship Opportunities");
+    expect(isWeakTitle("Find Out More")).toBe(true);
+    expect(isWeakTitle("KAUST Internship Programme 2026")).toBe(false);
+  });
+  test("extracts end date from an application period and rejects impossible dates", () => {
+    expect(findDeadlineExtended("Application period: 1 September – 31 October 2026")).toBe("2026-10-31");
+    expect(findDeadlineExtended("Application closing date: 31 February 2026")).toBeNull();
+  });
+  test("removes a truncated HTML tag from extracted text", () => {
+    const result = enrichFromDetailHtml(`<html><main><h1>Scholarship programme 2026</h1><p>Applicants must be citizens of Nigeria and have an undergraduate degree. The scholarship covers tuition fees and a monthly stipend.</p><div class="broken`);
+    expect(result.description).not.toContain("<div");
   });
 });
