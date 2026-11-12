@@ -8,7 +8,7 @@ import {
   SourceFetchError,
 } from "@/lib/ai/discovery.server";
 import { extractFallback } from "@/lib/ai/fallback-extract.server";
-import { fetchDetailEnrichment, needsEnrichment } from "@/lib/ai/detail-page-enrich.server";
+import { fetchDetailEnrichment, isWeakTitle, needsEnrichment } from "@/lib/ai/detail-page-enrich.server";
 import { isXmlFeedOrSitemap } from "@/lib/ai/rss-sitemap-extract.server";
 
 const MAX_SOURCES_PER_RUN = 5;
@@ -242,7 +242,8 @@ export async function runDiscoveryCore(
       let enrichBudget = 10; // bounded per source: one GET per new item
       const now = new Date().toISOString();
       for (const it of items) {
-        const { title, organization } = it;
+        let title = it.title;
+        const { organization } = it;
         const rawDescription = it.description;
         if (!title || !organization || !rawDescription) {
           incomplete++;
@@ -262,15 +263,20 @@ export async function runDiscoveryCore(
           continue;
         }
         let description = rawDescription;
-        if (link && normLink(link) !== normLink(src.source_url) && enrichBudget > 0 && needsEnrichment({ description, deadline: it.deadline, eligibility: it.eligibility, benefits: it.benefits })) {
+        if (link && normLink(link) !== normLink(src.source_url) && enrichBudget > 0 && (isWeakTitle(title) || needsEnrichment({ description, deadline: it.deadline, eligibility: it.eligibility, benefits: it.benefits }))) {
           enrichBudget--;
           const extra = await fetchDetailEnrichment(link);
           if (extra) {
+            if (extra.title && isWeakTitle(title)) title = extra.title;
             if (extra.description && (description.length < 120 || /Discovered (?:from|via) official|Check the official portal|Visit the official portal|<\w|&#x?\w+;/i.test(description))) description = extra.description;
             it.deadline = it.deadline || extra.deadline;
             it.eligibility = it.eligibility || extra.eligibility;
             it.benefits = it.benefits || extra.benefits;
           }
+        }
+        if (isWeakTitle(title)) {
+          incomplete++;
+          continue;
         }
         const deadline = it.deadline && /^\d{4}-\d{2}-\d{2}$/.test(it.deadline) ? it.deadline : null;
         const s = it.scores;

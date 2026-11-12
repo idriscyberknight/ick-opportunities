@@ -17,6 +17,8 @@ export function cleanText(s: string): string {
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, " ")
     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ")
+    .replace(/<[a-z!/][^>]*$/gi, " ")
+    .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&#0?39;|&apos;|&rsquo;|&lsquo;/gi, "'")
@@ -24,7 +26,14 @@ export function cleanText(s: string): string {
     .replace(/&ndash;|&mdash;/gi, "-")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
-    .replace(/&#(\d+);/g, (_m, n: string) => String.fromCharCode(Number(n)))
+    .replace(/&#(\d+);/g, (_m, n: string) => {
+      const codePoint = Number(n);
+      return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : " ";
+    })
+    .replace(/&#x([0-9a-f]+);/gi, (_m, h: string) => {
+      const codePoint = Number.parseInt(h, 16);
+      return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : " ";
+    })
     .replace(/\s+/g, " ")
     .trim();
 }
