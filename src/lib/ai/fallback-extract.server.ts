@@ -10,6 +10,7 @@ import {
   extractEligibility,
   extractBenefits,
   extractMetaDescription,
+  stripCookieAndPrivacyNotices,
 } from "./deterministic-enrichment.server";
 
 export type FallbackItem = {
@@ -26,7 +27,7 @@ const KEYWORDS =
   /scholarship|fellowship|grant|internship|intern\b|vacanc|job|position|career opening|programme|program\b|award|bursary|funding|call for (applications|proposals)|apply|opportunit|recruit|hiring|officer|manager|analyst|engineer|assistant|consultant|specialist|coordinator|phd|master/i;
 const NAV =
   /^(home|about|about us|contact|contact us|login|log in|sign in|sign up|register|privacy|terms|faq|faqs|blog|news|search|menu|more|read more|learn more|apply now|apply|click here|view all|see all|explore more|discover more|get started|start here|find out more|find more|know more|details|full details|read story|read full story|next|previous|back|career outcomes|student life|campus life|global community|educational excellence|short courses|our campus|leading faculty|fully funded|admissions? timelines?|careers|jobs|opportunities|scholarships|grants|internships|fellowships)$/i;
-const BAD_HREF = /^(mailto:|tel:|javascript:)|\.(pdf|jpg|jpeg|png|gif|zip|docx?)(\?|$)|\/(login|signin|signup|register|privacy|terms|contact|about(?:-[^/]+)?|tag|category|author|search|feed|publications?|news|blog|events?|press|media|page\/\d+|alumni|faculty|staff|life-at[^/]*|campus-life|campus|timelines?|career-outcomes|community|leadership|giving|donate|how-to-apply|fees-funding|virtual-tour)(\/|\?|$)|alumni\.|facebook\.com|twitter\.com|x\.com\/|linkedin\.com\/(share|company)|instagram\.com|youtube\.com|wa\.me|whatsapp/i;
+const BAD_HREF = /^(mailto:|tel:|javascript:)|\.(pdf|jpg|jpeg|png|gif|zip|docx?)(\?|$)|\/(login|signin|signup|register|privacy|terms|contact|about(?:-[^/]+)?|tag|category|author|search|feed|publications?|news|blog|events?|press|media|page\/\d+|alumni|faculty|staff|life-at[^/]*|campus-life|campus|timelines?|career-outcomes|community|leadership|giving|donate|how-to-apply|fees-funding|virtual-tour|host-organisations?|directory|course-catalogue?|catalogue?|course-finder|find-a-course|guidance|who-can-apply)(\/|\?|$)|alumni\.|facebook\.com|twitter\.com|x\.com\/|linkedin\.com\/(share|company)|instagram\.com|youtube\.com|wa\.me|whatsapp/i;
 
 function absolute(href: string, base: string): string | null {
   try {
@@ -76,7 +77,8 @@ export function extractFallback(html: string, sourceUrl: string, max = 15): Fall
     seen.add(k);
     seen.add(title.toLowerCase());
 
-    const description = contextText.length > 30 ? contextText.slice(0, 1500) : (pageMetaDesc ?? undefined);
+    const rawDesc = contextText.length > 30 ? contextText.slice(0, 1500) : (pageMetaDesc ?? undefined);
+    const description = rawDesc ? stripCookieAndPrivacyNotices(rawDesc) : undefined;
     const eligibility = extractEligibility(contextText);
     const benefits = extractBenefits(contextText);
 
@@ -140,4 +142,4 @@ export function extractFallback(html: string, sourceUrl: string, max = 15): Fall
   }
 
   return out;
-      }
+          }
