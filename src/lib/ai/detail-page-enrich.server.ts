@@ -2,7 +2,13 @@
  * Stage 2 of deterministic discovery: read an opportunity's own page and
  * pull description, deadline, eligibility and benefits. No AI involved.
  */
-import { extractBenefits, extractEligibility, extractMetaDescription, findDeadlineFromText } from "./deterministic-enrichment.server";
+import {
+  extractBenefits,
+  extractEligibility,
+  extractMetaDescription,
+  findDeadlineFromText,
+  stripCookieAndPrivacyNotices,
+} from "./deterministic-enrichment.server";
 
 const MONTHS: Record<string, number> = {
   jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
@@ -152,10 +158,11 @@ export function enrichFromDetailHtml(html: string): DetailEnrichment {
   const meta = extractMetaDescription(html);
   const firstPara = sentences(text).find((s) => s.length >= 60) ?? null;
   const bodyStart = text.slice(0, 1500).replace(/\s+/g, " ").trim();
-  const description = (meta && meta.length >= 60 ? decodeEntities(meta) : null) ?? (bodyStart.length >= 80 ? bodyStart : firstPara);
+  const rawDesc = (meta && meta.length >= 60 ? decodeEntities(meta) : null) ?? (bodyStart.length >= 80 ? bodyStart : firstPara);
+  const description = rawDesc ? stripCookieAndPrivacyNotices(rawDesc).slice(0, 2000) : null;
   return {
     title: extractPageTitle(html),
-    description: description ? description.slice(0, 2000) : null,
+    description,
     deadline: findDeadlineExtended(text),
     eligibility: pick(text, ELIG_RX) ?? extractEligibility(text),
     benefits: pick(text, BENEFIT_RX) ?? extractBenefits(text),
@@ -182,4 +189,4 @@ export async function fetchDetailEnrichment(url: string, timeoutMs = 8000): Prom
   } catch {
     return null;
   }
-}
+                                                              }
