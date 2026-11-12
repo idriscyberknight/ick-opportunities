@@ -55,26 +55,33 @@ export function renderOpportunityDigestHtml(payload: DigestEmailPayload): string
   const origin = (payload.siteOrigin || "https://ick-opportunities.vercel.app").replace(/\/+$/, "");
   const recipientName = payload.recipient.name?.trim() || "Applicant";
   const items = payload.opportunities;
-  const preferencesUrl = payload.preferencesUrl || `${origin}/dashboard/alerts`;
-  const unsubscribeUrl = payload.unsubscribeUrl || `${origin}/dashboard/alerts`;
+  const preferencesUrl = payload.preferencesUrl || `${origin}/alerts`;
+  const unsubscribeUrl = payload.unsubscribeUrl || `${origin}/alerts`;
 
-  const itemsHtml = items.map((item) => {
-    const itemUrl = item.url || `${origin}/opportunities/${item.id}`;
-    const colors = CATEGORY_COLORS[item.category] || { bg: "#f3f4f6", text: "#1f2937", border: "#e5e7eb" };
-    const categoryBadge = item.category.toUpperCase();
-    const location = [item.state, item.country].filter(Boolean).join(", ") || "International / Online";
-    const deadlineText = item.deadline ? `Deadline: ${item.deadline}` : "No deadline specified";
+  const itemsHtml = items
+    .map((item) => {
+      const itemUrl = item.url || `${origin}/opportunities/${item.id}`;
+      const colors = CATEGORY_COLORS[item.category] || {
+        bg: "#f3f4f6",
+        text: "#1f2937",
+        border: "#e5e7eb",
+      };
+      const categoryBadge = item.category.toUpperCase();
+      const location =
+        [item.state, item.country].filter(Boolean).join(", ") || "International / Online";
+      const deadlineText = item.deadline ? `Deadline: ${item.deadline}` : "No deadline specified";
 
-    const reasonsHtml = item.matchReasons && item.matchReasons.length > 0
-      ? `<div style="margin-top: 10px; padding: 10px 14px; background-color: #f8fafc; border-left: 3px solid #10b981; border-radius: 4px;">
+      const reasonsHtml =
+        item.matchReasons && item.matchReasons.length > 0
+          ? `<div style="margin-top: 10px; padding: 10px 14px; background-color: #f8fafc; border-left: 3px solid #10b981; border-radius: 4px;">
            <span style="font-size: 11px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">Why this matches your profile:</span>
            <ul style="margin: 4px 0 0 0; padding-left: 18px; color: #475569; font-size: 13px; line-height: 18px;">
              ${item.matchReasons.map((r) => `<li style="margin-bottom: 2px;">${escapeHtml(r)}</li>`).join("")}
            </ul>
          </div>`
-      : "";
+          : "";
 
-    return `
+      return `
       <tr>
         <td style="padding: 18px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 16px;">
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -93,12 +100,16 @@ export function renderOpportunityDigestHtml(payload: DigestEmailPayload): string
                 </a>
               </td>
             </tr>
-            ${item.organization ? `
+            ${
+              item.organization
+                ? `
             <tr>
               <td style="padding-top: 4px; font-size: 13px; color: #64748b; font-weight: 500;">
                 Organization / Institution: <strong>${escapeHtml(item.organization)}</strong>
               </td>
-            </tr>` : ""}
+            </tr>`
+                : ""
+            }
             <tr>
               <td style="padding-top: 6px; font-size: 12px; color: #64748b;">
                 📍 ${escapeHtml(location)} &nbsp;|&nbsp; ⏰ ${escapeHtml(deadlineText)}
@@ -117,7 +128,8 @@ export function renderOpportunityDigestHtml(payload: DigestEmailPayload): string
       </tr>
       <tr><td height="14" style="line-height: 14px; font-size: 14px;">&nbsp;</td></tr>
     `;
-  }).join("");
+    })
+    .join("");
 
   return `<!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -174,7 +186,7 @@ export function renderOpportunityDigestHtml(payload: DigestEmailPayload): string
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 16px;">
                 <tr>
                   <td style="font-size: 12px; color: #991b1b; line-height: 18px;">
-                    🛡️ <strong>Security Alert:</strong> All opportunities listed on ICK Opportunities are 100% free. Never send money or pay application fees to anyone claiming to represent a scholarship, internship, or job listing.
+                    🛡️ <strong>Security Alert:</strong> ICK Opportunities does not charge to browse listings. Check any legitimate application fees only with the official opportunity provider. Never pay someone claiming to guarantee an award or job.
                   </td>
                 </tr>
               </table>
@@ -212,21 +224,25 @@ export function renderOpportunityDigestText(payload: DigestEmailPayload): string
   const recipientName = payload.recipient.name?.trim() || "Applicant";
   const items = payload.opportunities;
 
-  const itemsText = items.map((item, index) => {
-    const itemUrl = item.url || `${origin}/opportunities/${item.id}`;
-    const location = [item.state, item.country].filter(Boolean).join(", ") || "International / Online";
-    const deadline = item.deadline ? `Deadline: ${item.deadline}` : "No deadline specified";
-    const reasons = item.matchReasons && item.matchReasons.length > 0
-      ? `  Why it matches: ${item.matchReasons.join("; ")}\n`
-      : "";
+  const itemsText = items
+    .map((item, index) => {
+      const itemUrl = item.url || `${origin}/opportunities/${item.id}`;
+      const location =
+        [item.state, item.country].filter(Boolean).join(", ") || "International / Online";
+      const deadline = item.deadline ? `Deadline: ${item.deadline}` : "No deadline specified";
+      const reasons =
+        item.matchReasons && item.matchReasons.length > 0
+          ? `  Why it matches: ${item.matchReasons.join("; ")}\n`
+          : "";
 
-    return `${index + 1}. [${item.category.toUpperCase()}] ${item.title}
+      return `${index + 1}. [${item.category.toUpperCase()}] ${item.title}
   Organization: ${item.organization || "N/A"}
   Location: ${location} | ${deadline}
   Match Score: ${item.matchScore ? item.matchScore + "%" : "Tailored match"}
 ${reasons}  Apply URL: ${itemUrl}
 `;
-  }).join("\n");
+    })
+    .join("\n");
 
   return `HELLO, ${recipientName.toUpperCase()}!
 
@@ -235,14 +251,13 @@ Based on your profile, here are new opportunities tailored to your interests:
 ${itemsText}
 ---
 SECURITY ALERT:
-All listings on ICK Opportunities are 100% free. Never pay anyone claiming to sell scholarship slots or job opportunities.
+ICK Opportunities does not charge to browse listings. Verify any application fees directly with the official provider and beware of guaranteed-award scams.
 
 ---
 You received this email because you opted in to opportunity alerts.
-Manage Preferences: ${payload.preferencesUrl || `${origin}/dashboard/alerts`}
-Unsubscribe: ${payload.unsubscribeUrl || `${origin}/dashboard/alerts`}
+Manage Preferences: ${payload.preferencesUrl || `${origin}/alerts`}
+Unsubscribe: ${payload.unsubscribeUrl || `${origin}/alerts`}
 
 (c) 2026 ICK Opportunities (${origin})
 `;
-    }
-               
+}

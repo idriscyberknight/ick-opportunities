@@ -70,6 +70,17 @@ describe("English Opportunity Digest Email Generator", () => {
     expect(html).toContain("Unsubscribe");
   });
 
+  test("does not promise all provider applications are free or link to a missing settings path", () => {
+    const html = renderOpportunityDigestHtml(samplePayload);
+    const plainText = renderOpportunityDigestText(samplePayload);
+    expect(html).toContain("does not charge to browse listings");
+    expect(plainText).toContain("does not charge to browse listings");
+    expect(html).toContain("https://ick-opportunities.vercel.app/alerts");
+    expect(plainText).toContain("https://ick-opportunities.vercel.app/alerts");
+    expect(html).not.toContain("/dashboard/alerts");
+    expect(plainText).not.toContain("100% free");
+  });
+
   test("renders English plain text fallback accurately", () => {
     const text = renderOpportunityDigestText(samplePayload);
     expect(text).toContain("HELLO, IDRIS SALISU!");

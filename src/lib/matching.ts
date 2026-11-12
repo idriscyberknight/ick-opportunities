@@ -190,10 +190,7 @@ function scoreOne(o: Opportunity, p: ProfileData, today: string): Recommendation
   } else if (isRemoteOpp && (p.remote_preference === "remote" || p.remote_preference === "any")) {
     score += W.location;
     reasons.push("100% Remote / Work from anywhere");
-  } else if (
-    userCountry === "nigeria" &&
-    AFRICA_KEYWORDS.some((k) => text.includes(k))
-  ) {
+  } else if (userCountry === "nigeria" && AFRICA_KEYWORDS.some((k) => text.includes(k))) {
     score += Math.round(W.location * 0.8);
     reasons.push("Open to applicants from Nigeria & Africa");
   } else if (!oppCountry || GLOBAL_KEYWORDS.some((k) => text.includes(k))) {
@@ -230,4 +227,4 @@ export function rankOpportunities(
     .map((o) => scoreOne(o, profile, today))
     .filter((r) => r.score >= minScore)
     .sort((a, b) => b.score - a.score);
-      }
+}

@@ -11,9 +11,23 @@ export const Route = createFileRoute("/api/public/jobs/alerts")({
         if (authFailure) return authFailure;
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { runAlertWorker } = await import("@/lib/a18-alert-worker.server");
-          const result = await runAlertWorker(supabaseAdmin);
-          return Response.json({ ok: true, ...result });
+          const { runAlertWorker, parseAlertWorkerCursor } = await import("@/lib/a18-alert-worker.server");
+          let afterUserId: string | null;
+          try {
+            const url = new URL(request.url);
+            afterUserId = parseAlertWorkerCursor(url.searchParams.get("afterUserId"));
+          } catch {
+            return Response.json({ ok: false, error: "Invalid continuation cursor" }, { status: 400 });
+          }
+          const result = await runAlertWorker(supabaseAdmin, new Date(), afterUserId);
+          // The authorized scheduler MUST follow nextUserCursor when non-null.
+          // Partial user batches are not evidence that all opted-in users were
+          // processed. Missing/failed records are surfaced, not hidden.
+          const healthy = result.failures === 0 && !result.truncatedOpportunities;
+          return Response.json(
+            { ok: healthy, ...result },
+            { status: healthy ? 200 : 503 },
+          );
         } catch (e) {
           console.error("[a18-worker] run failed:", (e as Error).message);
           return Response.json({ ok: false }, { status: 500 });
