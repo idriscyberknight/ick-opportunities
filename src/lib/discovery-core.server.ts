@@ -244,8 +244,8 @@ export async function runDiscoveryCore(
       for (const it of items) {
         let title = it.title;
         const { organization } = it;
-        const rawDescription = it.description;
-        if (!title || !organization || !rawDescription) {
+        const rawDescription = it.description ?? "";
+        if (!organization) {
           incomplete++;
           continue;
         }
@@ -263,7 +263,7 @@ export async function runDiscoveryCore(
           continue;
         }
         let description = rawDescription;
-        if (link && normLink(link) !== normLink(src.source_url) && enrichBudget > 0 && (isWeakTitle(title) || needsEnrichment({ description, deadline: it.deadline, eligibility: it.eligibility, benefits: it.benefits }))) {
+        if (link && normLink(link) !== normLink(src.source_url) && enrichBudget > 0 && (isWeakTitle(title) || needsEnrichment({ description: description || null, deadline: it.deadline, eligibility: it.eligibility, benefits: it.benefits }))) {
           enrichBudget--;
           const extra = await fetchDetailEnrichment(link);
           if (extra) {
@@ -274,7 +274,7 @@ export async function runDiscoveryCore(
             it.benefits = it.benefits || extra.benefits;
           }
         }
-        if (isWeakTitle(title)) {
+        if (isWeakTitle(title) || !description) {
           incomplete++;
           continue;
         }
