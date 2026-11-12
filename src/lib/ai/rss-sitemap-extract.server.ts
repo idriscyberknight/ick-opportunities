@@ -27,6 +27,18 @@ export type ExtractedFeedItem = {
 export { cleanText as cleanXmlText, findDeadlineFromText };
 
 /**
+ * Jerin sunaye da shafukan menu na sitemap da za a tsallake don kada su zama damammaki na karya.
+ */
+const SITEMAP_EXCLUDED_SLUGS = new Set([
+  "scholarships", "fellowships", "grants", "internships", "jobs", "careers",
+  "programmes", "programs", "courses", "catalogue", "catalog", "directory",
+  "who-can-apply", "guidance", "eligibility", "find-a-course", "faqs",
+  "host-organisations", "host-organisations-information", "apply", "how-to-apply",
+  "selection-process", "overview", "all-scholarships", "all-fellowships",
+  "other-scholarships", "information-for-candidates", "applications",
+]);
+
+/**
  * Tabbatar da cewa shafin da aka sauko XML Feed ne ko Sitemap.
  */
 export function isXmlFeedOrSitemap(text: string): boolean {
@@ -138,15 +150,26 @@ export function parseSitemap(xml: string, max = 25): ExtractedFeedItem[] {
 
     if (!OPP_REGEX.test(link)) continue;
 
+    // 1. Tace shafukan Chevening na kowace kasa (/scholarship/country-name/)
+    if (/chevening\.org\/scholarship\/[a-z-]+(?:\/)?$/i.test(link)) {
+      continue;
+    }
+
     // Fitar da sunan damar daga karshen URL slug
     const urlParts = link.replace(/\/$/, "").split("/");
-    const slug = urlParts[urlParts.length - 1] || "";
+    const slug = (urlParts[urlParts.length - 1] || "").toLowerCase();
+
+    // 2. Tace shafukan directory, menu, da jagororin gamayya
+    if (SITEMAP_EXCLUDED_SLUGS.has(slug)) {
+      continue;
+    }
+
     const title = slug
       .replace(/[-_]+/g, " ")
       .replace(/\b[a-z]/g, (c) => c.toUpperCase())
       .slice(0, 300);
 
-    if (title.length >= 8) {
+    if (title.length >= 8 && !SITEMAP_EXCLUDED_SLUGS.has(title.toLowerCase())) {
       out.push({
         title,
         link,
@@ -175,5 +198,5 @@ export function extractFeedOrSitemap(xml: string, max = 25): ExtractedFeedItem[]
     return parseSitemap(xml, max);
   }
   return parseRssFeed(xml, max);
-                        }
-    
+                  }
+      
