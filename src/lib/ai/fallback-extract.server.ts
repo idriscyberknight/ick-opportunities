@@ -69,7 +69,8 @@ export function extractFallback(html: string, sourceUrl: string, max = 15): Fall
   ) => {
     title = decode(title).slice(0, 300);
     if (!link || link === srcNorm || out.length >= max) return;
-    if (title.length < 12 || title.length > 200 || title.split(" ").length < 2 || NAV.test(title)) return;
+    const genericAnchorForOpportunityPath = NAV.test(title) && KEYWORDS.test(link);
+    if (title.length < 12 || title.length > 200 || title.split(" ").length < 2 || (NAV.test(title) && !genericAnchorForOpportunityPath)) return;
     const k = link.toLowerCase().replace(/\/$/, "");
     if (seen.has(k) || seen.has(title.toLowerCase())) return;
     seen.add(k);
